@@ -93,7 +93,7 @@ namespace Confirm_server_by_Contracts
                 WHERE regexp_like(part_no, {0})
             GROUP BY PART_NO, To_Date(DATE_REQUIRED)", regex), "Get_demands_from_IFS");
 
-        public List<Simple_demands_row> add_field_Next_day(List<Simple_demands_row> source)
+        public List<Simple_demands_row> Add_field_Next_day(List<Simple_demands_row> source)
         {
             foreach (Simple_demands_row row in source)
             {

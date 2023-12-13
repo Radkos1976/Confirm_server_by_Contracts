@@ -553,7 +553,7 @@ namespace DB_Conect
                         DB_Col_number = Convert.ToInt32(row["ordinal_position"]) - 1,
                         Field_type = Postgres_helpers.PostegresTyp[row["data_type"].ToString()],
                         Dtst_col = P_columns.ContainsKey(row["column_name"].ToString().ToLower()) ? P_columns[row["column_name"].ToString().ToLower()] : 10000,
-                        char_max_len = (int)row["character_maximum_length"]                      
+                        Char_max_len = (int)row["character_maximum_length"]                      
                 };
                     schema.Add(rw);
                 }
@@ -790,7 +790,7 @@ namespace DB_Conect
         public int DB_Col_number { get; set; }
         public NpgsqlTypes.NpgsqlDbType Field_type { get; set; }
         public int Dtst_col { get; set; }
-        public int char_max_len {get; set;} 
+        public int Char_max_len {get; set;} 
     }
     public class ORA_Schema_fields
     {
@@ -813,7 +813,7 @@ namespace DB_Conect
     }
     public static class PropertyInfoHelper
     {
-        private static ConcurrentDictionary<PropertyInfo, IPropertyAccessor> _cache =
+        private static readonly ConcurrentDictionary<PropertyInfo, IPropertyAccessor> _cache =
             new ConcurrentDictionary<PropertyInfo, IPropertyAccessor>();
 
         public static IPropertyAccessor GetAccessor(PropertyInfo propertyInfo)

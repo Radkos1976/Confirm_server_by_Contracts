@@ -108,7 +108,7 @@ namespace DB_Conect
                 }
             }
         }
-        private static Dictionary<string, DateTime, DateTime> Calendar_next_day;
+        private static readonly Dictionary<string, DateTime, DateTime> Calendar_next_day;
         public static DateTime Get_next_day(string Contract, DateTime Base_Day)
         {
             if (Calendar_next_day.ContainsKey(Contract, Base_Day))
@@ -190,7 +190,7 @@ namespace DB_Conect
                 var Tmp = conO.GetSchema("Columns", new string[] { null, null, Table_name });
                 foreach (DataRow row in Tmp.Rows)
                 {
-                    dict.Add(row["column_name"].ToString(), (int) (row["character_maximum_length"]!=null ?  row["character_maximum_length"]:  0));
+                    dict.Add(row["column_name"].ToString(), (int)(row["character_maximum_length"] ?? 0));
                 }
             }
             return dict;
@@ -260,14 +260,14 @@ namespace DB_Conect
         {
             try
             {
-                (Conn_set, Contracts) = get_values("POSTEGRESQL_MAIN");
+                (Conn_set, Contracts) = Get_values("POSTEGRESQL_MAIN");
                 Connection_pool["MAIN"] = Conn_set;
                 if (Contracts.Length > 0 )
                 {
                     Contract_lst =  new string[] { "" };
                     Contract_lst = Contracts.Split(',');
                     foreach ( string str in Contract_lst) {
-                        (Connection_pool[str], Contracts) = get_values(String.Format("POSTEGRESQL_{0}", str));                        
+                        (Connection_pool[str], Contracts) = Get_values(String.Format("POSTEGRESQL_{0}", str));                        
                     }
                 }
             }
@@ -281,7 +281,7 @@ namespace DB_Conect
         /// </summary>
         /// <param name="decendant"></param>
         /// <returns></returns>
-        static (NpgsqlConnectionStringBuilder, string) get_values(string decendant)
+        static (NpgsqlConnectionStringBuilder, string) Get_values(string decendant)
         {
             XDocument Doc = XDocument.Load("Settings.xml");
             var pstgr = Doc.Descendants("POSTEGRESQL_MAIN")
@@ -401,7 +401,7 @@ namespace DB_Conect
         /// <returns></returns>
         public static bool Step_error(string step)
         {
-            (int state, string desc, DateTime? started) = Step_Status(step);
+            (int state, _, DateTime? started) = Step_Status(step);
             if (started == null || state == 0)
             {
                 Loger.Log(String.Format("Step {0} error", step));
@@ -421,7 +421,7 @@ namespace DB_Conect
         /// <returns></returns>
         public static bool End_step(string step)
         {
-            (int state, string desc, DateTime? started) = Step_Status(step);
+            (int state, _, DateTime? started) = Step_Status(step);
             if (started == null || state != 1)
             {
                 Loger.Log(String.Format("Step {0} was end work with success", step));
@@ -445,7 +445,7 @@ namespace DB_Conect
         /// <returns></returns>
         public static bool Register_step(string step)
         {
-            (int state, string desc, DateTime? started) = Step_Status(step);
+            (int state, _, DateTime? started) = Step_Status(step);
             if (started == null || state == 2)
             {
                 Loger.Log(String.Format("Step {0} was registered", step));
@@ -503,10 +503,10 @@ namespace DB_Conect
         public static string Log_rek = "";
         public static void Log(string txt)
         {
-            txt = String.Format("{0} => {1}", time_stamp(), txt);
+            txt = String.Format("{0} => {1}", Time_stamp(), txt);
             Log_rek = Log_rek + Environment.NewLine + txt;
         }
-        private static string time_stamp()
+        private static string Time_stamp()
         {
             TimeSpan diff = DateTime.Now - serw_run;
             return diff.TotalSeconds.ToString();
