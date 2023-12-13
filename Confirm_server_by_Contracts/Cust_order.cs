@@ -1,12 +1,6 @@
 ﻿using DB_Conect;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
-using System.Diagnostics.Metrics;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Confirm_server_by_Contracts
@@ -33,6 +27,7 @@ namespace Confirm_server_by_Contracts
                         Steps_executor.Register_step("cust_ord");
                         await Update_cust();
                         Updated_on_init = true;
+                        Steps_executor.End_step("cust_ord");
                     }
                     else
                     {
@@ -60,6 +55,7 @@ namespace Confirm_server_by_Contracts
                         Steps_executor.Register_step("cust_ord");
                         Updated_on_init = true;
                         await Update_cust();
+                        Steps_executor.End_step("cust_ord");
                     }
                     else
                     {
@@ -95,7 +91,7 @@ namespace Confirm_server_by_Contracts
                 Changes_List<Orders_row> tmp = rw.Changes(list_pstgr, list_ora, new[] { "Custid" }, new[] { "id", "zest", "objversion" }, "id", "cust_ord");
                 list_ora = null;
                 list_pstgr = null;
-                return await PSTRG_Changes_to_dataTable(tmp, "cust_ord", "id", null, new[] {
+                return await PSTRG_Changes_to_dataTable(tmp, "cust_ord", new[] { "id" }, null, new[] {
 
                     @"update public.cust_ord a
                     SET zest =case when a.dop_connection_db = 'AUT' then
@@ -140,7 +136,7 @@ namespace Confirm_server_by_Contracts
                             left join
                             public.cust_ord b
                             on a.id=b.id
-                            where b.id is null)"}, "cust_ord");
+                            where b.id is null)"}, "cust_ord");                
             }
             catch (Exception e)
             {
@@ -154,7 +150,7 @@ namespace Confirm_server_by_Contracts
         /// </summary>
         /// <param name="rw"></param>
         /// <returns></returns>
-        private async Task<List<Orders_row>> Get_PSTGR_List() => await rw.Get_PSTGR("Select * from cust_ord", "Pstgr_cust_ord");
+        private async Task<List<Orders_row>> Get_PSTGR_List() => await rw.Get_PSTGR("Select * from cust_ord", "cust_ord");
 
         /// <summary>
         /// Get present list of customer orders stored in ERP
@@ -238,7 +234,7 @@ namespace Confirm_server_by_Contracts
                             WHERE a.order_no = b.order_no AND SubStr(MESSAGE_TEXT, 1, 3) = 'Wys'
                             GROUP BY a.ORDER_NO, LINE_NO, REL_NO, LINE_ITEM_NO) b
                             WHERE a.HISTORY_NO = b.HI) c
-                    ON c.id = a.id", "ORA_cust_ord");
+                    ON c.id = a.id", "cust_ord");
 
         public class Orders_row : IEquatable<Orders_row>, IComparable<Orders_row>
         {

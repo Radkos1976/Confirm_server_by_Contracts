@@ -109,6 +109,10 @@ namespace DB_Conect
         /// </summary>
         public static Dictionary<string, int> inventory_part_len = new Dictionary<string, int>().Set_postgres_limit("MAIN", "mag");
         /// <summary>
+        /// Schema for work_cal
+        /// </summary>
+        public static Dictionary<string, int> calendar_len = new Dictionary<string, int>().Set_postgres_limit("MAIN", "work_cal");
+
         /// Method for  fill dictionary with list of fields in table of POSGRESs
         /// Database must exist in Connection poll dictionary
         /// </summary>
@@ -175,6 +179,7 @@ namespace DB_Conect
         private static NpgsqlConnectionStringBuilder Conn_set { get; set; }
         public static Dictionary<string, NpgsqlConnectionStringBuilder> Connection_pool {get; set;}
         public static string[] Contract_lst {  get; set; }
+        public static Dictionary<string, string> Contracts_kalendar { get; set; }
         private static string Host { get; set; }
         private static int Port { get; set; }
         private static int CommandTimeout { get; set; }
@@ -184,6 +189,8 @@ namespace DB_Conect
         private static string Password { get; set; }
         private static string Database { get; set; }
         private static string Contracts { get; set; }
+        private static string Kalendar_name { get; set; }
+
         /// <summary>
         /// Initialize data from XML
         /// </summary>
@@ -226,6 +233,7 @@ namespace DB_Conect
                     XUsername = (string)x.Element("Username"),
                     XPassword = (string)x.Element("Password"),
                     XDatabase = (string)x.Element("Database"),
+                    XKalendar_name = decendant.Contains("MAIN") ? "":(string)x.Element("Calendar_id"),
                     XContracts = decendant.Contains("MAIN") ? (string)x.Element("Contracts"):""
                 });
             foreach (var res in pstgr)
@@ -239,7 +247,13 @@ namespace DB_Conect
                 Password = res.XPassword;
                 Database = res.XDatabase;
                 Contracts = res.XContracts;
+                Kalendar_name = res.XKalendar_name;
             }
+            if (!decendant.Contains("MAIN"))
+            {
+                Contracts_kalendar.Add(decendant, Kalendar_name);
+            }
+            
             Conn_set = new NpgsqlConnectionStringBuilder()
             {
                 Host = Host,

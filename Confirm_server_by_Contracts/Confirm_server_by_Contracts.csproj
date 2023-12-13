@@ -96,9 +96,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include=".recipes\Naos.TupleInitializers\Initializers.cs" />
+    <Compile Include="Calendar.cs" />
     <Compile Include="Common.cs" />
     <Compile Include="Cust_order.cs" />
     <Compile Include="DB_connect.cs" />
+    <Compile Include="Demands.cs" />
     <Compile Include="Inventory_part.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

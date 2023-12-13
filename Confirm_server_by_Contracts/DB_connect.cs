@@ -567,7 +567,7 @@ namespace DB_Conect
         /// <param name="name_table"></param>
         /// <param name="guid_col"></param>
         /// <returns></returns>
-        public async Task<int> PSTRG_Changes_to_dataTable(Changes_List<T> _list, string name_table, string guid_col, string[] query_before, string[] query_after, string Task_name)
+        public async Task<int> PSTRG_Changes_to_dataTable(Changes_List<T> _list, string name_table, string[] guid_col, string[] query_before, string[] query_after, string Task_name)
         {
 
             try
@@ -614,24 +614,33 @@ namespace DB_Conect
                             string comand = "DELETE FROM " + name_table;
                             string tbl_values = " WHERE ";
                             string param_values = "=";
+                            string[] guid_col_enum = null; 
                             using (NpgsqlCommand cmd = new NpgsqlCommand())
                             {
                                 cmd.Connection = conO;
                                 foreach (Npgsql_Schema_fields _Fields in Schema)
                                 {
                                     string nam = _Fields.Field_name;
-                                    if (guid_col == nam && _Fields.Dtst_col != 10000)
+                                    if (guid_col.Contains(nam) && _Fields.Dtst_col != 10000)
                                     {
-                                        tbl_values += nam;
+                                        tbl_values += tbl_values != " WHERE " ? String.Format(" AND {0}", nam ):nam;
                                         param_values = "=@" + nam.ToLower();
                                         cmd.Parameters.Add("@" + nam.ToLower(), _Fields.Field_type);
+                                        tbl_values += param_values;
+                                        guid_col_enum.Append(nam.ToLower());
                                     }
                                 }
-                                cmd.CommandText = comand + tbl_values + param_values;
+                                cmd.CommandText = comand + tbl_values;
                                 await cmd.PrepareAsync();
                                 foreach (T row in _list.Delete)
                                 {
-                                    cmd.Parameters[0].Value = Accessors[P_columns[guid_col]].GetValue(row);
+                                    int cnt = 0;
+                                    foreach(string key in guid_col_enum)
+                                    {
+                                        cmd.Parameters[cnt].Value = Accessors[P_columns[key]].GetValue(row);
+                                        cnt += 1;
+                                    }
+                                    
                                     await cmd.ExecuteNonQueryAsync();
                                 }
                             }
@@ -649,9 +658,9 @@ namespace DB_Conect
                                     string nam = _Fields.Field_name;
                                     if (_Fields.Dtst_col != 10000)
                                     {
-                                        if (nam.ToLower() == guid_col.ToLower())
+                                        if (guid_col.Contains(nam))
                                         {
-                                            param_values = param_values + nam + "=@" + nam.ToLower();
+                                            param_values += param_values == " WHERE "?"":" AND " + nam + "=@" + nam;
                                         }
                                         else
                                         {
@@ -699,9 +708,9 @@ namespace DB_Conect
                                 {
                                     foreach (Npgsql_Schema_fields _field in Schema)
                                     {
-                                        if (_field.Field_name.ToLower() == guid_col.ToLower())
+                                        if (_field.Dtst_col != 10000)
                                         {
-                                            if (_field.Field_type == NpgsqlTypes.NpgsqlDbType.Uuid)
+                                            if (_field.Field_type == NpgsqlTypes.NpgsqlDbType.Uuid & guid_col.Contains(_field.Field_name))
                                             {
                                                 cmd.Parameters[_field.DB_Col_number].Value = Guid.NewGuid();
                                             }
@@ -709,11 +718,7 @@ namespace DB_Conect
                                             {
                                                 cmd.Parameters[_field.DB_Col_number].Value = Accessors[_field.Dtst_col].GetValue(row) ?? DBNull.Value;
                                             }
-                                        }
-                                        else if (_field.Dtst_col != 10000)
-                                        {
-                                            cmd.Parameters[_field.DB_Col_number].Value = Accessors[_field.Dtst_col].GetValue(row) ?? DBNull.Value;
-                                        }
+                                        }                                        
                                     }
                                     await cmd.ExecuteNonQueryAsync();
                                 }

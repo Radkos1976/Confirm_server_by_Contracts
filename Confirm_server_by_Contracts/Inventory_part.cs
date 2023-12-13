@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 
@@ -14,7 +13,7 @@ namespace Confirm_server_by_Contracts
     /// </summary>       
     public class Inventory_part : Update_pstgr_from_Ora<Inventory_part.Inventory_part_row>
     {
-        //  regex  ^(5|6(?!16)).*
+        //  regex for all without 616% ^(5|6(?!16)).*
         public bool Updated_on_init;
         public List<Inventory_part_row> Inventory_part_list;
         private readonly Update_pstgr_from_Ora<Inventory_part_row> rw;
@@ -28,21 +27,26 @@ namespace Confirm_server_by_Contracts
             limit_not_zero_stock = not_zero_stock;
             limit_part_no = part_no_values;
         }
-
+        public async Task<int> Update_dataset(List<Inventory_part_row> pstgrdtset, List<Inventory_part_row> oradtset,string Task_name)
+        {
+            Changes_List<Inventory_part_row> tmp = rw.Changes(pstgrdtset, oradtset, new[] { "Indeks", "Contract" }, new[] { "Indeks", "Contract" }, "Note_id", Task_name);
+            return await PSTRG_Changes_to_dataTable(tmp, "mag", new[] { "note_id", "contract" }, null, null, Task_name);
+        }
+            
         /// <summary>
         /// Get inventory_part stored in PSTGR
         /// </summary>
         /// <param name="rw"></param>
         /// <returns></returns>
-        public async Task<List<Inventory_part_row>> Get_PSTGR_List() => await rw.Get_PSTGR("" + 
+        public async Task<List<Inventory_part_row>> Get_PSTGR_List(string Task_name) => await rw.Get_PSTGR("" + 
             String.Format(@"Select * from mag {0}", regex_part_no != "^(5|6).*" ?
-                String.Format("WHERE regexp_like(indeks, '{0}'", regex_part_no): ""), "Pstgr_inventory_part");
+                String.Format("WHERE regexp_like(indeks, '{0}'", regex_part_no): ""), Task_name);
 
         /// <summary>
         /// Get present list of inventory_part stored in ERP
         /// </summary>
         /// <returns>Present list of inventory_part</returns>
-        public async Task<List<Inventory_part_row>> Get_Ora_list() => await rw.Get_Ora("" +
+        public async Task<List<Inventory_part_row>> Get_Ora_list(string Task_name) => await rw.Get_Ora("" +
                String.Format(@"SELECT 
                     a.part_no Indeks,
                     contract,
@@ -72,7 +76,7 @@ namespace Confirm_server_by_Contracts
                     String.Format("AND {0} ifsapp.inventory_part_in_stock_api. Get_Plannable_Qty_Onhand (CONTRACT,part_no,'*') > 0 {1}", limit_part_no.Count > 0 ? 
                        String.Format("((part_no , contract) IN ({0}) OR ", string.Join(",", limit_part_no.Select(t => string.Format("( '{0}', '{1}')", t.Item1, t.Item2)))): "",
                        limit_part_no.Count > 0 ? ")":""): "",
-                   regex_part_no), "ORA_inventory_part");
+                   regex_part_no), Task_name);
 
 
         public class Inventory_part_row : IEquatable<Inventory_part_row>, IComparable<Inventory_part_row>
@@ -109,7 +113,7 @@ namespace Confirm_server_by_Contracts
                     // change main atribute 
                     // TO DOO: for beter performance whe need to check existence of note_id in other tables (transactions / demands) integer values  are  beter
                     //int prim = this.Note_id.CompareTo(other.Note_id);
-                    int prim = this.Note_id.CompareTo(other.Indeks);
+                    int prim = this.Indeks.CompareTo(other.Indeks);
                     if (prim != 0) { return prim; }
                     return this.Contract.CompareTo(other.Contract);
                 }
