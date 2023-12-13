@@ -12,12 +12,12 @@ namespace Confirm_server_by_Contracts
         public async Task<List<Simple_demands_row>> Get_source_list(string regex) => await rw.Get_Ora("" +
             String.Format(@"SELECT 
                 PART_NO,
+                contract,
                 To_Date(DATE_REQUIRED) DATE_REQUIRED,
                 round(Sum(QTY_SUPPLY),10) QTY_SUPPLY,
                 round(Sum(QTY_DEMAND),10) QTY_DEMAND,
                 Nvl(round(Sum(QTY_DEMAND_ZAM),10),0) DEMAND_ZAM,
-                Nvl(round(Sum(QTY_DEMAND_DOP),10),0) QTY_DEMAND_DOP,
-                ifsapp.work_time_calendar_api.Get_Next_Work_Day(ifsapp.site_api.Get_Manuf_Calendar_Id('ST'),To_Date(DATE_REQUIRED)) NextDay,
+                Nvl(round(Sum(QTY_DEMAND_DOP),10),0) QTY_DEMAND_DOP,                
                 Sum(chksum) chk_sum 
             FROM 
                 (SELECT 
@@ -91,7 +91,17 @@ namespace Confirm_server_by_Contracts
                 FROM 
                     ifsapp.purchase_order_line_supply  
                 WHERE regexp_like(part_no, {0})
-               GROUP BY PART_NO, To_Date(DATE_REQUIRED)", regex), "Get_demands_from_IFS");
+            GROUP BY PART_NO, To_Date(DATE_REQUIRED)", regex), "Get_demands_from_IFS");
+
+        public List<Simple_demands_row> add_field_Next_day(List<Simple_demands_row> source)
+        {
+            foreach (Simple_demands_row row in source)
+            {
+                row.Next_day = Next_DAY.Get_next_day(row.Contract, row.Date_required);
+            }
+            
+            return source;
+        }
                             
         public class Simple_demands_row : IEquatable<Simple_demands_row>, IComparable<Simple_demands_row>
         {
@@ -102,8 +112,8 @@ namespace Confirm_server_by_Contracts
             public double QTY_DEMAND { get; set; }
             public double DEMAND_ZAM { get; set; }
             public double QTY_DEMAND_DOP { get; set; }
-            public DateTime NextDay { get; set; }
-            public long chk_sum { get; set; }
+            public DateTime Next_day { get; set; } = DateTime.Now;
+            public long Chk_sum { get; set; }
 
             public int CompareTo(Simple_demands_row other)
             {

@@ -56,7 +56,69 @@ namespace DB_Conect
             {"xml",NpgsqlTypes.NpgsqlDbType.Xml },
             {"interval",NpgsqlTypes.NpgsqlDbType.Interval }
         };
-    }    
+    }
+    /// <summary>
+    /// Dictionary for 2 keys
+    /// </summary>
+    /// <typeparam name="TKey1"></typeparam>
+    /// <typeparam name="TKey2"></typeparam>
+    /// <typeparam name="TValue"></typeparam>
+    public class Dictionary<TKey1, TKey2, TValue> : Dictionary<Tuple<TKey1, TKey2>, TValue>, IDictionary<Tuple<TKey1, TKey2>, TValue>
+    {
+
+        public TValue this[TKey1 key1, TKey2 key2]
+        {
+            get { return base[Tuple.Create(key1, key2)]; }
+            set { base[Tuple.Create(key1, key2)] = value; }
+        }
+
+        public void Add(TKey1 key1, TKey2 key2, TValue value)
+        {
+            base.Add(Tuple.Create(key1, key2), value);
+        }
+
+        public bool ContainsKey(TKey1 key1, TKey2 key2)
+        {
+            return base.ContainsKey(Tuple.Create(key1, key2));
+        }
+    }
+
+    /// <summary>
+    /// Quick fix/speedup query
+    /// </summary>
+    public class Next_DAY
+    {
+        public Next_DAY()
+        {
+            using (NpgsqlConnection conO = new NpgsqlConnection(Postegresql_conn.Connection_pool["MAIN"].ToString()))
+            {
+                conO.Open();
+                foreach (string contract in Postegresql_conn.Contracts_kalendar.Keys)
+                {
+                    using (NpgsqlCommand cust = new NpgsqlCommand(String.Format("Select '{0}' contract, work_day, wrk_day(wrk_count(work_day,'{0}')+1,'{0}') next_day from work_cal where calendar_id = '{0}' ", contract), conO))
+                    {
+                        using (NpgsqlDataReader reader = cust.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                Calendar_next_day[reader.GetString(0), reader.GetDateTime(1)] = reader.GetDateTime(2);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        private static Dictionary<string, DateTime, DateTime> Calendar_next_day;
+        public static DateTime Get_next_day(string Contract, DateTime Base_Day)
+        {
+            if (Calendar_next_day.ContainsKey(Contract, Base_Day))
+            {
+                return Calendar_next_day[Contract, Base_Day];
+            }
+            return Base_Day;
+        }
+
+    }
 
     /// <summary>
     /// Extension for string type => for limit length
