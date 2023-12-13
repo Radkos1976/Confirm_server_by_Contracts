@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Web;
 using System.Threading;
 using System.Diagnostics.Metrics;
+using System.Security.Cryptography.X509Certificates;
 
 namespace DB_Conect
 {
@@ -98,8 +99,14 @@ namespace DB_Conect
     /// All tables for update must be saved in dictionaries(by method Set_postgres_limit)
     /// </summary>
     public static class Get_limit_of_fields
-    {
+    { 
+        /// <summary>
+        /// Schema for cust_ord
+        /// </summary>
         public static Dictionary<string, int> cust_ord_len = new Dictionary<string, int>().Set_postgres_limit("MAIN", "cust_ord");
+        /// <summary>
+        /// Schema for inventory_part
+        /// </summary>
         public static Dictionary<string, int> inventory_part_len = new Dictionary<string, int>().Set_postgres_limit("MAIN", "mag");
         /// <summary>
         /// Method for  fill dictionary with list of fields in table of POSGRESs
@@ -133,6 +140,7 @@ namespace DB_Conect
         /// Get settings for connections with ORACLE
         /// </summary>
         public static string Connection_string { get; set; }
+        public static int Limit_oracle_conn { get; set; }
         /// <summary>
         /// Initialize data from XML
         /// </summary>
@@ -144,11 +152,13 @@ namespace DB_Conect
                 var oraconn = Doc.Descendants("ORACLE")
                     .Select(x => new
                     {
-                        XConnection_string = (string)x.Element("ConnectionString")
+                        XConnection_string = (string)x.Element("ConnectionString"),
+                        XLimit_oracle_conn =  (int)x.Element("Limit_oracle_conn")
                     });
                 foreach (var res in oraconn)
                 {
                     Connection_string = res.XConnection_string;
+                    Limit_oracle_conn = res.XLimit_oracle_conn;
                 }
             }
             catch (Exception e)
@@ -197,6 +207,11 @@ namespace DB_Conect
                 Loger.Log(String.Format("Error width XML file for POSTEGRESQL: {0} ", e));
             }
         }
+        /// <summary>
+        /// Get values from XML file
+        /// </summary>
+        /// <param name="decendant"></param>
+        /// <returns></returns>
         static (NpgsqlConnectionStringBuilder, string) get_values(string decendant)
         {
             XDocument Doc = XDocument.Load("Settings.xml");
@@ -245,29 +260,40 @@ namespace DB_Conect
     /// </summary>
     public class Steps_executor
     {
-        private readonly Dictionary<string, DateTime> Active_steps;
-        private readonly Dictionary<string, DateTime> Reccent_steps;
-        private readonly Dictionary<string, DateTime> Steps_with_error;
-
-        public void Reset_diary_of_steps()
+        private readonly static Dictionary<string, DateTime> Active_steps;
+        private readonly static Dictionary<string, DateTime> Reccent_steps;
+        private readonly static Dictionary<string, DateTime> Steps_with_error;
+        /// <summary>
+        /// Reset list of registered Steps
+        /// </summary>
+        public static void Reset_diary_of_steps()
         {
             Active_steps.Clear();
             Reccent_steps.Clear();
             Steps_with_error.Clear();
         }
-
-        public (int, string, DateTime?) Step_Status(string step)
+        /// <summary>
+        /// Get State or Step
+        /// </summary>
+        /// <param name="step"></param>
+        /// <returns></returns>
+        public static (int, string, DateTime?) Step_Status(string step)
         {
             if (Active_steps.ContainsKey(step)) { return (0, "Active", Active_steps[step]); }
             if (Reccent_steps.ContainsKey(step)) { return (1, "Ready", Reccent_steps[step]); }
             if (Steps_with_error.ContainsKey(step)) { return (2, "Error", Steps_with_error[step]); }
             return (0, "Not Started", null);
         }
-
-        public bool Wait_for(string[] task_list)
+        /// <summary>
+        /// Wait for end all Steps in array of string
+        /// </summary>
+        /// <param name="task_list"></param>
+        /// <returns></returns>
+        public static bool Wait_for(string[] task_list, string step)
         {
             bool not_started_pending = true;
             bool on_error = false;
+            Loger.Log(String.Format("Step {0} is frozen and will wait for end another process'es => {1}", step, task_list));
             while (not_started_pending == true & on_error == false)
             {
                 not_started_pending = false;
@@ -284,7 +310,7 @@ namespace DB_Conect
                         break;
                     }
                 }
-                System.Threading.Thread.Sleep(500);
+                System.Threading.Thread.Sleep(200);
             }
             if (on_error)
             {
@@ -292,12 +318,17 @@ namespace DB_Conect
             }
             return true;
         }
-
-        public bool Step_error(string step)
+        /// <summary>
+        /// Report error of Step
+        /// </summary>
+        /// <param name="step"></param>
+        /// <returns></returns>
+        public static bool Step_error(string step)
         {
             (int state, string desc, DateTime? started) = Step_Status(step);
             if (started == null || state == 0)
             {
+                Loger.Log(String.Format("Step {0} error", step));
                 Steps_with_error.Add(step, DateTime.Now);
                 if (state == 0)
                 {
@@ -307,12 +338,17 @@ namespace DB_Conect
             }
             return false;
         }
-
-        public bool End_step(string step)
+        /// <summary>
+        /// Report Step ending
+        /// </summary>
+        /// <param name="step"></param>
+        /// <returns></returns>
+        public static bool End_step(string step)
         {
             (int state, string desc, DateTime? started) = Step_Status(step);
             if (started == null || state != 1)
             {
+                Loger.Log(String.Format("Step {0} was end work with success", step));
                 Reccent_steps.Add(step, DateTime.Now);
                 if (state == 0)
                 {
@@ -326,12 +362,17 @@ namespace DB_Conect
             }
             return false;
         }
-
-        public bool Register_step(string step)
+        /// <summary>
+        /// Report Step Start
+        /// </summary>
+        /// <param name="step"></param>
+        /// <returns></returns>
+        public static bool Register_step(string step)
         {
             (int state, string desc, DateTime? started) = Step_Status(step);
             if (started == null || state == 2)
             {
+                Loger.Log(String.Format("Step {0} was registered", step));
                 Active_steps.Add(step, DateTime.Now);
                 if (state == 2)
                 {
@@ -349,8 +390,9 @@ namespace DB_Conect
     /// </summary>
     public class Count_oracle_conn
     {
-        private const int max_connections = 6;
+        private static readonly int max_connections = Oracle_conn.Limit_oracle_conn;
         private static int count = 0;
+
         /// <summary>
         /// Freezes task For limit max_connections Const
         /// </summary>
@@ -358,7 +400,7 @@ namespace DB_Conect
         {
             while (count >= max_connections)
             {
-                System.Threading.Thread.Sleep(500);
+                System.Threading.Thread.Sleep(250);
             }
             count++;            
         }
@@ -372,8 +414,7 @@ namespace DB_Conect
 
     /// <summary>
     /// Simple logger class
-    /// </summary>  
-   
+    /// </summary>     
     public class Loger : IDB_Loger
     {
         /// <summary>
@@ -386,7 +427,13 @@ namespace DB_Conect
         public static string Log_rek = "";
         public static void Log(string txt)
         {
+            txt = String.Format("{0} => {1}", time_stamp(), txt);
             Log_rek = Log_rek + Environment.NewLine + txt;
+        }
+        private static string time_stamp()
+        {
+            TimeSpan diff = DateTime.Now - serw_run;
+            return diff.TotalSeconds.ToString();
         }
         public static void Srv_start()
         {

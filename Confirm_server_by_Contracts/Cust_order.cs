@@ -13,6 +13,7 @@ namespace Confirm_server_by_Contracts
 {
     /// <summary>
     /// Gets informations about active customer orders
+    /// Class update its self
     /// </summary>       
     public class Cust_orders : Update_pstgr_from_Ora<Cust_orders.Orders_row>
     {
@@ -29,6 +30,7 @@ namespace Confirm_server_by_Contracts
                 {
                     if (updt)
                     {
+                        Steps_executor.Register_step("cust_ord");
                         await Update_cust();
                         Updated_on_init = true;
                     }
@@ -55,6 +57,7 @@ namespace Confirm_server_by_Contracts
                     Orders_list = await Get_PSTGR_List();
                     if (Orders_list.Count == 0)
                     {
+                        Steps_executor.Register_step("cust_ord");
                         Updated_on_init = true;
                         await Update_cust();
                     }
@@ -67,7 +70,7 @@ namespace Confirm_server_by_Contracts
             }
             catch (Exception e)
             {
-                Loger.Log("Błąd Inicjalizacji obiektu zamówienia klienta:" + e);
+                Loger.Log("Error on initialize cust_ord:" + e);
             }
         }
         /// <summary>
@@ -77,7 +80,7 @@ namespace Confirm_server_by_Contracts
         public async Task<int> Update_cust()
         {
             try
-            {
+            {                
                 //rw = new Update_pstgr_from_Ora<Orders_row>();
                 List<Orders_row> list_ora = new List<Orders_row>();
                 List<Orders_row> list_pstgr = new List<Orders_row>();
@@ -89,7 +92,7 @@ namespace Confirm_server_by_Contracts
                         list_pstgr = await Get_PSTGR_List(); list_pstgr.Sort(); 
                     }
                 );
-                Changes_List<Orders_row> tmp = rw.Changes(list_pstgr, list_ora, new[] { "Custid" }, new[] { "id", "zest", "objversion" }, "id");
+                Changes_List<Orders_row> tmp = rw.Changes(list_pstgr, list_ora, new[] { "Custid" }, new[] { "id", "zest", "objversion" }, "id", "cust_ord");
                 list_ora = null;
                 list_pstgr = null;
                 return await PSTRG_Changes_to_dataTable(tmp, "cust_ord", "id", null, new[] {
@@ -137,10 +140,11 @@ namespace Confirm_server_by_Contracts
                             left join
                             public.cust_ord b
                             on a.id=b.id
-                            where b.id is null)"});
+                            where b.id is null)"}, "cust_ord");
             }
             catch (Exception e)
             {
+                Steps_executor.Step_error("cust_ord");
                 Loger.Log("Error in import Customer Orders:" + e);
                 return 1;
             }
@@ -298,6 +302,11 @@ namespace Confirm_server_by_Contracts
                     return this.Custid.CompareTo(other.Custid);
                 }
             }
+            /// <summary>
+            /// Default Equality  check b
+            /// </summary>
+            /// <param name="other"></param>
+            /// <returns></returns>
             public bool Equals(Orders_row other)
             {
                 if (other == null) return false;

@@ -18,15 +18,16 @@ namespace DB_Conect
     {
         public Update_pstgr_from_Ora(string KEY_CONN)
         {
-            npC = Postegresql_conn.Connection_pool[KEY_CONN].ToString();
+            npC = Postegresql_conn.Connection_pool[KEY_CONN].ToString();            
         }
         public Update_pstgr_from_Ora()
         {
-            npC = Postegresql_conn.Connection_pool["MAIN"].ToString();
+            npC = Postegresql_conn.Connection_pool["MAIN"].ToString();           
         }
         
         static readonly string Str_oracle_conn = Oracle_conn.Connection_string;
         readonly string npC;
+   
         /// <summary>
         /// Get datasets from ORACLE - use this override when columns in query and in class T is same and create prepared parameters 
         /// </summary>
@@ -119,7 +120,8 @@ namespace DB_Conect
             }
             catch (Exception e)
             {
-                Loger.Log("Błąd modyfikacji tabeli:" + Task_name + e);
+                Steps_executor.Step_error(Task_name);
+                Loger.Log("Error on Get_Ora(string Sql_ora, string Task_name, Dictionary<string, int> D_columns, Dictionary<int, string> P_columns, Dictionary<int, Type> P_types, ORA_parameters parameters):" + Task_name + e);
                 return Rows;
             }
             finally
@@ -198,7 +200,8 @@ namespace DB_Conect
             }
             catch (Exception e)
             {
-                Loger.Log("Błąd modyfikacji tabeli:" + Task_name + e);
+                Steps_executor.Step_error(Task_name);
+                Loger.Log("Error on update (string Sql_ora, string Task_name, Dictionary<string, int> D_columns, Dictionary<int, string> P_columns, Dictionary<int, Type> P_types) :" + Task_name + e);
                 return Rows;
             }
             finally
@@ -290,6 +293,7 @@ namespace DB_Conect
             }
             catch (Exception e)
             {
+                Steps_executor.Step_error(Task_name);
                 Loger.Log(String.Format("Error of modification Table: {0} => {1}",Task_name, e));
                 return Rows;
             }
@@ -378,7 +382,7 @@ namespace DB_Conect
         /// <param name="not_compare"></param>
         /// <param name="guid_col"></param>
         /// <returns>  </returns>
-        public Changes_List<T> Changes(List<T> Old_list, List<T> New_list, string[] ID_column, string[] not_compare, string guid_col)
+        public Changes_List<T> Changes(List<T> Old_list, List<T> New_list, string[] ID_column, string[] not_compare, string guid_col, string Task_name)
         {
             Changes_List<T> modyfications = new Changes_List<T>();
             try
@@ -524,6 +528,7 @@ namespace DB_Conect
             }
             catch (Exception e)
             {
+                Steps_executor.Step_error(Task_name);
                 Loger.Log(String.Format("Error in compare procedure :  {0}", e));
                 return modyfications;
             }
@@ -562,7 +567,7 @@ namespace DB_Conect
         /// <param name="name_table"></param>
         /// <param name="guid_col"></param>
         /// <returns></returns>
-        public async Task<int> PSTRG_Changes_to_dataTable(Changes_List<T> _list, string name_table, string guid_col, string[] query_before, string[] query_after)
+        public async Task<int> PSTRG_Changes_to_dataTable(Changes_List<T> _list, string name_table, string guid_col, string[] query_before, string[] query_after, string Task_name)
         {
 
             try
@@ -753,6 +758,7 @@ namespace DB_Conect
                         await cmd.ExecuteNonQueryAsync();
                     }
                 }
+                Steps_executor.Step_error(Task_name);
                 Loger.Log(String.Format("Error in update table : {0} =>  {1}",name_table , e.StackTrace));
                 return 1;
             }

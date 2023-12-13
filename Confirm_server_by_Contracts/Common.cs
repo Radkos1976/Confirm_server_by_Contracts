@@ -20,6 +20,7 @@ namespace Common
         void Srv_stop();
         DateTime Serw_run { get; }
     }
+    
     public interface IRunnable
     {
         void Run();

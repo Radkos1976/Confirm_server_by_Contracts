@@ -19,7 +19,7 @@ namespace Confirm_server_by_Contracts
         public List<Inventory_part_row> Inventory_part_list;
         private readonly Update_pstgr_from_Ora<Inventory_part_row> rw;
         private readonly string regex_part_no  = "";
-        private bool limit_not_zero_stock = false;
+        private readonly bool limit_not_zero_stock = false;
         private readonly List<Tuple<string, string>> limit_part_no;
 
         public Inventory_part(string regex, bool not_zero_stock = false, List<Tuple<string, string>> part_no_values =  null)
@@ -69,7 +69,7 @@ namespace Confirm_server_by_Contracts
                         ifsapp.inventory_part_pub 
                         WHERE REGEXP_LIKE(part_no,'{1}') {0} AND TYPE_CODE_DB='4' ) a
                 ", limit_not_zero_stock ? 
-                   String.Format("AND {0} ifsapp.inventory_part_in_stock_api. Get_Plannable_Qty_Onhand (CONTRACT,part_no,'*') > 0 {1}", limit_part_no.Count > 0 ? 
+                    String.Format("AND {0} ifsapp.inventory_part_in_stock_api. Get_Plannable_Qty_Onhand (CONTRACT,part_no,'*') > 0 {1}", limit_part_no.Count > 0 ? 
                        String.Format("((part_no , contract) IN ({0}) OR ", string.Join(",", limit_part_no.Select(t => string.Format("( '{0}', '{1}')", t.Item1, t.Item2)))): "",
                        limit_part_no.Count > 0 ? ")":""): "",
                    regex_part_no), "ORA_inventory_part");
@@ -106,7 +106,10 @@ namespace Confirm_server_by_Contracts
                 }
                 else
                 {
-                    int prim = this.Note_id.CompareTo(other.Note_id);
+                    // change main atribute 
+                    // TO DOO: for beter performance whe need to check existence of note_id in other tables (transactions / demands) integer values  are  beter
+                    //int prim = this.Note_id.CompareTo(other.Note_id);
+                    int prim = this.Note_id.CompareTo(other.Indeks);
                     if (prim != 0) { return prim; }
                     return this.Contract.CompareTo(other.Contract);
                 }
@@ -114,7 +117,8 @@ namespace Confirm_server_by_Contracts
             public bool Equals(Inventory_part_row other)
             {
                 if (other == null) return false;
-                return (this.Note_id.Equals(other.Note_id) && this.Contract.Equals(other.Contract));
+                // return (this.Note_id.Equals(other.Note_id) && this.Contract.Equals(other.Contract));
+                return (this.Indeks.Equals(other.Indeks) && this.Contract.Equals(other.Contract));
             }
         }
     }
