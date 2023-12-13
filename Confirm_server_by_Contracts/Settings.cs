@@ -174,7 +174,10 @@ namespace DB_Conect
         /// Schema for work_cal
         /// </summary>
         public static Dictionary<string, int> calendar_len = new Dictionary<string, int>().Set_postgres_limit("MAIN", "work_cal");
-
+        /// <summary>
+        /// Schema for planners / buyers
+        /// </summary>
+        public static Dictionary<string, int> buyer_info_len = new Dictionary<string, int>().Set_postgres_limit("MAIN", "data");
         /// Method for  fill dictionary with list of fields in table of POSGRESs
         /// Database must exist in Connection poll dictionary
         /// </summary>

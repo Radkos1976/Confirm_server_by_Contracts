@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Confirm_server_by_Contracts
 {
-    public class Demands: Update_pstgr_from_Ora<Demands.Simple_demands_row>
+    public class Simple_Demands: Update_pstgr_from_Ora<Simple_Demands.Simple_demands_row>
     {
         private readonly Update_pstgr_from_Ora<Simple_demands_row> rw;
         public async Task<List<Simple_demands_row>> Get_source_list(string regex) => await rw.Get_Ora("" +
@@ -143,4 +143,5 @@ namespace Confirm_server_by_Contracts
             }
         }
     }
+
 }
