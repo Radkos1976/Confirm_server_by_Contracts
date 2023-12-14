@@ -1,6 +1,8 @@
 ﻿using DB_Conect;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Metrics;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 
 namespace Confirm_server_by_Contracts
@@ -12,13 +14,13 @@ namespace Confirm_server_by_Contracts
     public class Cust_orders : Update_pstgr_from_Ora<Cust_orders.Orders_row>
     {
         public bool Updated_on_init;
-        public List<Orders_row> Orders_list;        
+        public List<Orders_row> Orders_list;
         private readonly Update_pstgr_from_Ora<Orders_row> rw;
         public Cust_orders(bool updt)
         {
             try
             {
-                 
+
                 rw = new Update_pstgr_from_Ora<Orders_row>("MAIN");
                 Parallel.Invoke(async () =>
                 {
@@ -45,7 +47,7 @@ namespace Confirm_server_by_Contracts
         public Cust_orders()
         {
             try
-            {                
+            {
                 rw = new Update_pstgr_from_Ora<Orders_row>("MAIN");
                 Parallel.Invoke(async () =>
                 {
@@ -76,16 +78,18 @@ namespace Confirm_server_by_Contracts
         public async Task<int> Update_cust()
         {
             try
-            {                
+            {
                 //rw = new Update_pstgr_from_Ora<Orders_row>();
                 List<Orders_row> list_ora = new List<Orders_row>();
                 List<Orders_row> list_pstgr = new List<Orders_row>();
                 Parallel.Invoke(
-                    async () => {
-                        list_ora = await Get_Ora_list(); list_ora.Sort(); Orders_list = list_ora;
-                    }, 
-                    async () => { 
-                        list_pstgr = await Get_PSTGR_List(); list_pstgr.Sort(); 
+                    async () =>
+                    {
+                        list_ora = Check_length( await Get_Ora_list()); list_ora.Sort(); Orders_list = list_ora;
+                    },
+                    async () =>
+                    {
+                        list_pstgr = await Get_PSTGR_List(); list_pstgr.Sort();
                     }
                 );
                 Changes_List<Orders_row> tmp = rw.Changes(list_pstgr, list_ora, new[] { "Custid" }, new[] { "id", "zest", "objversion" }, "id", "cust_ord");
@@ -136,7 +140,7 @@ namespace Confirm_server_by_Contracts
                             left join
                             public.cust_ord b
                             on a.id=b.id
-                            where b.id is null)"}, "cust_ord");                
+                            where b.id is null)"}, "cust_ord");
             }
             catch (Exception e)
             {
@@ -236,40 +240,69 @@ namespace Confirm_server_by_Contracts
                             WHERE a.HISTORY_NO = b.HI) c
                     ON c.id = a.id", "cust_ord");
 
+        public List<Orders_row> Check_length(List<Orders_row> source)
+        {
+            Dictionary<string, int> cust_ord_len = Get_limit_of_fields.cust_ord_len;
+            foreach (Orders_row row in source)
+            {                
+                row.Koor = row.Koor.LimitDictLen("koor", cust_ord_len);
+                row.Order_no = row.Order_no.LimitDictLen("order_no", cust_ord_len);
+                row.Line_no = row.Line_no.LimitDictLen("line_no", cust_ord_len);
+                row.Rel_no = row.Rel_no.LimitDictLen("rel_no", cust_ord_len);
+                row.Customer_po_line_no = row.Customer_po_line_no.LimitDictLen("customer_po_line_no", cust_ord_len);
+                row.State_conf = row.State_conf.LimitDictLen("state_conf", cust_ord_len);
+                row.Line_state = row.Line_state.LimitDictLen("line_state", cust_ord_len);
+                row.Cust_order_state = row.Cust_order_state.LimitDictLen("cust_order_state", cust_ord_len);
+                row.Country = row.Country.LimitDictLen("country", cust_ord_len);
+                row.Cust_no = row.Cust_no.LimitDictLen("cust_no", cust_ord_len);
+                row.Zip_code = row.Zip_code.LimitDictLen("zip_code", cust_ord_len);
+                row.Addr1 = row.Addr1.LimitDictLen("addr1", cust_ord_len);
+                row.Prom_week = row.Prom_week.LimitDictLen("prom_week", cust_ord_len);
+                row.Part_no = row.Part_no.LimitDictLen("Part_no", cust_ord_len);
+                row.Descr = row.Descr.LimitDictLen("descr", cust_ord_len);
+                row.Configuration = row.Configuration.LimitDictLen("configuration", cust_ord_len);
+                row.Dop_connection_db = row.Dop_connection_db.LimitDictLen("dop_connection_db", cust_ord_len);
+                row.Dop_state = row.Dop_state.LimitDictLen("dop_state", cust_ord_len);
+                row.Zest = row.Zest.LimitDictLen("zest", cust_ord_len);
+            }
+            return source;
+        }
+
+
+
+
         public class Orders_row : IEquatable<Orders_row>, IComparable<Orders_row>
         {
-            private readonly Dictionary<string, int> cust_ord_len = Get_limit_of_fields.cust_ord_len; 
-            
-            public string Koor { get { return Koor; } set => Koor = value.LimitDictLen("koor", cust_ord_len); }
+            public string Koor { get; set; }
             public string Order_no { get; set; }
             public string Line_no { get; set; }
             public string Rel_no { get; set; }
             public int Line_item_no { get; set; }
-            public string Customer_po_line_no { get { return Customer_po_line_no; } set => Customer_po_line_no = value.LimitDictLen("customer_po_line_no", cust_ord_len); }
+            public string Customer_po_line_no { get; set; }
             public double? Dimmension { get; set; }
             public DateTime? Last_mail_conf { get; set; }
-            public string State_conf { get { return State_conf; } set => State_conf = value.LimitDictLen("state_conf", cust_ord_len); }
-            public string Line_state { get { return Line_state; } set => Line_state = value.LimitDictLen("line_state", cust_ord_len); }
-            public string Cust_order_state { get { return Cust_order_state; } set => Cust_order_state = value.LimitDictLen("cust_order_state", cust_ord_len); }
-            public string Country { get { return Country; } set => Country = value.LimitDictLen("country", cust_ord_len); }
-            public string Cust_no { get { return Cust_no; } set => Cust_no = value.LimitDictLen("cust_no", cust_ord_len); }
-            public string Zip_code { get { return Zip_code; } set => Zip_code = value.LimitDictLen("zip_code", cust_ord_len); }
-            public string Addr1 { get { return Addr1; } set => Addr1 = value.LimitDictLen("addr1", cust_ord_len); }
+            public string State_conf { get; set; }
+            public string Line_state { get; set; }
+            public string Cust_order_state { get; set; }
+            public string Country { get; set; }
+            public string Cust_no { get; set; }
+            public string Zip_code { get; set; }
+            public string Addr1 { get; set; }
             public DateTime Prom_date { get; set; }
             public string Prom_week { get; set; }
             public int? Load_id { get; set; }
             public DateTime? Ship_date { get; set; }
-            public string Part_no { get { return Part_no; } set => Part_no = value.LimitDictLen("part_no", cust_ord_len); }
-            public string Descr { get { return Descr; } set => Descr = value.LimitDictLen("descr", cust_ord_len); }
-            public string Configuration { get { return Configuration; } set => Configuration = value.LimitDictLen("configuration", cust_ord_len); }
+            public string Part_no { get; set; }
+            public string Descr { get; set; }
+            public string Configuration { get; set; }
             public double Buy_qty_due { get; set; }
             public double Desired_qty { get; set; }
             public double Qty_invoiced { get; set; }
             public double Qty_shipped { get; set; }
             public double Qty_assigned { get; set; }
-            public string Dop_connection_db { get { return Dop_connection_db; } set => Dop_connection_db = value.LimitDictLen("dop_connection_db", cust_ord_len); }
+            public string Dop_connection_db { get; set; }
             public int Dop_id { get; set; }
-            public string Dop_state { get { return Dop_state; } set => Dop_state = value.LimitDictLen("dop_state", cust_ord_len); }
+            public string Dop_state { get; set; }
             public DateTime? Data_dop { get; set; }
             public double Dop_qty { get; set; }
             public double Dop_made { get; set; }

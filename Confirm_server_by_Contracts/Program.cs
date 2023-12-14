@@ -10,6 +10,7 @@ namespace Confirm_server_by_Contracts
     {
         static void Main(string[] args)
         {
+            Cust_orders cust_Orders = new Cust_orders(true);
         }
     }
 }

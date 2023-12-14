@@ -108,7 +108,7 @@ namespace DB_Conect
                 }
             }
         }
-        private static readonly Dictionary<string, DateTime, DateTime> Calendar_next_day;
+        private static readonly Dictionary<string, DateTime, DateTime> Calendar_next_day= new Dictionary<string, DateTime, DateTime>();
         public static DateTime Get_next_day(string Contract, DateTime Base_Day)
         {
             if (Calendar_next_day.ContainsKey(Contract, Base_Day))
@@ -165,19 +165,26 @@ namespace DB_Conect
         /// <summary>
         /// Schema for cust_ord
         /// </summary>
-        public static Dictionary<string, int> cust_ord_len = new Dictionary<string, int>().Set_postgres_limit("MAIN", "cust_ord");
+        public static Dictionary<string, int> cust_ord_len = new Dictionary<string, int>();
         /// <summary>
         /// Schema for inventory_part
         /// </summary>
-        public static Dictionary<string, int> inventory_part_len = new Dictionary<string, int>().Set_postgres_limit("MAIN", "mag");
+        public static Dictionary<string, int> inventory_part_len = new Dictionary<string, int>();
         /// <summary>
         /// Schema for work_cal
         /// </summary>
-        public static Dictionary<string, int> calendar_len = new Dictionary<string, int>().Set_postgres_limit("MAIN", "work_cal");
+        public static Dictionary<string, int> calendar_len = new Dictionary<string, int>();
         /// <summary>
         /// Schema for planners / buyers
         /// </summary>
-        public static Dictionary<string, int> buyer_info_len = new Dictionary<string, int>().Set_postgres_limit("MAIN", "data");
+        public static Dictionary<string, int> buyer_info_len = new Dictionary<string, int>();
+        static Get_limit_of_fields()
+        {
+            buyer_info_len = new Dictionary<string, int>().Set_postgres_limit("MAIN", "data");
+            calendar_len = new Dictionary<string, int>().Set_postgres_limit("MAIN", "work_cal");
+            inventory_part_len = new Dictionary<string, int>().Set_postgres_limit("MAIN", "mag");
+            cust_ord_len = new Dictionary<string, int>().Set_postgres_limit("MAIN", "cust_ord");
+        }
         /// Method for  fill dictionary with list of fields in table of POSGRESs
         /// Database must exist in Connection poll dictionary
         /// </summary>
@@ -193,7 +200,7 @@ namespace DB_Conect
                 var Tmp = conO.GetSchema("Columns", new string[] { null, null, Table_name });
                 foreach (DataRow row in Tmp.Rows)
                 {
-                    dict.Add(row["column_name"].ToString(), (int)(row["character_maximum_length"] ?? 0));
+                    dict.Add(row["column_name"].ToString(), (int)(row["character_maximum_length"].GetType()==typeof(System.DBNull) ? 0: row["character_maximum_length"]));
                 }
             }
             return dict;
@@ -241,10 +248,10 @@ namespace DB_Conect
     /// </summary>
     public static class Postegresql_conn
     {
-        private static NpgsqlConnectionStringBuilder Conn_set { get; set; }
-        public static Dictionary<string, NpgsqlConnectionStringBuilder> Connection_pool {get; set;}
+        private static NpgsqlConnectionStringBuilder Conn_set { get; set; } = new NpgsqlConnectionStringBuilder();
+        public static Dictionary<string, NpgsqlConnectionStringBuilder> Connection_pool {get; set;} = new Dictionary<string, NpgsqlConnectionStringBuilder>();
         public static string[] Contract_lst {  get; set; }
-        public static Dictionary<string, string> Contracts_kalendar { get; set; }
+        public static Dictionary<string, string> Contracts_kalendar { get; set; } = new Dictionary<string, string>();
         private static string Host { get; set; }
         private static int Port { get; set; }
         private static int CommandTimeout { get; set; }
@@ -264,7 +271,7 @@ namespace DB_Conect
             try
             {
                 (Conn_set, Contracts) = Get_values("POSTEGRESQL_MAIN");
-                Connection_pool["MAIN"] = Conn_set;
+                Connection_pool.Add("MAIN",Conn_set);
                 if (Contracts.Length > 0 )
                 {
                     Contract_lst =  new string[] { "" };
@@ -286,8 +293,10 @@ namespace DB_Conect
         /// <returns></returns>
         static (NpgsqlConnectionStringBuilder, string) Get_values(string decendant)
         {
-            XDocument Doc = XDocument.Load("Settings.xml");
-            var pstgr = Doc.Descendants("POSTEGRESQL_MAIN")
+            XDocument Doc = XDocument.Load("C:\\serv\\Settings.xml");
+            try
+            {
+                var pstgr = Doc.Descendants(decendant)
                 .Select(x => new
                 {
                     XHost = (string)x.Element("Host"),
@@ -298,38 +307,54 @@ namespace DB_Conect
                     XUsername = (string)x.Element("Username"),
                     XPassword = (string)x.Element("Password"),
                     XDatabase = (string)x.Element("Database"),
-                    XKalendar_name = decendant.Contains("MAIN") ? "":(string)x.Element("Calendar_id"),
-                    XContracts = decendant.Contains("MAIN") ? (string)x.Element("Contracts"):""
+                    XKalendar_name = decendant.Contains("MAIN") ? "" : (string)x.Element("Calendar_id"),
+                    XContracts = decendant.Contains("MAIN") ? (string)x.Element("Contracts") : ""
                 });
-            foreach (var res in pstgr)
-            {
-                Host = res.XHost;
-                Port = res.XPort;
-                CommandTimeout = res.XCommandTimeout;
-                ConnectionIdleLifetime = res.XConnectionIdleLifetime;
-                ApplicationName = res.XApplicationName;
-                Username = res.XUsername;
-                Password = res.XPassword;
-                Database = res.XDatabase;
-                Contracts = res.XContracts;
-                Kalendar_name = res.XKalendar_name;
+                foreach (var res in pstgr)
+                {
+                    Host = res.XHost;
+                    Port = res.XPort;
+                    CommandTimeout = res.XCommandTimeout;
+                    ConnectionIdleLifetime = res.XConnectionIdleLifetime;
+                    ApplicationName = res.XApplicationName;
+                    Username = res.XUsername;
+                    Password = res.XPassword;
+                    Database = res.XDatabase;
+                    Contracts = res.XContracts;
+                    Kalendar_name = res.XKalendar_name;
+                }
+                Conn_set = new NpgsqlConnectionStringBuilder()
+                {
+                    Host = Host,
+                    Port = Port,
+                    ConnectionIdleLifetime = ConnectionIdleLifetime,
+                    CommandTimeout = CommandTimeout,
+                    ApplicationName = ApplicationName,
+                    Username = Username,
+                    Password = Password,
+                    Database = Database
+                };
             }
-            if (!decendant.Contains("MAIN"))
+            catch
             {
-                Contracts_kalendar.Add(decendant, Kalendar_name);
+                Conn_set = new NpgsqlConnectionStringBuilder();
             }
-            
-            Conn_set = new NpgsqlConnectionStringBuilder()
+            finally 
             {
-                Host = Host,
-                Port = Port,
-                ConnectionIdleLifetime = ConnectionIdleLifetime,
-                CommandTimeout = CommandTimeout,
-                ApplicationName = ApplicationName,
-                Username = Username,
-                Password = Password,
-                Database = Database
-            };
+                if (!decendant.Contains("MAIN"))
+                {
+                    var valgr = Doc.Descendants(decendant)
+                   .Select(x => new
+                   {
+                       XKalendar_name = decendant.Contains("MAIN") ? "" : (string)x.Element("Calendar_id")
+                   });
+                    foreach (var res in valgr)
+                    {
+                        Kalendar_name = res.XKalendar_name;
+                    }
+                    Contracts_kalendar.Add(decendant, Kalendar_name);
+                }                
+            }         
             return (Conn_set, Contracts);
         }
     }
@@ -339,9 +364,9 @@ namespace DB_Conect
     /// </summary>
     public class Steps_executor
     {
-        private readonly static Dictionary<string, DateTime> Active_steps;
-        private readonly static Dictionary<string, DateTime> Reccent_steps;
-        private readonly static Dictionary<string, DateTime> Steps_with_error;
+        private readonly static Dictionary<string, DateTime> Active_steps=new Dictionary<string, DateTime>();
+        private readonly static Dictionary<string, DateTime> Reccent_steps=new Dictionary<string, DateTime>();
+        private readonly static Dictionary<string, DateTime> Steps_with_error = new Dictionary<string, DateTime>();
         /// <summary>
         /// Reset list of registered Steps
         /// </summary>
@@ -471,7 +496,10 @@ namespace DB_Conect
     {
         private static readonly int max_connections = Oracle_conn.Limit_oracle_conn;
         private static int count = 0;
-
+        static Count_oracle_conn()
+        {
+            max_connections = Oracle_conn.Limit_oracle_conn;
+        }
         /// <summary>
         /// Freezes task For limit max_connections Const
         /// </summary>
