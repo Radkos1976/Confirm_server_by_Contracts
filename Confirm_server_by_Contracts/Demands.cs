@@ -143,5 +143,12 @@ namespace Confirm_server_by_Contracts
             }
         }
     }
+    public class Demands
+    {
+        public class Demands_row
+        {
+
+        }
+    }
 
 }
