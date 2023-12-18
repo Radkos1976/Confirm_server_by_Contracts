@@ -12,6 +12,7 @@ using System.Web;
 using System.Threading;
 using System.Diagnostics.Metrics;
 using System.Security.Cryptography.X509Certificates;
+using System.Runtime.InteropServices;
 
 namespace DB_Conect
 {
@@ -364,9 +365,16 @@ namespace DB_Conect
     /// </summary>
     public class Steps_executor
     {
-        private readonly static Dictionary<string, DateTime> Active_steps=new Dictionary<string, DateTime>();
-        private readonly static Dictionary<string, DateTime> Reccent_steps=new Dictionary<string, DateTime>();
+        public static CancellationTokenSource cts;
+        private readonly static Dictionary<string, DateTime> Active_steps = new Dictionary<string, DateTime>();
+        private readonly static Dictionary<string, DateTime> Reccent_steps = new Dictionary<string, DateTime>();
         private readonly static Dictionary<string, DateTime> Steps_with_error = new Dictionary<string, DateTime>();
+
+        static Steps_executor() 
+        {             
+            cts = new CancellationTokenSource();
+        }
+
         /// <summary>
         /// Reset list of registered Steps
         /// </summary>
@@ -375,7 +383,10 @@ namespace DB_Conect
             Active_steps.Clear();
             Reccent_steps.Clear();
             Steps_with_error.Clear();
+            Steps_executor.cts.Dispose();
+            cts = new CancellationTokenSource();
         }
+
         /// <summary>
         /// Get State or Step
         /// </summary>
@@ -393,7 +404,7 @@ namespace DB_Conect
         /// </summary>
         /// <param name="task_list"></param>
         /// <returns></returns>
-        public static bool Wait_for(string[] task_list, string step)
+        public static bool Wait_for(string[] task_list, string step, CancellationToken cancellationToken)
         {
             bool not_started_pending = true;
             bool on_error = false;
@@ -408,7 +419,7 @@ namespace DB_Conect
                     {
                         not_started_pending = true;
                     }
-                    if (state == 2)
+                    if (state == 2 || cancellationToken.IsCancellationRequested)
                     {
                         on_error = true;
                         break;
@@ -438,6 +449,7 @@ namespace DB_Conect
                 {
                     Active_steps.Remove(step);
                 }
+                cts.Cancel();
                 return true;
             }
             return false;
@@ -503,14 +515,15 @@ namespace DB_Conect
         /// <summary>
         /// Freezes task For limit max_connections Const
         /// </summary>
-        public static void Wait_for_Oracle()
+        public static void Wait_for_Oracle(CancellationToken cancellationToken)
         {
-            while (count >= max_connections)
+            while (count >= max_connections && !cancellationToken.IsCancellationRequested)
             {
                 System.Threading.Thread.Sleep(250);
             }
             count++;            
         }
+
         public static void Oracle_conn_ended()
         {
             count--;

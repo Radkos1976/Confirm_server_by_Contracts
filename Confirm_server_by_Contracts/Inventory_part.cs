@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 
@@ -27,10 +28,10 @@ namespace Confirm_server_by_Contracts
             limit_not_zero_stock = not_zero_stock;
             limit_part_no = part_no_values;
         }
-        public async Task<int> Update_dataset(List<Inventory_part_row> pstgrdtset, List<Inventory_part_row> oradtset,string Task_name)
+        public async Task<int> Update_dataset(List<Inventory_part_row> pstgrdtset, List<Inventory_part_row> oradtset,string Task_name, CancellationToken cancellationToken)
         {
-            Changes_List<Inventory_part_row> tmp = rw.Changes(pstgrdtset, oradtset, new[] { "Indeks", "Contract" }, new[] { "Indeks", "Contract" }, "Note_id", Task_name);
-            return await PSTRG_Changes_to_dataTable(tmp, "mag", new[] { "note_id", "contract" }, null, null, Task_name);
+            Changes_List<Inventory_part_row> tmp = rw.Changes(pstgrdtset, oradtset, new[] { "Indeks", "Contract" }, new[] { "Indeks", "Contract" }, "Note_id", Task_name, cancellationToken);
+            return await PSTRG_Changes_to_dataTable(tmp, "mag", new[] { "note_id", "contract" }, null, null, Task_name, cancellationToken);
         }
             
         /// <summary>
@@ -38,15 +39,15 @@ namespace Confirm_server_by_Contracts
         /// </summary>
         /// <param name="rw"></param>
         /// <returns></returns>
-        public async Task<List<Inventory_part_row>> Get_PSTGR_List(string Task_name) => await rw.Get_PSTGR("" + 
+        public async Task<List<Inventory_part_row>> Get_PSTGR_List(string Task_name, CancellationToken cancellationToken) => await rw.Get_PSTGR("" + 
             String.Format(@"Select * from mag {0}", regex_part_no != "^(5|6).*" ?
-                String.Format("WHERE regexp_like(indeks, '{0}'", regex_part_no): ""), Task_name);
+                String.Format("WHERE regexp_like(indeks, '{0}'", regex_part_no): ""), Task_name, cancellationToken);
 
         /// <summary>
         /// Get present list of inventory_part stored in ERP
         /// </summary>
         /// <returns>Present list of inventory_part</returns>
-        public async Task<List<Inventory_part_row>> Get_Ora_list(string Task_name) => await rw.Get_Ora("" +
+        public async Task<List<Inventory_part_row>> Get_Ora_list(string Task_name, CancellationToken cancellationToken) => Check_length(await rw.Get_Ora("" +
                String.Format(@"SELECT 
                     a.part_no Indeks,
                     contract,
@@ -76,20 +77,18 @@ namespace Confirm_server_by_Contracts
                     String.Format("AND {0} ifsapp.inventory_part_in_stock_api. Get_Plannable_Qty_Onhand (CONTRACT,part_no,'*') > 0 {1}", limit_part_no.Count > 0 ? 
                        String.Format("((part_no , contract) IN ({0}) OR ", string.Join(",", limit_part_no.Select(t => string.Format("( '{0}', '{1}')", t.Item1, t.Item2)))): "",
                        limit_part_no.Count > 0 ? ")":""): "",
-                   regex_part_no), Task_name);
+                   regex_part_no), Task_name, cancellationToken), cancellationToken);
 
 
         public class Inventory_part_row : IEquatable<Inventory_part_row>, IComparable<Inventory_part_row>
-        {
-            private readonly Dictionary<string, int> inventory_part_len = Get_limit_of_fields.inventory_part_len;
-
-            public string Indeks { get { return Indeks; } set => Indeks = value.LimitDictLen("indeks", inventory_part_len); }
+        {           
+            public string Indeks { get; set; }
             public string Contract { get; set; }
-            public string Opis { get { return Opis; } set => Opis = value.LimitDictLen("opis", inventory_part_len); }
-            public string Kolekcja { get { return Kolekcja; } set => Kolekcja = value.LimitDictLen("kolekcja", inventory_part_len); }
+            public string Opis { get; set; }
+            public string Kolekcja { get; set; }
             public double Mag { get; set; }
-            public string Planner_buyer { get { return Planner_buyer; } set => Planner_buyer = value.LimitDictLen("planner_buyer", inventory_part_len); }
-            public string Rodzaj { get { return Rodzaj; } set => Rodzaj = value.LimitDictLen("rodzaj", inventory_part_len); }
+            public string Planner_buyer { get; set; }
+            public string Rodzaj { get; set; }
             public double Czas_dostawy { get; set; }
             public double Weight_net { get; set; }
             public double Volume_net { get; set; }
@@ -124,6 +123,24 @@ namespace Confirm_server_by_Contracts
                 // return (this.Note_id.Equals(other.Note_id) && this.Contract.Equals(other.Contract));
                 return (this.Indeks.Equals(other.Indeks) && this.Contract.Equals(other.Contract));
             }
+        }
+        public List<Inventory_part_row> Check_length(List<Inventory_part_row> source, CancellationToken cancellationToken)
+        {
+            Dictionary<string, int> inventory_part_len = Get_limit_of_fields.inventory_part_len;
+            foreach (Inventory_part_row row in source)
+            {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    break;
+                }
+                row.Indeks = row.Indeks.LimitDictLen("indeks", inventory_part_len);
+                row.Contract = row.Contract.LimitDictLen("contract", inventory_part_len);
+                row.Opis = row.Opis.LimitDictLen("opis", inventory_part_len);
+                row.Kolekcja = row.Kolekcja.LimitDictLen("kolekcja", inventory_part_len);
+                row.Planner_buyer = row.Planner_buyer.LimitDictLen("planner_buyer", inventory_part_len);
+                row.Rodzaj = row.Rodzaj.LimitDictLen("state_conf", inventory_part_len);                
+            }
+            return source;
         }
     }
 }

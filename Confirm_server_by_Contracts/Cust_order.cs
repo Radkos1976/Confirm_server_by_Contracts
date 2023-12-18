@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Security.Cryptography;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Confirm_server_by_Contracts
@@ -16,7 +17,7 @@ namespace Confirm_server_by_Contracts
         public bool Updated_on_init;
         public List<Orders_row> Orders_list;
         private readonly Update_pstgr_from_Ora<Orders_row> rw;
-        public Cust_orders(bool updt)
+        public Cust_orders(bool updt, CancellationToken cancellationToken)
         {
             try
             {
@@ -27,13 +28,13 @@ namespace Confirm_server_by_Contracts
                     if (updt)
                     {
                         Steps_executor.Register_step("cust_ord");
-                        await Update_cust();
+                        await Update_cust(cancellationToken);
                         Updated_on_init = true;
                         Steps_executor.End_step("cust_ord");
                     }
                     else
                     {
-                        Orders_list = await Get_PSTGR_List();
+                        Orders_list = await Get_PSTGR_List(cancellationToken);
                         Orders_list.Sort();
                         Updated_on_init = false;
                     }
@@ -41,22 +42,22 @@ namespace Confirm_server_by_Contracts
             }
             catch (Exception e)
             {
-                Loger.Log("Błąd Inicjalizacji obiektu zamówienia klienta:" + e);
+                Loger.Log("Error on initialization Cust_ord object:" + e);
             }
         }
-        public Cust_orders()
+        public Cust_orders(CancellationToken cancellationToken)
         {
             try
             {
                 rw = new Update_pstgr_from_Ora<Orders_row>("MAIN");
                 Parallel.Invoke(async () =>
                 {
-                    Orders_list = await Get_PSTGR_List();
+                    Orders_list = await Get_PSTGR_List(cancellationToken);
                     if (Orders_list.Count == 0)
                     {
                         Steps_executor.Register_step("cust_ord");
                         Updated_on_init = true;
-                        await Update_cust();
+                        await Update_cust(cancellationToken);
                         Steps_executor.End_step("cust_ord");
                     }
                     else
@@ -75,7 +76,7 @@ namespace Confirm_server_by_Contracts
         /// Update customer order table
         /// </summary>
         /// <returns></returns>
-        public async Task<int> Update_cust()
+        public async Task<int> Update_cust(CancellationToken  cancellationToken)
         {
             try
             {
@@ -85,14 +86,14 @@ namespace Confirm_server_by_Contracts
                 Parallel.Invoke(
                     async () =>
                     {
-                        list_ora = Check_length( await Get_Ora_list()); list_ora.Sort(); Orders_list = list_ora;
+                        list_ora =  await Get_Ora_list(cancellationToken); Orders_list = list_ora;
                     },
                     async () =>
                     {
-                        list_pstgr = await Get_PSTGR_List(); list_pstgr.Sort();
+                        list_pstgr = await Get_PSTGR_List(cancellationToken);
                     }
                 );
-                Changes_List<Orders_row> tmp = rw.Changes(list_pstgr, list_ora, new[] { "Custid" }, new[] { "id", "zest", "objversion" }, "id", "cust_ord");
+                Changes_List<Orders_row> tmp = rw.Changes(list_pstgr, list_ora, new[] { "Custid" }, new[] { "id", "zest", "objversion" }, "id", "cust_ord", cancellationToken);
                 list_ora = null;
                 list_pstgr = null;
                 return await PSTRG_Changes_to_dataTable(tmp, "cust_ord", new[] { "id" }, null, new[] {
@@ -122,8 +123,8 @@ namespace Confirm_server_by_Contracts
                                       group by id) b
                                       on b.id=a.order_no||'_'||coalesce(a.customer_po_line_no, a.line_no)||'_'||a.prom_week
                                  where substring(part_no,1,1) not in ('5','6','2') ) a) b
-                          where a.order_no||'_'||coalesce(a.customer_po_line_no, a.line_no)||'_'||a.prom_week=b.ZEST_ID",
-
+                          where a.order_no||'_'||coalesce(a.customer_po_line_no, a.line_no)||'_'||a.prom_week=b.ZEST_ID"
+                    ,
                     @"Delete from public.late_ord
                       where cust_id in (SELECT a.cust_id
                       FROM 
@@ -131,8 +132,8 @@ namespace Confirm_server_by_Contracts
                         left join
                         public.cust_ord b
                         on a.cust_id=b.id
-                        where b.id is null or b.line_state= 'Zarezerwowana' or b.dop_qty= b.dop_made)",
-
+                        where b.id is null or b.line_state= 'Zarezerwowana' or b.dop_qty= b.dop_made)"
+                    ,
                     @"Delete from public.cust_ord_history
                       where id in 
                          (SELECT a.id FROM
@@ -140,7 +141,7 @@ namespace Confirm_server_by_Contracts
                             left join
                             public.cust_ord b
                             on a.id=b.id
-                            where b.id is null)"}, "cust_ord");
+                            where b.id is null)"}, "cust_ord", cancellationToken);
             }
             catch (Exception e)
             {
@@ -154,13 +155,13 @@ namespace Confirm_server_by_Contracts
         /// </summary>
         /// <param name="rw"></param>
         /// <returns></returns>
-        private async Task<List<Orders_row>> Get_PSTGR_List() => await rw.Get_PSTGR("Select * from cust_ord", "cust_ord");
+        private async Task<List<Orders_row>> Get_PSTGR_List(CancellationToken cancellationToken) => await rw.Get_PSTGR("Select * from cust_ord", "cust_ord", cancellationToken);
 
         /// <summary>
         /// Get present list of customer orders stored in ERP
         /// </summary>
         /// <returns>Present list of orders</returns>
-        private async Task<List<Orders_row>> Get_Ora_list() => await rw.Get_Ora("" +
+        private async Task<List<Orders_row>> Get_Ora_list(CancellationToken cancellationToken) => Check_length(await rw.Get_Ora("" +
                @"SELECT 
                     ifsapp.customer_order_api.Get_Authorize_Code(a.ORDER_NO) KOOR,
                     a.ORDER_NO,
@@ -238,7 +239,7 @@ namespace Confirm_server_by_Contracts
                             WHERE a.order_no = b.order_no AND SubStr(MESSAGE_TEXT, 1, 3) = 'Wys'
                             GROUP BY a.ORDER_NO, LINE_NO, REL_NO, LINE_ITEM_NO) b
                             WHERE a.HISTORY_NO = b.HI) c
-                    ON c.id = a.id", "cust_ord");
+                    ON c.id = a.id", "cust_ord", cancellationToken));
 
         public List<Orders_row> Check_length(List<Orders_row> source)
         {
@@ -267,9 +268,6 @@ namespace Confirm_server_by_Contracts
             }
             return source;
         }
-
-
-
 
         public class Orders_row : IEquatable<Orders_row>, IComparable<Orders_row>
         {

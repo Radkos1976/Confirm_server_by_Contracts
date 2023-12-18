@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Reflection;
 using System.Collections.Concurrent;
 using System.Data;
-
+using System.Threading;
 
 namespace DB_Conect
 {
@@ -18,20 +18,22 @@ namespace DB_Conect
     {
         public Update_pstgr_from_Ora(string KEY_CONN)
         {
-            npC = Postegresql_conn.Connection_pool[KEY_CONN].ToString();            
+            npC = Postegresql_conn.Connection_pool[KEY_CONN].ToString();
+            Str_oracle_conn = Oracle_conn.Connection_string;
         }
         public Update_pstgr_from_Ora()
         {
-            npC = Postegresql_conn.Connection_pool["MAIN"].ToString();           
+            npC = Postegresql_conn.Connection_pool["MAIN"].ToString(); 
+            Str_oracle_conn = Oracle_conn.Connection_string;
         }
-        
-        static readonly string Str_oracle_conn = Oracle_conn.Connection_string;
+
+        readonly string Str_oracle_conn;
         readonly string npC;
    
         /// <summary>
         /// Get datasets from ORACLE - use this override when columns in query and in class T is same and create prepared parameters 
         /// </summary>
-        public async Task<List<T>> Get_Ora(string Sql_ora, string Task_name, ORA_parameters parameters)
+        public async Task<List<T>> Get_Ora(string Sql_ora, string Task_name, ORA_parameters parameters, CancellationToken cancellationToken)
         {
             Dictionary<string, int> D_columns = new Dictionary<string, int>();
             Dictionary<int, string> P_columns = new Dictionary<int, string>();
@@ -46,7 +48,7 @@ namespace DB_Conect
                 P_columns.Add(counter, p.PropertyInfo.Name.ToLower());
                 counter++;
             }
-            return await Get_Ora(Sql_ora, Task_name, D_columns, P_columns, P_types, parameters);
+            return await Get_Ora(Sql_ora, Task_name, D_columns, P_columns, P_types, cancellationToken, parameters);
         }
         /// <summary>
         /// Get datasets from ORACLE - use this override when columns in query and in class T is diferent and use prepared parameters 
@@ -56,66 +58,69 @@ namespace DB_Conect
         /// <param name="D_columns"></param>
         /// <param name="P_columns"></param>
         /// <returns></returns>
-        public async Task<List<T>> Get_Ora(string Sql_ora, string Task_name, Dictionary<string, int> D_columns, Dictionary<int, string> P_columns, Dictionary<int, Type> P_types, ORA_parameters parameters)
+        public async Task<List<T>> Get_Ora(string Sql_ora, string Task_name, Dictionary<string, int> D_columns, Dictionary<int, string> P_columns, Dictionary<int, Type> P_types, CancellationToken cancellationToken, ORA_parameters parameters)
         {
             List<T> Rows = new List<T>();
             try
             {
-                Count_oracle_conn.Wait_for_Oracle();
-                using (OracleConnection conO = new OracleConnection(Str_oracle_conn))
+                Count_oracle_conn.Wait_for_Oracle(cancellationToken);
+                if (!cancellationToken.IsCancellationRequested)
                 {
-                    await conO.OpenAsync();
-                    OracleGlobalization info = conO.GetSessionInfo();
-                    info.DateFormat = "YYYY-MM-DD";
-                    conO.SetSessionInfo(info);
-                    bool list_columns = false;
-                    T Row = new T();
-                    IPropertyAccessor[] Accessors = Row.GetType().GetProperties()
-                                    .Select(pi => PropertyInfoHelper.CreateAccessor(pi)).ToArray();
-                    
-                    using (OracleCommand cust = new OracleCommand(Sql_ora, conO))
+                    using (OracleConnection conO = new OracleConnection(Str_oracle_conn))
                     {
+                        await conO.OpenAsync(cancellationToken);
+                        OracleGlobalization info = conO.GetSessionInfo();
+                        info.DateFormat = "YYYY-MM-DD";
+                        conO.SetSessionInfo(info);
+                        bool list_columns = false;
+                        T Row = new T();
+                        IPropertyAccessor[] Accessors = Row.GetType().GetProperties()
+                                        .Select(pi => PropertyInfoHelper.CreateAccessor(pi)).ToArray();
 
-                        using (OracleDataReader reader = cust.ExecuteReader())
+                        using (OracleCommand cust = new OracleCommand(Sql_ora, conO))
                         {
-                            reader.FetchSize = cust.RowSize * 200;
-                            while (await reader.ReadAsync())
+
+                            using (OracleDataReader reader = cust.ExecuteReader())
                             {
-                                if (!list_columns)
+                                reader.FetchSize = cust.RowSize * 200;
+                                while (await reader.ReadAsync(cancellationToken))
                                 {
-                                    if (D_columns.Count == 0)
+                                    if (!list_columns)
                                     {
-                                        for (int col = 0; col < reader.FieldCount; col++)
+                                        if (D_columns.Count == 0)
                                         {
-                                            string nam = reader.GetName(col).ToLower();
-                                            D_columns.Add(nam, col);
+                                            for (int col = 0; col < reader.FieldCount; col++)
+                                            {
+                                                string nam = reader.GetName(col).ToLower();
+                                                D_columns.Add(nam, col);
+                                            }
                                         }
+                                        list_columns = true;
                                     }
-                                    list_columns = true;
-                                }
-                                Row = new T();
-                                int counter = 0;
-                                foreach (var Accessor in Accessors)
-                                {
-                                    string metod = P_columns[counter];
-                                    if (D_columns.ContainsKey(metod))
+                                    Row = new T();
+                                    int counter = 0;
+                                    foreach (var Accessor in Accessors)
                                     {
-                                        int col = D_columns[metod];
-                                        object readData = reader.GetValue(D_columns[metod]);
-                                        if (readData != System.DBNull.Value)
+                                        string metod = P_columns[counter];
+                                        if (D_columns.ContainsKey(metod))
                                         {
-                                            Type pt = P_types[counter];
-                                            Accessor.SetValue(Row, Convert.ChangeType(readData, Nullable.GetUnderlyingType(pt) ?? pt, null));
+                                            int col = D_columns[metod];
+                                            object readData = reader.GetValue(D_columns[metod]);
+                                            if (readData != System.DBNull.Value)
+                                            {
+                                                Type pt = P_types[counter];
+                                                Accessor.SetValue(Row, Convert.ChangeType(readData, Nullable.GetUnderlyingType(pt) ?? pt, null));
+                                            }
                                         }
+                                        counter++;
                                     }
-                                    counter++;
+                                    Rows.Add(Row);
                                 }
-                                Rows.Add(Row);
                             }
                         }
                     }
-                }
-                Rows.Sort();               
+                    Rows.Sort();
+                }                               
                 return Rows;
             }
             catch (Exception e)
@@ -138,64 +143,67 @@ namespace DB_Conect
         /// <param name="D_columns"></param>
         /// <param name="P_columns"></param>
         /// <returns></returns>
-        public async Task<List<T>> Get_Ora(string Sql_ora, string Task_name, Dictionary<string, int> D_columns, Dictionary<int, string> P_columns, Dictionary<int, Type> P_types)
+        public async Task<List<T>> Get_Ora(string Sql_ora, string Task_name, Dictionary<string, int> D_columns, Dictionary<int, string> P_columns, Dictionary<int, Type> P_types, CancellationToken cancellationToken)
         {
             List<T> Rows = new List<T>();
             try
             {
-                Count_oracle_conn.Wait_for_Oracle();
-                using (OracleConnection conO = new OracleConnection(Str_oracle_conn))
+                Count_oracle_conn.Wait_for_Oracle(cancellationToken);
+                if (!cancellationToken.IsCancellationRequested)
                 {
-                    await conO.OpenAsync();
-                    OracleGlobalization info = conO.GetSessionInfo();
-                    info.DateFormat = "YYYY-MM-DD";
-                    conO.SetSessionInfo(info);
-                    bool list_columns = false;
-                    T Row = new T();
-                    IPropertyAccessor[] Accessors = Row.GetType().GetProperties()
-                                    .Select(pi => PropertyInfoHelper.CreateAccessor(pi)).ToArray();
-                    using (OracleCommand cust = new OracleCommand(Sql_ora, conO))
+                    using (OracleConnection conO = new OracleConnection(Str_oracle_conn))
                     {
-                        using (OracleDataReader reader = cust.ExecuteReader())
+                        await conO.OpenAsync(cancellationToken);
+                        OracleGlobalization info = conO.GetSessionInfo();
+                        info.DateFormat = "YYYY-MM-DD";
+                        conO.SetSessionInfo(info);
+                        bool list_columns = false;
+                        T Row = new T();
+                        IPropertyAccessor[] Accessors = Row.GetType().GetProperties()
+                                        .Select(pi => PropertyInfoHelper.CreateAccessor(pi)).ToArray();
+                        using (OracleCommand cust = new OracleCommand(Sql_ora, conO))
                         {
-                            reader.FetchSize = cust.RowSize * 200;
-                            while (await reader.ReadAsync())
+                            using (OracleDataReader reader = cust.ExecuteReader())
                             {
-                                if (!list_columns)
+                                reader.FetchSize = cust.RowSize * 200;
+                                while (await reader.ReadAsync(cancellationToken))
                                 {
-                                    if (D_columns.Count == 0)
+                                    if (!list_columns)
                                     {
-                                        for (int col = 0; col < reader.FieldCount; col++)
+                                        if (D_columns.Count == 0)
                                         {
-                                            string nam = reader.GetName(col).ToLower();
-                                            D_columns.Add(nam, col);
+                                            for (int col = 0; col < reader.FieldCount; col++)
+                                            {
+                                                string nam = reader.GetName(col).ToLower();
+                                                D_columns.Add(nam, col);
+                                            }
                                         }
+                                        list_columns = true;
                                     }
-                                    list_columns = true;
-                                }
-                                Row = new T();
-                                int counter = 0;
-                                foreach (var Accessor in Accessors)
-                                {
-                                    string metod = P_columns[counter];
-                                    if (D_columns.ContainsKey(metod))
+                                    Row = new T();
+                                    int counter = 0;
+                                    foreach (var Accessor in Accessors)
                                     {
-                                        int col = D_columns[metod];
-                                        object readData = reader.GetValue(D_columns[metod]);
-                                        if (readData != System.DBNull.Value)
+                                        string metod = P_columns[counter];
+                                        if (D_columns.ContainsKey(metod))
                                         {
-                                            Type pt = P_types[counter];
-                                            Accessor.SetValue(Row, Convert.ChangeType(readData, Nullable.GetUnderlyingType(pt) ?? pt, null));
+                                            int col = D_columns[metod];
+                                            object readData = reader.GetValue(D_columns[metod]);
+                                            if (readData != System.DBNull.Value)
+                                            {
+                                                Type pt = P_types[counter];
+                                                Accessor.SetValue(Row, Convert.ChangeType(readData, Nullable.GetUnderlyingType(pt) ?? pt, null));
+                                            }
                                         }
+                                        counter++;
                                     }
-                                    counter++;
+                                    Rows.Add(Row);
                                 }
-                                Rows.Add(Row);
                             }
                         }
                     }
+                    Rows.Sort();
                 }
-                Rows.Sort();
                 return Rows;
             }
             catch (Exception e)
@@ -212,7 +220,7 @@ namespace DB_Conect
         /// <summary>
         /// Get datasets from ORACLE - use this override when columns in query and in class T is same  
         /// </summary>
-        public async Task<List<T>> Get_Ora(string Sql_ora, string Task_name)
+        public async Task<List<T>> Get_Ora(string Sql_ora, string Task_name, CancellationToken cancellationToken)
         {
             Dictionary<string, int> D_columns = new Dictionary<string, int>();
             Dictionary<int, string> P_columns = new Dictionary<int, string>();
@@ -227,7 +235,7 @@ namespace DB_Conect
                 P_columns.Add(counter, p.PropertyInfo.Name.ToLower());
                 counter++;
             }
-            return await Get_Ora(Sql_ora, Task_name, D_columns, P_columns, P_types);
+            return await Get_Ora(Sql_ora, Task_name, D_columns, P_columns, P_types, cancellationToken);
         }
         /// <summary>
         /// Get datasets from POSTEGRES - use this override when columns in query and in class T is diferent  
@@ -237,58 +245,61 @@ namespace DB_Conect
         /// <param name="D_columns"></param>
         /// <param name="P_columns"></param>
         /// <returns></returns>
-        public async Task<List<T>> Get_PSTGR(string Sql_ora, string Task_name, Dictionary<string, int> D_columns, Dictionary<int, string> P_columns, Dictionary<int, Type> P_types)
+        public async Task<List<T>> Get_PSTGR(string Sql_ora, string Task_name, Dictionary<string, int> D_columns, Dictionary<int, string> P_columns, Dictionary<int, Type> P_types, CancellationToken cancellationToken)
         {
             List<T> Rows = new List<T>();
             try
             {
-                using (NpgsqlConnection conO = new NpgsqlConnection(npC))
+                if (!cancellationToken.IsCancellationRequested)
                 {
-                    await conO.OpenAsync();
-                    bool list_columns = false;
-                    T Row = new T();
-                    IPropertyAccessor[] Accessors = Row.GetType().GetProperties()
-                                    .Select(pi => PropertyInfoHelper.CreateAccessor(pi)).ToArray();
-                    using (NpgsqlCommand cust = new NpgsqlCommand(Sql_ora, conO))
+                    using (NpgsqlConnection conO = new NpgsqlConnection(npC))
                     {
-                        using (NpgsqlDataReader reader = cust.ExecuteReader())
+                        await conO.OpenAsync(cancellationToken);
+                        bool list_columns = false;
+                        T Row = new T();
+                        IPropertyAccessor[] Accessors = Row.GetType().GetProperties()
+                                        .Select(pi => PropertyInfoHelper.CreateAccessor(pi)).ToArray();
+                        using (NpgsqlCommand cust = new NpgsqlCommand(Sql_ora, conO))
                         {
-                            while (await reader.ReadAsync())
+                            using (NpgsqlDataReader reader = cust.ExecuteReader())
                             {
-                                if (!list_columns)
+                                while (await reader.ReadAsync(cancellationToken))
                                 {
-                                    if (D_columns.Count == 0)
+                                    if (!list_columns)
                                     {
-                                        for (int col = 0; col < reader.FieldCount; col++)
+                                        if (D_columns.Count == 0)
                                         {
-                                            D_columns.Add(reader.GetName(col).ToLower(), col);
+                                            for (int col = 0; col < reader.FieldCount; col++)
+                                            {
+                                                D_columns.Add(reader.GetName(col).ToLower(), col);
+                                            }
                                         }
+                                        list_columns = true;
                                     }
-                                    list_columns = true;
-                                }
-                                Row = new T();
-                                int counter = 0;
-                                foreach (var Accessor in Accessors)
-                                {
-                                    string metod = P_columns[counter];
-                                    if (D_columns.ContainsKey(metod))
+                                    Row = new T();
+                                    int counter = 0;
+                                    foreach (var Accessor in Accessors)
                                     {
-                                        int col = D_columns[metod];
-                                        object readData = reader.GetValue(D_columns[metod]);
-                                        if (readData != System.DBNull.Value)
+                                        string metod = P_columns[counter];
+                                        if (D_columns.ContainsKey(metod))
                                         {
-                                            Type pt = P_types[counter];
-                                            Accessor.SetValue(Row, Convert.ChangeType(readData, Nullable.GetUnderlyingType(pt) ?? pt, null));
+                                            int col = D_columns[metod];
+                                            object readData = reader.GetValue(D_columns[metod]);
+                                            if (readData != System.DBNull.Value)
+                                            {
+                                                Type pt = P_types[counter];
+                                                Accessor.SetValue(Row, Convert.ChangeType(readData, Nullable.GetUnderlyingType(pt) ?? pt, null));
+                                            }
                                         }
+                                        counter++;
                                     }
-                                    counter++;
+                                    Rows.Add(Row);
                                 }
-                                Rows.Add(Row);
                             }
                         }
                     }
-                }
-                Rows.Sort();
+                    Rows.Sort();
+                }                
                 return Rows;
             }
             catch (Exception e)
@@ -304,7 +315,7 @@ namespace DB_Conect
         /// <param name="Sql_ora"></param>
         /// <param name="Task_name"></param>
         /// <returns></returns>
-        public async Task<List<T>> Get_PSTGR(string Sql_ora, string Task_name)
+        public async Task<List<T>> Get_PSTGR(string Sql_ora, string Task_name, CancellationToken cancellationToken )
         {
             Dictionary<string, int> D_columns = new Dictionary<string, int>();
             Dictionary<int, string> P_columns = new Dictionary<int, string>();
@@ -319,7 +330,7 @@ namespace DB_Conect
                 P_columns.Add(counter, p.PropertyInfo.Name.ToLower());
                 counter++;
             }
-            return await Get_PSTGR(Sql_ora, Task_name, D_columns, P_columns, P_types);
+            return await Get_PSTGR(Sql_ora, Task_name, D_columns, P_columns, P_types, cancellationToken);
         }
         /// <summary>
         /// Compare columns in rows by order assigned in ID array,
@@ -382,7 +393,7 @@ namespace DB_Conect
         /// <param name="not_compare"></param>
         /// <param name="guid_col"></param>
         /// <returns>  </returns>
-        public Changes_List<T> Changes(List<T> Old_list, List<T> New_list, string[] ID_column, string[] not_compare, string guid_col, string Task_name)
+        public Changes_List<T> Changes(List<T> Old_list, List<T> New_list, string[] ID_column, string[] not_compare, string guid_col, string Task_name, CancellationToken cancellationToken)
         {
             Changes_List<T> modyfications = new Changes_List<T>();
             try
@@ -390,8 +401,8 @@ namespace DB_Conect
                 List<T> _operDEl = new List<T>();
                 List<T> _operINS = new List<T>();
                 List<T> _operMOD = new List<T>();
-                int[] ID = Enumerable.Range(0, ID_column.Length).ToArray(); 
-                int[] found = new int[0]; 
+                int[] ID = Enumerable.Range(0, ID_column.Length).ToArray();
+                int[] found = new int[0];
                 int[] dont_check = new int[0];
                 int counter = 0;
                 int guid_id = 10000;
@@ -399,132 +410,139 @@ namespace DB_Conect
                 T Row = new T();
                 IPropertyAccessor[] Accessors = Row.GetType().GetProperties()
                                    .Select(pi => PropertyInfoHelper.CreateAccessor(pi)).ToArray();
-
-                foreach (var p in Accessors)
+                if (!cancellationToken.IsCancellationRequested)
                 {
-                    string pt_name = p.PropertyInfo.Name.ToLower();
-                    if (ID_column.Contains(pt_name)) { 
-                        ID[Array.IndexOf(ID_column, pt_name)] = counter;
-                        found.Append(counter);
-                    }  
-                    if (not_compare.Contains(pt_name))
+                    foreach (var p in Accessors)
                     {
-                        dont_check.Append(counter);
-                    }
-                    if (pt_name == guid_col.ToLower()) { guid_id = counter; }
-                    P_types.Add(counter, p.PropertyInfo.PropertyType);
-                    counter++;
-                }
-                if (ID.Length > found.Length)
-                {
-                    throw new Exception(String.Format("Some Parameters of ID_column {0} have fields name width no existence in DataSet", ID_column));
-                }
-                counter = 0;
-                int max_old_rows = Old_list.Count;
-                bool add_Record = false;
-                foreach (T rows in New_list)
-                {
-                    if (max_old_rows > counter)
-                    {
-                        while (Compare_rows(rows, Old_list[counter], ID, Accessors, P_types) == 1)
+                        string pt_name = p.PropertyInfo.Name.ToLower();
+                        if (ID_column.Contains(pt_name))
                         {
-                            _operDEl.Add(Old_list[counter]);
-                            counter++;
-                            if (max_old_rows <= counter) { break; }
+                            ID[Array.IndexOf(ID_column, pt_name)] = counter;
+                            found.Append(counter);
+                        }
+                        if (not_compare.Contains(pt_name))
+                        {
+                            dont_check.Append(counter);
+                        }
+                        if (pt_name == guid_col.ToLower()) { guid_id = counter; }
+                        P_types.Add(counter, p.PropertyInfo.PropertyType);
+                        counter++;
+                    }
+                    if (ID.Length > found.Length)
+                    {
+                        throw new Exception(String.Format("Some Parameters of ID_column {0} have fields name width no existence in DataSet", ID_column));
+                    }
+                    counter = 0;
+                    int max_old_rows = Old_list.Count;
+                    bool add_Record = false;
+                    foreach (T rows in New_list)
+                    {
+                        if (cancellationToken.IsCancellationRequested)
+                        {
+                            break;
                         }
                         if (max_old_rows > counter)
                         {
-                            if (Compare_rows(rows, Old_list[counter], ID, Accessors, P_types) == 0)
+                            while (Compare_rows(rows, Old_list[counter], ID, Accessors, P_types) == 1)
                             {
-                                bool changed = false;
-                                int col = 0;
-                                foreach (var rw in Accessors)
+                                _operDEl.Add(Old_list[counter]);
+                                counter++;
+                                if (max_old_rows <= counter) { break; }
+                            }
+                            if (max_old_rows > counter)
+                            {
+                                if (Compare_rows(rows, Old_list[counter], ID, Accessors, P_types) == 0)
                                 {
-                                    if (!ID.Contains(col) && !dont_check.Contains(col))
+                                    bool changed = false;
+                                    int col = 0;
+                                    foreach (var rw in Accessors)
                                     {
+                                        if (!ID.Contains(col) && !dont_check.Contains(col))
+                                        {
 
-                                        Type pt = P_types[col];
-                                        var val1 = rw.GetValue(rows) == null ? null : Convert.ChangeType(rw.GetValue(rows), Nullable.GetUnderlyingType(pt) ?? pt, null);
-                                        var val2 = rw.GetValue(Old_list[counter]) == null ? null : Convert.ChangeType(rw.GetValue(Old_list[counter]), Nullable.GetUnderlyingType(pt) ?? pt, null);
-                                        if (val1 == null)
-                                        {
-                                            if (val2 != null)
+                                            Type pt = P_types[col];
+                                            var val1 = rw.GetValue(rows) == null ? null : Convert.ChangeType(rw.GetValue(rows), Nullable.GetUnderlyingType(pt) ?? pt, null);
+                                            var val2 = rw.GetValue(Old_list[counter]) == null ? null : Convert.ChangeType(rw.GetValue(Old_list[counter]), Nullable.GetUnderlyingType(pt) ?? pt, null);
+                                            if (val1 == null)
                                             {
-                                                changed = true;
-                                            }
-                                        }
-                                        else
-                                        {
-                                            if (val2 == null)
-                                            {
-                                                if (val1 != null)
+                                                if (val2 != null)
                                                 {
                                                     changed = true;
                                                 }
                                             }
                                             else
                                             {
-                                                if (!val1.Equals(val2))
+                                                if (val2 == null)
                                                 {
-                                                    changed = true;
-                                                    break;
+                                                    if (val1 != null)
+                                                    {
+                                                        changed = true;
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    if (!val1.Equals(val2))
+                                                    {
+                                                        changed = true;
+                                                        break;
+                                                    }
                                                 }
                                             }
                                         }
-                                    }
-                                    col++;
-                                }
-                                if (changed)
-                                {
-                                    Row = new T();
-                                    col = 0;
-                                    foreach (var p in Accessors)
-                                    {
-                                        if (guid_id == col)
-                                        {
-                                            p.SetValue(Row, Accessors[guid_id].GetValue(Old_list[counter]));
-                                        }
-                                        else
-                                        {
-                                            p.SetValue(Row, p.GetValue(rows));
-                                        }
                                         col++;
                                     }
-                                    _operMOD.Add(Row);
+                                    if (changed)
+                                    {
+                                        Row = new T();
+                                        col = 0;
+                                        foreach (var p in Accessors)
+                                        {
+                                            if (guid_id == col)
+                                            {
+                                                p.SetValue(Row, Accessors[guid_id].GetValue(Old_list[counter]));
+                                            }
+                                            else
+                                            {
+                                                p.SetValue(Row, p.GetValue(rows));
+                                            }
+                                            col++;
+                                        }
+                                        _operMOD.Add(Row);
+                                    }
+                                    counter++;
                                 }
-                                counter++;
+                                else
+                                {
+                                    add_Record = true;
+                                }
                             }
                             else
                             {
                                 add_Record = true;
                             }
+
                         }
                         else
                         {
                             add_Record = true;
                         }
-
+                        if (add_Record)
+                        {
+                            _operINS.Add(rows);
+                            counter++;
+                            add_Record = false;
+                        }
                     }
-                    else
+                    var dataset = new Changes_List<T>
                     {
-                        add_Record = true;
-                    }
-                    if (add_Record)
-                    {
-                        _operINS.Add(rows);
-                        counter++;
-                        add_Record = false;
-                    }
+                        Insert = _operINS,
+                        Delete = _operDEl,
+                        Update = _operMOD
+                    };
+                    modyfications = dataset;
+                    return modyfications;
                 }
-                var dataset = new Changes_List<T>
-                {
-                    Insert = _operINS,
-                    Delete = _operDEl,
-                    Update = _operMOD
-                };
-                modyfications = dataset;
                 return modyfications;
-
             }
             catch (Exception e)
             {
@@ -538,26 +556,29 @@ namespace DB_Conect
         /// </summary>
         /// <param name="Table_name"></param>
         /// <returns></returns>
-        public async Task<List<Npgsql_Schema_fields>> Get_shema(string Table_name, Dictionary<string, int> P_columns)
+        public async Task<List<Npgsql_Schema_fields>> Get_shema(string Table_name, Dictionary<string, int> P_columns, CancellationToken cancellationToken)
         {
             List<Npgsql_Schema_fields> schema = new List<Npgsql_Schema_fields>();
-            using (NpgsqlConnection conO = new NpgsqlConnection(npC))
+            if (!cancellationToken.IsCancellationRequested)
             {
-                await conO.OpenAsync();
-                var Tmp = conO.GetSchema("Columns", new string[] { null, null, Table_name });
-                foreach (DataRow row in Tmp.Rows)
+                using (NpgsqlConnection conO = new NpgsqlConnection(npC))
                 {
-                    Npgsql_Schema_fields rw = new Npgsql_Schema_fields
+                    await conO.OpenAsync(cancellationToken);
+                    var Tmp = await conO.GetSchemaAsync("Columns", new string[] { null, null, Table_name }, cancellationToken);
+                    foreach (DataRow row in Tmp.Rows)
                     {
-                        Field_name = row["column_name"].ToString(),
-                        DB_Col_number = Convert.ToInt32(row["ordinal_position"]) - 1,
-                        Field_type = Postgres_helpers.PostegresTyp[row["data_type"].ToString()],
-                        Dtst_col = P_columns.ContainsKey(row["column_name"].ToString().ToLower()) ? P_columns[row["column_name"].ToString().ToLower()] : 10000,
-                        Char_max_len = (int)row["character_maximum_length"]                      
-                };
-                    schema.Add(rw);
+                        Npgsql_Schema_fields rw = new Npgsql_Schema_fields
+                        {
+                            Field_name = row["column_name"].ToString(),
+                            DB_Col_number = Convert.ToInt32(row["ordinal_position"]) - 1,
+                            Field_type = Postgres_helpers.PostegresTyp[row["data_type"].ToString()],
+                            Dtst_col = P_columns.ContainsKey(row["column_name"].ToString().ToLower()) ? P_columns[row["column_name"].ToString().ToLower()] : 10000,
+                            Char_max_len = (int)row["character_maximum_length"]
+                        };
+                        schema.Add(rw);
+                    }
                 }
-            }
+            }           
             return schema;
         }
         /// <summary>
@@ -567,186 +588,210 @@ namespace DB_Conect
         /// <param name="name_table"></param>
         /// <param name="guid_col"></param>
         /// <returns></returns>
-        public async Task<int> PSTRG_Changes_to_dataTable(Changes_List<T> _list, string name_table, string[] guid_col, string[] query_before, string[] query_after, string Task_name)
+        public async Task<int> PSTRG_Changes_to_dataTable(Changes_List<T> _list, string name_table, string[] guid_col, string[] query_before, string[] query_after, string Task_name, CancellationToken cancellationToken)
         {
 
             try
             {
-                Dictionary<string, int> P_columns = new Dictionary<string, int>();
-                Dictionary<int, Type> P_types = new Dictionary<int, Type>();
-                T Row = new T();
-                IPropertyAccessor[] Accessors = Row.GetType().GetProperties()
-                                         .Select(pi => PropertyInfoHelper.CreateAccessor(pi)).ToArray();
-                int counter = 0;
-                foreach (var p in Accessors)
+                if (!cancellationToken.IsCancellationRequested)
                 {
-                    P_types.Add(counter, p.PropertyInfo.PropertyType);
-                    P_columns.Add(p.PropertyInfo.Name.ToLower(), counter);
-                    counter++;
-                }
-                List<Npgsql_Schema_fields> Schema = await Get_shema(name_table, P_columns);
-                using (NpgsqlConnection conO = new NpgsqlConnection(npC))
-                {
-                    await conO.OpenAsync();
-                    using (NpgsqlTransaction npgsqlTransaction = conO.BeginTransaction())
+                    Dictionary<string, int> P_columns = new Dictionary<string, int>();
+                    Dictionary<int, Type> P_types = new Dictionary<int, Type>();
+                    T Row = new T();
+                    IPropertyAccessor[] Accessors = Row.GetType().GetProperties()
+                                             .Select(pi => PropertyInfoHelper.CreateAccessor(pi)).ToArray();
+                    int counter = 0;
+                    foreach (var p in Accessors)
                     {
-                        using (NpgsqlCommand cmd = new NpgsqlCommand("" +
-                        @"UPDATE public.datatbles 
+                        P_types.Add(counter, p.PropertyInfo.PropertyType);
+                        P_columns.Add(p.PropertyInfo.Name.ToLower(), counter);
+                        counter++;
+                    }
+                    List<Npgsql_Schema_fields> Schema = await Get_shema(name_table, P_columns, cancellationToken);
+                    using (NpgsqlConnection conO = new NpgsqlConnection(npC))
+                    {
+                        await conO.OpenAsync(cancellationToken);
+                        using (NpgsqlTransaction npgsqlTransaction = conO.BeginTransaction())
+                        {
+                            using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                            @"UPDATE public.datatbles 
                            SET start_update=current_timestamp, in_progress=true,updt_errors=false 
                            WHERE table_name=@table_name", conO))
-                        {
-                            cmd.Parameters.Add("table_name", NpgsqlTypes.NpgsqlDbType.Varchar).Value = name_table;
-                            await cmd.PrepareAsync();
-                            await cmd.ExecuteNonQueryAsync();
-                        }
-                        if (query_before != null)
-                        {
-                            foreach (string comm in query_before)
                             {
-                                using (NpgsqlCommand cmd = new NpgsqlCommand(comm, conO))
+                                cmd.Parameters.Add("table_name", NpgsqlTypes.NpgsqlDbType.Varchar).Value = name_table;
+                                await cmd.PrepareAsync(cancellationToken);
+                                await cmd.ExecuteNonQueryAsync(cancellationToken);
+                            }
+                            if (query_before != null)
+                            {
+                                foreach (string comm in query_before)
                                 {
-                                    await cmd.ExecuteNonQueryAsync();
+                                    using (NpgsqlCommand cmd = new NpgsqlCommand(comm, conO))
+                                    {
+                                        await cmd.ExecuteNonQueryAsync(cancellationToken);
+                                    }
                                 }
                             }
-                        }
-                        if (_list.Delete.Count > 0)
-                        {
-                            string comand = "DELETE FROM " + name_table;
-                            string tbl_values = " WHERE ";
-                            string param_values = "=";
-                            string[] guid_col_enum = null; 
-                            using (NpgsqlCommand cmd = new NpgsqlCommand())
+                            if (_list.Delete.Count > 0)
                             {
-                                cmd.Connection = conO;
-                                foreach (Npgsql_Schema_fields _Fields in Schema)
+                                string comand = "DELETE FROM " + name_table;
+                                string tbl_values = " WHERE ";
+                                string param_values = "=";
+                                string[] guid_col_enum = null;
+                                using (NpgsqlCommand cmd = new NpgsqlCommand())
                                 {
-                                    string nam = _Fields.Field_name;
-                                    if (guid_col.Contains(nam) && _Fields.Dtst_col != 10000)
+                                    cmd.Connection = conO;
+                                    foreach (Npgsql_Schema_fields _Fields in Schema)
                                     {
-                                        tbl_values += tbl_values != " WHERE " ? String.Format(" AND {0}", nam ):nam;
-                                        param_values = "=@" + nam.ToLower();
-                                        cmd.Parameters.Add("@" + nam.ToLower(), _Fields.Field_type);
-                                        tbl_values += param_values;
-                                        guid_col_enum.Append(nam.ToLower());
+                                        string nam = _Fields.Field_name;
+                                        if (guid_col.Contains(nam) && _Fields.Dtst_col != 10000)
+                                        {
+                                            tbl_values += tbl_values != " WHERE " ? String.Format(" AND {0}", nam) : nam;
+                                            param_values = "=@" + nam.ToLower();
+                                            cmd.Parameters.Add("@" + nam.ToLower(), _Fields.Field_type);
+                                            tbl_values += param_values;
+                                            guid_col_enum.Append(nam.ToLower());
+                                        }
                                     }
-                                }
-                                cmd.CommandText = comand + tbl_values;
-                                await cmd.PrepareAsync();
-                                foreach (T row in _list.Delete)
-                                {
-                                    int cnt = 0;
-                                    foreach(string key in guid_col_enum)
+                                    cmd.CommandText = comand + tbl_values;
+                                    await cmd.PrepareAsync(cancellationToken);
+                                    foreach (T row in _list.Delete)
                                     {
-                                        cmd.Parameters[cnt].Value = Accessors[P_columns[key]].GetValue(row);
-                                        cnt += 1;
+                                        if (cancellationToken.IsCancellationRequested)
+                                        {
+                                            break;
+                                        }
+                                        int cnt = 0;
+                                        foreach (string key in guid_col_enum)
+                                        {
+                                            cmd.Parameters[cnt].Value = Accessors[P_columns[key]].GetValue(row);
+                                            cnt += 1;
+                                        }
+
+                                        await cmd.ExecuteNonQueryAsync(cancellationToken);
                                     }
-                                    
-                                    await cmd.ExecuteNonQueryAsync();
                                 }
                             }
-                        }
-                        if (_list.Update.Count > 0)
-                        {
-                            string comand = "UPDATE " + name_table + " SET";
-                            string tbl_values = " ";
-                            string param_values = " WHERE ";
-                            using (NpgsqlCommand cmd = new NpgsqlCommand())
+                            if (_list.Update.Count > 0)
                             {
-                                cmd.Connection = conO;
-                                foreach (Npgsql_Schema_fields _Fields in Schema)
+                                string comand = "UPDATE " + name_table + " SET";
+                                string tbl_values = " ";
+                                string param_values = " WHERE ";
+                                using (NpgsqlCommand cmd = new NpgsqlCommand())
                                 {
-                                    string nam = _Fields.Field_name;
-                                    if (_Fields.Dtst_col != 10000)
+                                    cmd.Connection = conO;
+                                    foreach (Npgsql_Schema_fields _Fields in Schema)
                                     {
-                                        if (guid_col.Contains(nam))
+                                        string nam = _Fields.Field_name;
+                                        if (_Fields.Dtst_col != 10000)
                                         {
-                                            param_values += param_values == " WHERE "?"":" AND " + nam + "=@" + nam;
-                                        }
-                                        else
-                                        {
-                                            tbl_values = tbl_values + nam + "=@" + nam.ToLower() + ",";
-                                        }
-                                        cmd.Parameters.Add("@" + nam.ToLower(), _Fields.Field_type);
-                                    }
-                                }
-                                cmd.CommandText = comand + tbl_values.Substring(0, tbl_values.Length - 1) + " " + param_values;
-                                await cmd.PrepareAsync();
-                                foreach (T row in _list.Update)
-                                {
-                                    foreach (Npgsql_Schema_fields _field in Schema)
-                                    {
-                                        if (_field.Dtst_col != 10000)
-                                        {
-                                            cmd.Parameters[_field.DB_Col_number].Value = Accessors[_field.Dtst_col].GetValue(row) ?? DBNull.Value;
-                                        }
-                                    }
-                                    await cmd.ExecuteNonQueryAsync();
-                                }
-                            }
-                        }
-                        if (_list.Insert.Count > 0)
-                        {
-                            string comand = "INSERT INTO " + name_table;
-                            string tbl_values = "(";
-                            string param_values = " VALUES (";
-                            using (NpgsqlCommand cmd = new NpgsqlCommand())
-                            {
-                                cmd.Connection = conO;
-                                foreach (Npgsql_Schema_fields _Fields in Schema)
-                                {
-                                    string nam = _Fields.Field_name;
-                                    if (_Fields.Dtst_col != 10000)
-                                    {
-                                        tbl_values = tbl_values + nam + ",";
-                                        param_values = param_values + "@" + nam.ToLower() + ",";
-                                        cmd.Parameters.Add("@" + nam.ToLower(), _Fields.Field_type);
-                                    }
-                                }
-                                cmd.CommandText = comand + tbl_values.Substring(0, tbl_values.Length - 1) + ")" + param_values.Substring(0, param_values.Length - 1) + ")";
-                                await cmd.PrepareAsync();
-                                foreach (T row in _list.Insert)
-                                {
-                                    foreach (Npgsql_Schema_fields _field in Schema)
-                                    {
-                                        if (_field.Dtst_col != 10000)
-                                        {
-                                            if (_field.Field_type == NpgsqlTypes.NpgsqlDbType.Uuid & guid_col.Contains(_field.Field_name))
+                                            if (guid_col.Contains(nam))
                                             {
-                                                cmd.Parameters[_field.DB_Col_number].Value = Guid.NewGuid();
+                                                param_values += param_values == " WHERE " ? "" : " AND " + nam + "=@" + nam;
                                             }
                                             else
                                             {
+                                                tbl_values = tbl_values + nam + "=@" + nam.ToLower() + ",";
+                                            }
+                                            cmd.Parameters.Add("@" + nam.ToLower(), _Fields.Field_type);
+                                        }
+                                    }
+                                    cmd.CommandText = comand + tbl_values.Substring(0, tbl_values.Length - 1) + " " + param_values;
+                                    await cmd.PrepareAsync(cancellationToken);
+                                    foreach (T row in _list.Update)
+                                    {
+                                        if (cancellationToken.IsCancellationRequested)
+                                        {
+                                            break;
+                                        }
+                                        foreach (Npgsql_Schema_fields _field in Schema)
+                                        {
+                                            if (_field.Dtst_col != 10000)
+                                            {
                                                 cmd.Parameters[_field.DB_Col_number].Value = Accessors[_field.Dtst_col].GetValue(row) ?? DBNull.Value;
                                             }
-                                        }                                        
+                                        }
+                                        await cmd.ExecuteNonQueryAsync(cancellationToken);
                                     }
-                                    await cmd.ExecuteNonQueryAsync();
                                 }
                             }
-                        }
-                        if (query_after != null)
-                        {
-                            foreach (string comm in query_after)
+                            if (_list.Insert.Count > 0)
                             {
-                                using (NpgsqlCommand cmd = new NpgsqlCommand(comm, conO))
+                                string comand = "INSERT INTO " + name_table;
+                                string tbl_values = "(";
+                                string param_values = " VALUES (";
+                                using (NpgsqlCommand cmd = new NpgsqlCommand())
                                 {
-                                    await cmd.ExecuteNonQueryAsync();
+                                    cmd.Connection = conO;
+                                    foreach (Npgsql_Schema_fields _Fields in Schema)
+                                    {
+                                        string nam = _Fields.Field_name;
+                                        if (_Fields.Dtst_col != 10000)
+                                        {
+                                            tbl_values = tbl_values + nam + ",";
+                                            param_values = param_values + "@" + nam.ToLower() + ",";
+                                            cmd.Parameters.Add("@" + nam.ToLower(), _Fields.Field_type);
+                                        }
+                                    }
+                                    cmd.CommandText = comand + tbl_values.Substring(0, tbl_values.Length - 1) + ")" + param_values.Substring(0, param_values.Length - 1) + ")";
+                                    await cmd.PrepareAsync(cancellationToken);
+                                    foreach (T row in _list.Insert)
+                                    {
+                                        if (cancellationToken.IsCancellationRequested)
+                                        {
+                                            break;
+                                        }
+                                        foreach (Npgsql_Schema_fields _field in Schema)
+                                        {
+                                            if (_field.Dtst_col != 10000)
+                                            {
+                                                if (_field.Field_type == NpgsqlTypes.NpgsqlDbType.Uuid & guid_col.Contains(_field.Field_name))
+                                                {
+                                                    cmd.Parameters[_field.DB_Col_number].Value = Guid.NewGuid();
+                                                }
+                                                else
+                                                {
+                                                    cmd.Parameters[_field.DB_Col_number].Value = Accessors[_field.Dtst_col].GetValue(row) ?? DBNull.Value;
+                                                }
+                                            }
+                                        }
+                                        await cmd.ExecuteNonQueryAsync(cancellationToken);
+                                    }
                                 }
                             }
-                        }
-                        using (NpgsqlCommand cmd = new NpgsqlCommand("" +
-                                                @"UPDATE public.datatbles
+                            if (query_after != null)
+                            {
+                                foreach (string comm in query_after)
+                                {
+                                    if (cancellationToken.IsCancellationRequested)
+                                    {
+                                        break;
+                                    }
+                                    using (NpgsqlCommand cmd = new NpgsqlCommand(comm, conO))
+                                    {
+                                        await cmd.ExecuteNonQueryAsync(cancellationToken);
+                                    }
+                                }
+                            }
+                            using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                                                    @"UPDATE public.datatbles
                                                     SET last_modify=current_timestamp, in_progress=false 
                                                     WHERE table_name=@table_name", conO))
-                        {
-                            cmd.Parameters.Add("table_name", NpgsqlTypes.NpgsqlDbType.Varchar).Value = name_table;
-                            await cmd.PrepareAsync();
-                            await cmd.ExecuteNonQueryAsync();
+                            {
+                                cmd.Parameters.Add("table_name", NpgsqlTypes.NpgsqlDbType.Varchar).Value = name_table;
+                                await cmd.PrepareAsync(cancellationToken);
+                                await cmd.ExecuteNonQueryAsync(cancellationToken);
+                            }
+                            if (cancellationToken.IsCancellationRequested)
+                            {
+                                npgsqlTransaction.Rollback();
+                            }
+                            else { npgsqlTransaction.Commit(); }                            
                         }
-                        npgsqlTransaction.Commit();
                     }
+                    return 0;
                 }
-                return 0;
+                return 1;
             }
             catch (Exception e)
             {

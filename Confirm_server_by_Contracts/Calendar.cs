@@ -3,21 +3,23 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using static Confirm_server_by_Contracts.Calendar;
+using static Confirm_server_by_Contracts.Cust_orders;
 
 namespace Confirm_server_by_Contracts
 {
     /// <summary>
-    /// Gets informations about active customer orders
+    /// Gets informations about active Calendars
     /// Class update its self
     /// </summary>       
-    public class Calendar : Update_pstgr_from_Ora<Calendar.Calendar_row>
+    public class Calendar : Update_pstgr_from_Ora<Calendar_row>
     {
         public bool Updated_on_init;
         public List<Calendar_row> Calendar_list;
         private readonly Update_pstgr_from_Ora<Calendar_row> rw;
-        public Calendar(bool updt)
+        public Calendar(bool updt, CancellationToken cancellationToken)
         {
             try
             {
@@ -27,13 +29,13 @@ namespace Confirm_server_by_Contracts
                     if (updt)
                     {
                         Steps_executor.Register_step("Calendar");
-                        await Update_cust();
+                        await Update_cal(cancellationToken);
                         Updated_on_init = true;
                         Steps_executor.End_step("Calendar");
                     }
                     else
                     {
-                        Calendar_list = await Get_PSTGR_List("ALL");
+                        Calendar_list = await Get_PSTGR_List("ALL", cancellationToken);
                         Calendar_list.Sort();
                         Updated_on_init = false;
                     }
@@ -44,21 +46,21 @@ namespace Confirm_server_by_Contracts
                 Loger.Log("Error on initialize Calendar object:" + e);
             }
         }
-        public Calendar()
+        public Calendar(CancellationToken cancellationToken)
         {
             try
             {
                 rw = new Update_pstgr_from_Ora<Calendar_row>("MAIN");
                 Parallel.Invoke(async () =>
                 {
-                    Calendar_list = await Get_PSTGR_List("ALL");
+                    Calendar_list = await Get_PSTGR_List("ALL", cancellationToken);
                     if (Calendar_list.Count == 0)
                     {
                         Steps_executor.Register_step("Calendar");
                         Updated_on_init = true;
-                        await Update_cust();
+                        await Update_cal(cancellationToken);
                         Steps_executor.End_step("Calendar");
-                        Calendar_list = await Get_PSTGR_List("ALL");
+                        Calendar_list = await Get_PSTGR_List("ALL", cancellationToken);
                     }
                     else
                     {
@@ -74,34 +76,38 @@ namespace Confirm_server_by_Contracts
             }
         }
         /// <summary>
-        /// Update customer order table
+        /// Update Calendar table
         /// </summary>
         /// <returns></returns>
-        public async Task<int> Update_cust()
+        public async Task<int> Update_cal(CancellationToken cancellationToken)
         {
             try
             {
+                string[] checked_calendar = new string[] { };
                 int returned = 0;
                 foreach (string contract in Postegresql_conn.Contracts_kalendar.Keys)
                 {
-
-                    //rw = new Update_pstgr_from_Ora<Orders_row>();
-                    List<Calendar_row> list_ora = new List<Calendar_row>();
-                    List<Calendar_row> list_pstgr = new List<Calendar_row>();
-                    Parallel.Invoke(
-                        async () => {
-                            list_ora = await Get_Ora_list(Postegresql_conn.Contracts_kalendar[contract]); list_ora.Sort();
-                        },
-                        async () => {
-                            list_pstgr = await Get_PSTGR_List(Postegresql_conn.Contracts_kalendar[contract]); list_pstgr.Sort();
-                        }
-                    );
-                    Changes_List<Calendar_row> tmp = rw.Changes(list_pstgr, list_ora, new[] { "calendar_id", "counter" }, new[] { "calendar_id", "counter" }, "counter", "Calendar");
-                    list_ora = null;
-                    list_pstgr = null;
-                    returned += await PSTRG_Changes_to_dataTable(tmp, "work_cal", new[] { "calendar_id", "counter" }, null, new[] {
+                    if (!checked_calendar.Contains(Postegresql_conn.Contracts_kalendar[contract]) && returned == 0) 
+                    {
+                        //rw = new Update_pstgr_from_Ora<Orders_row>();
+                        checked_calendar.Append(Postegresql_conn.Contracts_kalendar[contract]);
+                        List<Calendar_row> list_ora = new List<Calendar_row>();
+                        List<Calendar_row> list_pstgr = new List<Calendar_row>();
+                        Parallel.Invoke(
+                            async () => {
+                                list_ora = await Get_Ora_list(Postegresql_conn.Contracts_kalendar[contract], cancellationToken);
+                            },
+                            async () => {
+                                list_pstgr = await Get_PSTGR_List(Postegresql_conn.Contracts_kalendar[contract], cancellationToken);
+                            }
+                        );
+                        Changes_List<Calendar_row> tmp = rw.Changes(list_pstgr, list_ora, new[] { "calendar_id", "counter" }, new[] { "calendar_id", "counter" }, "counter", "Calendar", cancellationToken);
+                        list_ora = null;
+                        list_pstgr = null;
+                        returned += await PSTRG_Changes_to_dataTable(tmp, "work_cal", new[] { "calendar_id", "counter" }, null, new[] {
                         String.Format(@"Delete from public.work_cal
-                          where calendar_id not in ({0})", String.Join(", ", Postegresql_conn.Contracts_kalendar.Select(x => (String.Format("'{0}'",x.Value))).ToArray())) } , "Calendar");
+                          where calendar_id not in ({0})", String.Join(", ", Postegresql_conn.Contracts_kalendar.Select(x => (String.Format("'{0}'",x.Value))).ToArray())) }, "Calendar", cancellationToken);
+                    }                   
                 }
                 return returned;
             }
@@ -117,13 +123,13 @@ namespace Confirm_server_by_Contracts
         /// </summary>
         /// <param name="rw"></param>
         /// <returns></returns>
-        public async Task<List<Calendar_row>> Get_PSTGR_List(string calendar_id) => await rw.Get_PSTGR(String.Format("Select * from work_cal {0}", calendar_id == "ALL"?"":String.Format("WHERE CALENDAR_ID='{0}'", calendar_id)), "Calendar");
+        public async Task<List<Calendar_row>> Get_PSTGR_List(string calendar_id, CancellationToken cancellationToken) => await rw.Get_PSTGR(String.Format("Select * from work_cal {0}", calendar_id == "ALL"?"":String.Format("WHERE CALENDAR_ID='{0}'", calendar_id)), "Calendar", cancellationToken);
 
         /// <summary>
         /// Get calendars from ERP
         /// </summary>
         /// <returns></returns>
-        public async Task<List<Calendar_row>> Get_Ora_list(string calendar_id) => await rw.Get_Ora("" +
+        public async Task<List<Calendar_row>> Get_Ora_list(string calendar_id, CancellationToken cancellationToken) => await rw.Get_Ora("" +
             String.Format(@"SELECT
                                 calendar_id,
                                 counter,
@@ -135,21 +141,18 @@ namespace Confirm_server_by_Contracts
                                 objversion 
                             FROM 
                                 ifsapp.work_time_counter 
-                            WHERE CALENDAR_ID='{0}'", calendar_id), "Calendar");
+                            WHERE CALENDAR_ID='{0}'", calendar_id), "Calendar", cancellationToken);
 
         public class Calendar_row : IEquatable<Calendar_row>, IComparable<Calendar_row>
-        {
-            private readonly Dictionary<string, int> calendar_len = Get_limit_of_fields.calendar_len;
-
-            public string Calendar_id { get { return Calendar_id; } set => Calendar_id = value.LimitDictLen("calendar_id", calendar_len); }            
+        { 
+            public string Calendar_id { get; set; }
             public int Counter { get; set; }
             public DateTime Work_day { get; set; }
-            public string Day_type { get { return Day_type; } set => Day_type = value.LimitDictLen("day_type", calendar_len); }
+            public string Day_type { get; set; }
             public double Working_time { get; set; }
             public int Working_periods { get; set; }
-            public string Objid { get { return Objid; } set => Objid = value.LimitDictLen("objid", calendar_len); }
-            public string Objersion { get { return Objersion; } set => Objersion = value.LimitDictLen("objersion", calendar_len); }
-
+            public string Objid { get; set; }
+            public string Objersion { get; set; }
             public int CompareTo(Calendar_row other)
             {
                 if (other == null)
@@ -169,6 +172,18 @@ namespace Confirm_server_by_Contracts
                 if (other == null) return false;
                 return (this.Counter.Equals(other.Counter) && this.Calendar_id.Equals(other.Calendar_id));
             }
+        }
+        public List<Calendar_row> Check_length(List<Calendar_row> source)
+        {
+            Dictionary<string, int> calendar_len = Get_limit_of_fields.calendar_len;
+            foreach (Calendar_row row in source)
+            {
+                row.Calendar_id = row.Calendar_id.LimitDictLen("calendar_id", calendar_len);
+                row.Day_type = row.Day_type.LimitDictLen("day_type", calendar_len);
+                row.Objid = row.Objid.LimitDictLen("objid", calendar_len);
+                row.Objersion = row.Objersion.LimitDictLen("objersion", calendar_len);               
+            }
+            return source;
         }
     }
 }

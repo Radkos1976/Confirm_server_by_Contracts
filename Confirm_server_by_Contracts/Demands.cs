@@ -1,6 +1,8 @@
 ﻿using DB_Conect;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 
@@ -9,7 +11,8 @@ namespace Confirm_server_by_Contracts
     public class Simple_Demands: Update_pstgr_from_Ora<Simple_Demands.Simple_demands_row>
     {
         private readonly Update_pstgr_from_Ora<Simple_demands_row> rw;
-        public async Task<List<Simple_demands_row>> Get_source_list(string regex) => await rw.Get_Ora("" +
+        public readonly List<Tuple<string, string>> limit_part_no;
+        public async Task<List<Simple_demands_row>> Get_source_list(string regex, bool create_tuple_off, CancellationToken cancellationToken) => Add_field_Next_day( await rw.Get_Ora("" +
             String.Format(@"SELECT 
                 PART_NO,
                 contract,
@@ -91,15 +94,30 @@ namespace Confirm_server_by_Contracts
                 FROM 
                     ifsapp.purchase_order_line_supply  
                 WHERE regexp_like(part_no, {0})
-            GROUP BY PART_NO, To_Date(DATE_REQUIRED)", regex), "Get_demands_from_IFS");
+            GROUP BY PART_NO, To_Date(DATE_REQUIRED)", regex), "Get_demands_from_IFS", cancellationToken), create_tuple_off, cancellationToken);
 
-        public List<Simple_demands_row> Add_field_Next_day(List<Simple_demands_row> source)
+        public List<Simple_demands_row> Add_field_Next_day(List<Simple_demands_row> source, bool create_tuple_off, CancellationToken cancellationToken)
         {
+            if (create_tuple_off)
+            {
+                limit_part_no.Clear();
+            }
             foreach (Simple_demands_row row in source)
             {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    break;
+                }
                 row.Next_day = Next_DAY.Get_next_day(row.Contract, row.Date_required);
+                if (create_tuple_off)
+                {
+                    bool tuple_exist = limit_part_no.Any(m => m.Item1 == row.Part_no & m.Item2 == row.Contract);
+                    if (!tuple_exist) 
+                    {
+                        limit_part_no.Add(new Tuple<string, string>(row.Part_no, row.Contract));
+                    }
+                }
             }
-            
             return source;
         }
                             
