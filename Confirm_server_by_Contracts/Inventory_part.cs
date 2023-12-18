@@ -24,6 +24,7 @@ namespace Confirm_server_by_Contracts
 
         public Inventory_part(string regex, bool not_zero_stock = false, List<Tuple<string, string>> part_no_values =  null)
         {
+            rw = new Update_pstgr_from_Ora<Inventory_part_row>("MAIN");
             regex_part_no = regex == "" ? "^(5|6).*" : regex;
             limit_not_zero_stock = not_zero_stock;
             limit_part_no = part_no_values;
@@ -41,7 +42,7 @@ namespace Confirm_server_by_Contracts
         /// <returns></returns>
         public async Task<List<Inventory_part_row>> Get_PSTGR_List(string Task_name, CancellationToken cancellationToken) => await rw.Get_PSTGR("" + 
             String.Format(@"Select * from mag {0}", regex_part_no != "^(5|6).*" ?
-                String.Format("WHERE regexp_like(indeks, '{0}'", regex_part_no): ""), Task_name, cancellationToken);
+                String.Format("WHERE regexp_like(indeks, '{0}')", regex_part_no): ""), Task_name, cancellationToken);
 
         /// <summary>
         /// Get present list of inventory_part stored in ERP

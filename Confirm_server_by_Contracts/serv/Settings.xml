@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<data>
+<POSTEGRESQL_MAIN>
+  <Host>localhost</Host>
+  <Port>5432</Port>
+  <CommandTimeout>10</CommandTimeout>
+  <ConnectionIdleLifetime>10</ConnectionIdleLifetime>
+  <ApplicationName>Zakupy_APP</ApplicationName>
+  <Username>RADKOS</Username>
+  <Password>tyghbn</Password>
+  <Database>zakupy</Database>
+  <Kalendar_name></Kalendar_name>
+  <Contracts>ST,IN</Contracts>
+</POSTEGRESQL_MAIN>
+
+<POSTEGRESQL_ST>
+<Calendar_id>SITS</Calendar_id>
+</POSTEGRESQL_ST>
+
+<ORACLE>
+  <ConnectionString>Password=tyghbn;User ID = radkos; Data Source = prod8</ConnectionString>
+  <Limit_oracle_conn>6</Limit_oracle_conn>
+</ORACLE>
+</data>

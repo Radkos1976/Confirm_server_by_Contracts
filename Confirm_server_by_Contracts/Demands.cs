@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using static Confirm_server_by_Contracts.Inventory_part;
 
 
 namespace Confirm_server_by_Contracts
@@ -11,7 +12,13 @@ namespace Confirm_server_by_Contracts
     public class Simple_Demands: Update_pstgr_from_Ora<Simple_Demands.Simple_demands_row>
     {
         private readonly Update_pstgr_from_Ora<Simple_demands_row> rw;
+
         public readonly List<Tuple<string, string>> limit_part_no;
+        public Simple_Demands()
+        {
+            rw = new Update_pstgr_from_Ora<Simple_demands_row>("MAIN");
+        }
+            
         public async Task<List<Simple_demands_row>> Get_source_list(string regex, bool create_tuple_off, CancellationToken cancellationToken) => Add_field_Next_day( await rw.Get_Ora("" +
             String.Format(@"SELECT 
                 PART_NO,

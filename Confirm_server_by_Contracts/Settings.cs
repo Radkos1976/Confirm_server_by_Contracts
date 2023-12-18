@@ -225,7 +225,7 @@ namespace DB_Conect
         {
             try
             {
-                XDocument Doc = XDocument.Load("Settings.xml");
+                XDocument Doc = XDocument.Load("C:\\serv\\Settings.xml");
                 var oraconn = Doc.Descendants("ORACLE")
                     .Select(x => new
                     {
