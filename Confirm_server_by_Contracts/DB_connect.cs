@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Collections.Concurrent;
 using System.Data;
 using System.Threading;
+using System.Xml;
 
 namespace DB_Conect
 {
@@ -125,8 +126,8 @@ namespace DB_Conect
             }
             catch (Exception e)
             {
-                Steps_executor.Step_error(Task_name);
-                Loger.Log("Error on Get_Ora(string Sql_ora, string Task_name, Dictionary<string, int> D_columns, Dictionary<int, string> P_columns, Dictionary<int, Type> P_types, ORA_parameters parameters):" + Task_name + e);
+                Loger.Log("Error on Get_Ora width ORA_parameters parameters):" + Task_name + e);
+                Steps_executor.Step_error(Task_name);               
                 return Rows;
             }
             finally
@@ -207,9 +208,9 @@ namespace DB_Conect
                 return Rows;
             }
             catch (Exception e)
-            {
+            {                
+                Loger.Log("Error on GET_ORA :" + Task_name + e);
                 Steps_executor.Step_error(Task_name);
-                Loger.Log("Error on update (string Sql_ora, string Task_name, Dictionary<string, int> D_columns, Dictionary<int, string> P_columns, Dictionary<int, Type> P_types) :" + Task_name + e);
                 return Rows;
             }
             finally
@@ -304,8 +305,8 @@ namespace DB_Conect
             }
             catch (Exception e)
             {
-                Steps_executor.Step_error(Task_name);
-                Loger.Log(String.Format("Error of modification Table: {0} => {1}",Task_name, e));
+                Loger.Log(String.Format("Error of modification Table: {0} => {1}", Task_name, e));
+                Steps_executor.Step_error(Task_name);                
                 return Rows;
             }
         }
@@ -402,8 +403,8 @@ namespace DB_Conect
                 List<T> _operINS = new List<T>();
                 List<T> _operMOD = new List<T>();
                 int[] ID = Enumerable.Range(0, ID_column.Length).ToArray();
-                int[] found = new int[0];
-                int[] dont_check = new int[0];
+                List<int> found = new List<int>();
+                List<int> dont_check = new List<int>();
                 int counter = 0;
                 int guid_id = 10000;
                 Dictionary<int, Type> P_types = new Dictionary<int, Type>();
@@ -418,19 +419,19 @@ namespace DB_Conect
                         if (ID_column.Contains(pt_name))
                         {
                             ID[Array.IndexOf(ID_column, pt_name)] = counter;
-                            found.Append(counter);
+                            found.Add(counter);
                         }
                         if (not_compare.Contains(pt_name))
                         {
-                            dont_check.Append(counter);
+                            dont_check.Add(counter);
                         }
                         if (pt_name == guid_col.ToLower()) { guid_id = counter; }
                         P_types.Add(counter, p.PropertyInfo.PropertyType);
                         counter++;
                     }
-                    if (ID.Length > found.Length)
+                    if (ID.Length > found.Count)
                     {
-                        throw new Exception(String.Format("Some Parameters of ID_column {0} have fields name width no existence in DataSet", ID_column));
+                        throw new Exception(String.Format("Some Parameters of ID_column like field name:{0} have fields name width no existence in DataSet", ID_column));
                     }
                     counter = 0;
                     int max_old_rows = Old_list.Count;
@@ -546,8 +547,8 @@ namespace DB_Conect
             }
             catch (Exception e)
             {
-                Steps_executor.Step_error(Task_name);
-                Loger.Log(String.Format("Error in compare procedure :  {0}", e));
+                Loger.Log(String.Format("Error in compare procedure : {0}", e));
+                Steps_executor.Step_error(Task_name);                
                 return modyfications;
             }
         }
@@ -561,23 +562,32 @@ namespace DB_Conect
             List<Npgsql_Schema_fields> schema = new List<Npgsql_Schema_fields>();
             if (!cancellationToken.IsCancellationRequested)
             {
-                using (NpgsqlConnection conO = new NpgsqlConnection(npC))
+                try
                 {
-                    await conO.OpenAsync(cancellationToken);
-                    var Tmp = await conO.GetSchemaAsync("Columns", new string[] { null, null, Table_name }, cancellationToken);
-                    foreach (DataRow row in Tmp.Rows)
+                    using (NpgsqlConnection conO = new NpgsqlConnection(npC))
                     {
-                        Npgsql_Schema_fields rw = new Npgsql_Schema_fields
+                        await conO.OpenAsync(cancellationToken);
+                        var Tmp = await conO.GetSchemaAsync("Columns", new string[] { null, null, Table_name }, cancellationToken);
+                        foreach (DataRow row in Tmp.Rows)
                         {
-                            Field_name = row["column_name"].ToString(),
-                            DB_Col_number = Convert.ToInt32(row["ordinal_position"]) - 1,
-                            Field_type = Postgres_helpers.PostegresTyp[row["data_type"].ToString()],
-                            Dtst_col = P_columns.ContainsKey(row["column_name"].ToString().ToLower()) ? P_columns[row["column_name"].ToString().ToLower()] : 10000,
-                            Char_max_len = (int)row["character_maximum_length"]
-                        };
-                        schema.Add(rw);
+                            Loger.Log(string.Format("Field Name {1} => Field Type {0}", row["data_type"].ToString(), row["column_name"].ToString()));
+                            Npgsql_Schema_fields rw = new Npgsql_Schema_fields
+                            {
+                                Field_name = row["column_name"].ToString(),
+                                DB_Col_number = Convert.ToInt32(row["ordinal_position"]) - 1,
+                                Field_type = Postgres_helpers.PostegresTyp[row["data_type"].ToString()],
+                                Dtst_col = P_columns.ContainsKey(row["column_name"].ToString().ToLower()) ? P_columns[row["column_name"].ToString().ToLower()] : 10000,
+                                Char_max_len = row["character_maximum_length"].GetType() == typeof(int) ? (int)row["character_maximum_length"] : 0
+                            };
+                            schema.Add(rw);
+                        }
                     }
                 }
+                catch (Exception ex)
+                {
+                    Loger.Log(String.Format("Error in Get_shema : {0} =>  {1}", Table_name, ex));
+                }
+                
             }           
             return schema;
         }
@@ -637,20 +647,20 @@ namespace DB_Conect
                                 string comand = "DELETE FROM " + name_table;
                                 string tbl_values = " WHERE ";
                                 string param_values = "=";
-                                string[] guid_col_enum = null;
+                                List<string> guid_col_enum = new List<string>();
                                 using (NpgsqlCommand cmd = new NpgsqlCommand())
                                 {
                                     cmd.Connection = conO;
                                     foreach (Npgsql_Schema_fields _Fields in Schema)
                                     {
-                                        string nam = _Fields.Field_name;
+                                        string nam = _Fields.Field_name.ToLower();
                                         if (guid_col.Contains(nam) && _Fields.Dtst_col != 10000)
                                         {
                                             tbl_values += tbl_values != " WHERE " ? String.Format(" AND {0}", nam) : nam;
                                             param_values = "=@" + nam.ToLower();
                                             cmd.Parameters.Add("@" + nam.ToLower(), _Fields.Field_type);
                                             tbl_values += param_values;
-                                            guid_col_enum.Append(nam.ToLower());
+                                            guid_col_enum.Add(nam.ToLower());
                                         }
                                     }
                                     cmd.CommandText = comand + tbl_values;
@@ -687,7 +697,7 @@ namespace DB_Conect
                                         {
                                             if (guid_col.Contains(nam))
                                             {
-                                                param_values += param_values == " WHERE " ? "" : " AND " + nam + "=@" + nam;
+                                                param_values += (param_values == " WHERE " ? "" : " AND ") + nam + "=@" + nam;
                                             }
                                             else
                                             {
@@ -700,17 +710,21 @@ namespace DB_Conect
                                     await cmd.PrepareAsync(cancellationToken);
                                     foreach (T row in _list.Update)
                                     {
+                                        
                                         if (cancellationToken.IsCancellationRequested)
                                         {
                                             break;
                                         }
+                                        //string param = "";
                                         foreach (Npgsql_Schema_fields _field in Schema)
-                                        {
+                                        {                                            
                                             if (_field.Dtst_col != 10000)
                                             {
+                                                //param += "_" + Convert.ToString(Accessors[_field.Dtst_col].GetValue(row));
                                                 cmd.Parameters[_field.DB_Col_number].Value = Accessors[_field.Dtst_col].GetValue(row) ?? DBNull.Value;
                                             }
                                         }
+                                        // Loger.Log(param);
                                         await cmd.ExecuteNonQueryAsync(cancellationToken);
                                     }
                                 }
@@ -808,8 +822,9 @@ namespace DB_Conect
                         await cmd.ExecuteNonQueryAsync();
                     }
                 }
+                
+                Loger.Log(String.Format("Error in update table : {0} =>  {1}",name_table , e));
                 Steps_executor.Step_error(Task_name);
-                Loger.Log(String.Format("Error in update table : {0} =>  {1}",name_table , e.StackTrace));
                 return 1;
             }
         }

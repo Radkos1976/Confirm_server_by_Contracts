@@ -13,14 +13,14 @@ namespace Confirm_server_by_Contracts
     {
         private readonly Update_pstgr_from_Ora<Simple_demands_row> rw;
 
-        public readonly List<Tuple<string, string>> limit_part_no;
+        public readonly List<Tuple<string, string>> limit_part_no = new List<Tuple<string, string>>();
         public Simple_Demands()
         {
             rw = new Update_pstgr_from_Ora<Simple_demands_row>("MAIN");
         }
             
-        public async Task<List<Simple_demands_row>> Get_source_list(string regex, bool create_tuple_off, CancellationToken cancellationToken) => Add_field_Next_day( await rw.Get_Ora("" +
-            String.Format(@"SELECT 
+        public async Task<List<Simple_demands_row>> Get_source_list(string regex, bool create_tuple_off, string transaction_name, CancellationToken cancellationToken) => Add_field_Next_day( await rw.Get_Ora("" +
+            string.Format(@"SELECT 
                 PART_NO,
                 contract,
                 To_Date(DATE_REQUIRED) DATE_REQUIRED,
@@ -32,6 +32,7 @@ namespace Confirm_server_by_Contracts
             FROM 
                 (SELECT 
                     PART_NO,
+                    contract,
                     DATE_REQUIRED,
                     0 QTY_SUPPLY,
                     QTY_DEMAND,
@@ -40,10 +41,11 @@ namespace Confirm_server_by_Contracts
                     owa_opt_lock.checksum(a.ROWID) chksum 
                 FROM 
                     ifsapp.shop_material_alloc_demand a 
-                WHERE regexp_like(part_no, {0})   
+                WHERE regexp_like(part_no, '{0}')   
                 UNION ALL  
                 SELECT 
                     PART_NO,
+                    contract,
                     DATE_REQUIRED,
                     0 QTY_SUPPLY,
                     QTY_DEMAND,
@@ -52,10 +54,11 @@ namespace Confirm_server_by_Contracts
                     owa_opt_lock.checksum(order_no||QTY_DEMAND||DATE_REQUIRED||ORDER_NO||LINE_NO||INFO) chksum
                 FROM 
                     ifsapp.dop_order_demand_ext 
-                WHERE regexp_like(part_no, {0}) 
+                WHERE regexp_like(part_no, '{0}') 
                 UNION ALL 
                 SELECT 
                     PART_NO,
+                    contract,
                     DATE_REQUIRED,
                     0 QTY_SUPPLY,
                     QTY_DEMAND,
@@ -64,10 +67,11 @@ namespace Confirm_server_by_Contracts
                     owa_opt_lock.checksum(ROW_ID||QTY_DEMAND||DATE_REQUIRED||QTY_PEGGED||QTY_RESERVED) chksum 
                 FROM 
                     ifsapp.customer_order_line_demand_oe 
-                WHERE regexp_like(part_no, {0}) 
+                WHERE regexp_like(part_no, '{0}') 
                 UNION ALL
                 SELECT
                     PART_NO,
+                    contract,
                     DATE_REQUIRED,
                     0 QTY_SUPPLY,
                     QTY_DEMAND,
@@ -76,10 +80,11 @@ namespace Confirm_server_by_Contracts
                     owa_opt_lock.checksum(ROWID||QTY_DEMAND||DATE_REQUIRED||STATUS_CODE) chksum 
                 FROM 
                     ifsapp.material_requis_line_demand_oe 
-                WHERE regexp_like(part_no, {0}) 
+                WHERE regexp_like(part_no, '{0}') 
                 UNION ALL  
                 SELECT
                     PART_NO,
+                    contract,
                     sysdate DATE_REQUIRED,
                     QTY_SUPPLY,
                     0 QTY_DEMAND,
@@ -88,10 +93,11 @@ namespace Confirm_server_by_Contracts
                     owa_opt_lock.checksum(ROWID||QTY_SUPPLY||DATE_REQUIRED||STATUS_CODE) chksum 
                 FROM 
                     ifsapp.ARRIVED_PUR_ORDER_EXT  
-                WHERE regexp_like(part_no, {0})  
+                WHERE regexp_like(part_no, '{0}')  
                 UNION ALL  
                 SELECT 
                     PART_NO, 
+                    contract,
                     DATE_REQUIRED,
                     QTY_SUPPLY,
                     0 QTY_DEMAND,
@@ -100,8 +106,9 @@ namespace Confirm_server_by_Contracts
                     owa_opt_lock.checksum(ROWID||QTY_SUPPLY||DATE_REQUIRED) chksum 
                 FROM 
                     ifsapp.purchase_order_line_supply  
-                WHERE regexp_like(part_no, {0})
-            GROUP BY PART_NO, To_Date(DATE_REQUIRED)", regex), "Get_demands_from_IFS", cancellationToken), create_tuple_off, cancellationToken);
+                WHERE regexp_like(part_no, '{0}')
+                )
+            GROUP BY PART_NO,contract,To_Date(DATE_REQUIRED)", regex), transaction_name, cancellationToken), create_tuple_off, cancellationToken);
 
         public List<Simple_demands_row> Add_field_Next_day(List<Simple_demands_row> source, bool create_tuple_off, CancellationToken cancellationToken)
         {

@@ -83,14 +83,14 @@ namespace Confirm_server_by_Contracts
         {
             try
             {
-                string[] checked_calendar = new string[] { };
+                List<string> checked_calendar = new List<string>();
                 int returned = 0;
                 foreach (string contract in Postegresql_conn.Contracts_kalendar.Keys)
                 {
                     if (!checked_calendar.Contains(Postegresql_conn.Contracts_kalendar[contract]) && returned == 0) 
                     {
                         //rw = new Update_pstgr_from_Ora<Orders_row>();
-                        checked_calendar.Append(Postegresql_conn.Contracts_kalendar[contract]);
+                        checked_calendar.Add(Postegresql_conn.Contracts_kalendar[contract]);
                         List<Calendar_row> list_ora = new List<Calendar_row>();
                         List<Calendar_row> list_pstgr = new List<Calendar_row>();
                         Parallel.Invoke(
@@ -101,10 +101,10 @@ namespace Confirm_server_by_Contracts
                                 list_pstgr = await Get_PSTGR_List(Postegresql_conn.Contracts_kalendar[contract], cancellationToken);
                             }
                         );
-                        Changes_List<Calendar_row> tmp = rw.Changes(list_pstgr, list_ora, new[] { "calendar_id", "counter" }, new[] { "calendar_id", "counter" }, "counter", "Calendar", cancellationToken);
+                        Changes_List<Calendar_row> tmp = rw.Changes(list_pstgr, list_ora, new[] { "calendar_id", "work_day", "counter" }, new[] { "calendar_id" }, "calendar_id", "Calendar", cancellationToken);
                         list_ora = null;
                         list_pstgr = null;
-                        returned += await PSTRG_Changes_to_dataTable(tmp, "work_cal", new[] { "calendar_id", "counter" }, null, new[] {
+                        returned += await PSTRG_Changes_to_dataTable(tmp, "work_cal", new[] { "objid" }, null, new[] {
                         String.Format(@"Delete from public.work_cal
                           where calendar_id not in ({0})", String.Join(", ", Postegresql_conn.Contracts_kalendar.Select(x => (String.Format("'{0}'",x.Value))).ToArray())) }, "Calendar", cancellationToken);
                     }                   
@@ -112,9 +112,9 @@ namespace Confirm_server_by_Contracts
                 return returned;
             }
             catch (Exception e)
-            {
-                Steps_executor.Step_error("calendar_updt");
+            {                
                 Loger.Log("Error in import Calendar object:" + e);
+                Steps_executor.Step_error("calendar_updt");
                 return 1;
             }
         }
@@ -136,8 +136,7 @@ namespace Confirm_server_by_Contracts
                                 to_date(work_day) work_day,
                                 day_type,
                                 working_time,
-                                working_periods,
-                                objid,
+                                working_periods,                               
                                 objversion 
                             FROM 
                                 ifsapp.work_time_counter 
@@ -150,8 +149,7 @@ namespace Confirm_server_by_Contracts
             public DateTime Work_day { get; set; }
             public string Day_type { get; set; }
             public double Working_time { get; set; }
-            public int Working_periods { get; set; }
-            public string Objid { get; set; }
+            public int Working_periods { get; set; }            
             public string Objersion { get; set; }
             public int CompareTo(Calendar_row other)
             {
@@ -179,8 +177,7 @@ namespace Confirm_server_by_Contracts
             foreach (Calendar_row row in source)
             {
                 row.Calendar_id = row.Calendar_id.LimitDictLen("calendar_id", calendar_len);
-                row.Day_type = row.Day_type.LimitDictLen("day_type", calendar_len);
-                row.Objid = row.Objid.LimitDictLen("objid", calendar_len);
+                row.Day_type = row.Day_type.LimitDictLen("day_type", calendar_len);                
                 row.Objersion = row.Objersion.LimitDictLen("objersion", calendar_len);               
             }
             return source;

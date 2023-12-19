@@ -13,6 +13,7 @@ using System.Threading;
 using System.Diagnostics.Metrics;
 using System.Security.Cryptography.X509Certificates;
 using System.Runtime.InteropServices;
+using System.Diagnostics;
 
 namespace DB_Conect
 {
@@ -28,22 +29,28 @@ namespace DB_Conect
             {"refcursor",NpgsqlTypes.NpgsqlDbType.Refcursor },
             {"char",NpgsqlTypes.NpgsqlDbType.Char },
             {"varchar",NpgsqlTypes.NpgsqlDbType.Varchar },
+            {"character varying",NpgsqlTypes.NpgsqlDbType.Varchar },
             {"text_nonbinary",NpgsqlTypes.NpgsqlDbType.Text },
             {"text",NpgsqlTypes.NpgsqlDbType.Text },
             {"bytea",NpgsqlTypes.NpgsqlDbType.Bytea },
             {"bit",NpgsqlTypes.NpgsqlDbType.Bit },
             {"bool",NpgsqlTypes.NpgsqlDbType.Boolean },
+            {"boolean",NpgsqlTypes.NpgsqlDbType.Boolean },
             {"int2",NpgsqlTypes.NpgsqlDbType.Smallint },
             {"int4",NpgsqlTypes.NpgsqlDbType.Integer },
+            {"integer",NpgsqlTypes.NpgsqlDbType.Integer},
             {"int8",NpgsqlTypes.NpgsqlDbType.Bigint },
             {"float4",NpgsqlTypes.NpgsqlDbType.Real },
             {"float8",NpgsqlTypes.NpgsqlDbType.Double },
+            {"double precision",NpgsqlTypes.NpgsqlDbType.Double },
             {"numeric",NpgsqlTypes.NpgsqlDbType.Numeric },
             {"money",NpgsqlTypes.NpgsqlDbType.Money },
             {"date",NpgsqlTypes.NpgsqlDbType.Date },
             {"timetz",NpgsqlTypes.NpgsqlDbType.TimeTz },
             {"time",NpgsqlTypes.NpgsqlDbType.Time },
             {"timestamptz",NpgsqlTypes.NpgsqlDbType.TimestampTz },
+            {"timestamp with time zone",NpgsqlTypes.NpgsqlDbType.TimestampTz },
+            {"timestamp without time zone",NpgsqlTypes.NpgsqlDbType.Timestamp },
             {"timestamp",NpgsqlTypes.NpgsqlDbType.Timestamp },
             {"point",NpgsqlTypes.NpgsqlDbType.Point },
             {"box",NpgsqlTypes.NpgsqlDbType.Box },
@@ -133,7 +140,8 @@ namespace DB_Conect
         /// <param name="maxLength">The maximum limit of the string to return.</param>
         public static string LimitLength(this string source, int maxLength)
         {
-            if (source.Length <= maxLength)
+
+            if (source == null || source.Length <= maxLength)
             {
                 return source;
             }
@@ -149,7 +157,7 @@ namespace DB_Conect
         /// <returns></returns>
         public static string LimitDictLen(this string source, string name, Dictionary<string, int> field_val)
         {
-            if (field_val.ContainsKey(name) & field_val[name] != 0)
+            if (field_val.ContainsKey(name) && field_val[name] != 0)
             {
                 return source.LimitLength(field_val[name]);
             }
@@ -333,7 +341,8 @@ namespace DB_Conect
                     ApplicationName = ApplicationName,
                     Username = Username,
                     Password = Password,
-                    Database = Database
+                    Database = Database,
+                    IncludeErrorDetail = true
                 };
             }
             catch
@@ -408,7 +417,7 @@ namespace DB_Conect
         {
             bool not_started_pending = true;
             bool on_error = false;
-            Loger.Log(String.Format("Step {0} is frozen and will wait for end another process'es => {1}", step, task_list));
+            Loger.Log(String.Format("Step {0} is frozen and will wait for end another process'es => {1}", step, string.Join(",", task_list); ));
             while (not_started_pending == true & on_error == false)
             {
                 not_started_pending = false;
@@ -548,6 +557,7 @@ namespace DB_Conect
         public static void Log(string txt)
         {
             txt = String.Format("{0} => {1}", Time_stamp(), txt);
+            Debug.WriteLine(txt);
             Log_rek = Log_rek + Environment.NewLine + txt;
         }
         private static string Time_stamp()
