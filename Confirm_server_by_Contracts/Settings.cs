@@ -417,7 +417,7 @@ namespace DB_Conect
         {
             bool not_started_pending = true;
             bool on_error = false;
-            Loger.Log(String.Format("Step {0} is frozen and will wait for end another process'es => {1}", step, string.Join(",", task_list); ));
+            Loger.Log(String.Format("Step {0} is frozen and will wait for end another process'es => {1}", step, string.Join(",", task_list)));
             while (not_started_pending == true & on_error == false)
             {
                 not_started_pending = false;

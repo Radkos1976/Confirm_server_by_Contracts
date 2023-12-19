@@ -621,7 +621,7 @@ namespace DB_Conect
                     using (NpgsqlConnection conO = new NpgsqlConnection(npC))
                     {
                         await conO.OpenAsync(cancellationToken);
-                        using (NpgsqlTransaction npgsqlTransaction = conO.BeginTransaction())
+                        using (NpgsqlTransaction npgsqlTransaction = conO.BeginTransaction(IsolationLevel.ReadCommitted))
                         {
                             using (NpgsqlCommand cmd = new NpgsqlCommand("" +
                             @"UPDATE public.datatbles 
