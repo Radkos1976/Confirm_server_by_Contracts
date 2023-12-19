@@ -15,7 +15,7 @@ namespace Confirm_server_by_Contracts
             Loger.Srv_start();
             CancellationToken active_token = Steps_executor.cts.Token;
             Parallel.Invoke(
-                new ParallelOptions { MaxDegreeOfParallelism = 30 },
+                new ParallelOptions { MaxDegreeOfParallelism = 50 },
                 new Action[]
                 {
                     () =>
@@ -27,42 +27,45 @@ namespace Confirm_server_by_Contracts
                         Parallel.Invoke(
                            async () =>
                            {
-                                only_616 = await part_616.Get_source_list("^616.*", true, "Demands for 616 ", active_token);
+                               only_616 = await part_616.Get_source_list("^616.*", true, "Demands for 616 ", active_token);
                                Steps_executor.End_step("Demands 616 ");
-                           });                      
-
-                        Steps_executor.Register_step("Inventory part 616 ");
-                        Inventory_part inventory_616 = new Inventory_part("^616.*", true, part_616.limit_part_no);
-                        List<Inventory_part.Inventory_part_row>  pstgr = new List<Inventory_part.Inventory_part_row>();
-                        List<Inventory_part.Inventory_part_row>  oracle= new List<Inventory_part.Inventory_part_row>();
-                        Parallel.Invoke(
-                           async () =>
-                           {
-                               pstgr = await inventory_616.Get_PSTGR_List("Inventory part 616 ", active_token);
-                           },
-                           async () =>
-                           {
-                               oracle = await inventory_616.Get_Ora_list("Inventory part 616 ", active_token);
-                           }
-                       );
-                       Parallel.Invoke(
-                           async () =>
-                           {
-                             await inventory_616.Update_dataset(
-                            pstgr,
-                            oracle,
-                            "Inventory part 616 ",
-                            active_token);
-                            Steps_executor.End_step("Inventory part 616 ");
-                           });                        
-
-                        bool end_with_no_err = Steps_executor.Wait_for(new string[] { "Demands 616 ", "Inventory part 616 " }, "Main_loop 616 ", active_token);
-                        if (end_with_no_err)
+                           });
+                        bool end_with_no_err1 = Steps_executor.Wait_for(new string[] { "Demands 616 " }, "Inventory part 616 ", active_token);
+                        if (end_with_no_err1)
                         {
-                            Steps_executor.Register_step("Main_loop 616 ");
+                            Steps_executor.Register_step("Inventory part 616 ");
+                            Inventory_part inventory_616 = new Inventory_part("^616.*", true, part_616.limit_part_no);
+                            List<Inventory_part.Inventory_part_row>  pstgr = new List<Inventory_part.Inventory_part_row>();
+                            List<Inventory_part.Inventory_part_row>  oracle= new List<Inventory_part.Inventory_part_row>();
+                            Parallel.Invoke(
+                               async () =>
+                               {
+                                   pstgr = await inventory_616.Get_PSTGR_List("Inventory part 616 ", active_token);
+                               },
+                               async () =>
+                               {
+                                   oracle = await inventory_616.Get_Ora_list("Inventory part 616 ", active_token);
+                               }
+                           );
+                           Parallel.Invoke(
+                               async () =>
+                               {
+                                 await inventory_616.Update_dataset(
+                                    pstgr,
+                                    oracle,
+                                    "Inventory part 616 ",
+                                    active_token);
+                                    Steps_executor.End_step("Inventory part 616 ");
+                               });
 
-                            Steps_executor.End_step("Main_loop 616 ");
-                        }
+                            bool end_with_no_err = Steps_executor.Wait_for(new string[] { "Demands 616 ", "Inventory part 616 " }, "Main_loop 616 ", active_token);
+                            if (end_with_no_err)
+                            {
+                                Steps_executor.Register_step("Main_loop 616 ");
+
+                                Steps_executor.End_step("Main_loop 616 ");
+                            }
+                        }                        
                     },
                     () =>
                     {

@@ -570,12 +570,16 @@ namespace DB_Conect
                         var Tmp = await conO.GetSchemaAsync("Columns", new string[] { null, null, Table_name }, cancellationToken);
                         foreach (DataRow row in Tmp.Rows)
                         {
-                            Loger.Log(string.Format("Field Name {1} => Field Type {0}", row["data_type"].ToString(), row["column_name"].ToString()));
+                            Loger.Log(string.Format("CHecking Schema for {2} => Field Name {1} => Field Type {0}  => type field exist in Postgres_helpers.PostegresTyp {3}", row["data_type"].ToString(), row["column_name"].ToString(), Table_name, Postgres_helpers.PostegresTyp.Keys.Contains(row["data_type"].ToString())));
+                            if (!Postgres_helpers.PostegresTyp.Keys.Contains(row["data_type"].ToString()))
+                            {
+                                Loger.Log(string.Format("Error Please contact width developer  => Schema for {0} , Field Name {1} =>  Field Type dont exist in system dictionary Postgres_helpers.PostegresTyp  => {2}", Table_name, row["column_name"].ToString(), row["data_type"].ToString()));
+                            }
                             Npgsql_Schema_fields rw = new Npgsql_Schema_fields
                             {
                                 Field_name = row["column_name"].ToString(),
                                 DB_Col_number = Convert.ToInt32(row["ordinal_position"]) - 1,
-                                Field_type = Postgres_helpers.PostegresTyp[row["data_type"].ToString()],
+                                Field_type = Postgres_helpers.PostegresTyp.Keys.Contains(row["data_type"].ToString()) ? Postgres_helpers.PostegresTyp[row["data_type"].ToString()]: NpgsqlTypes.NpgsqlDbType.Varchar,
                                 Dtst_col = P_columns.ContainsKey(row["column_name"].ToString().ToLower()) ? P_columns[row["column_name"].ToString().ToLower()] : 10000,
                                 Char_max_len = row["character_maximum_length"].GetType() == typeof(int) ? (int)row["character_maximum_length"] : 0
                             };
