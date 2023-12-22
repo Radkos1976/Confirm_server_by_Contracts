@@ -14,6 +14,7 @@ using System.Diagnostics.Metrics;
 using System.Security.Cryptography.X509Certificates;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
+using System.Globalization;
 
 namespace DB_Conect
 {
@@ -261,6 +262,7 @@ namespace DB_Conect
         public static Dictionary<string, NpgsqlConnectionStringBuilder> Connection_pool {get; set;} = new Dictionary<string, NpgsqlConnectionStringBuilder>();
         public static string[] Contract_lst {  get; set; }
         public static Dictionary<string, string> Contracts_kalendar { get; set; } = new Dictionary<string, string>();
+        public static Dictionary<string, string> Kalendar_eunm { get; set; } = new Dictionary< string, string>();
         private static string Host { get; set; }
         private static int Port { get; set; }
         private static int CommandTimeout { get; set; }
@@ -363,6 +365,10 @@ namespace DB_Conect
                         Kalendar_name = res.XKalendar_name;
                     }
                     Contracts_kalendar.Add(decendant, Kalendar_name);
+                    if (!Kalendar_eunm.ContainsKey(Kalendar_name))
+                    {
+                        Kalendar_eunm.Add(Kalendar_name, Convert.ToString(Kalendar_eunm.Count() + 1));
+                    }
                 }                
             }         
             return (Conn_set, Contracts);

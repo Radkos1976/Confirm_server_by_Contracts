@@ -137,6 +137,17 @@ namespace Confirm_server_by_Contracts
                             
         public class Simple_demands_row : IEquatable<Simple_demands_row>, IComparable<Simple_demands_row>
         {
+            public string _Id
+            {
+                get
+                {
+                    return string.Format("{0}_{1}_{2}", Part_no, Contract, Date_required);
+                }
+                set
+                {
+
+                }
+            }
             public string Part_no { get; set; }
             public string Contract {  get; set; }
             public DateTime Date_required {  get; set; }
@@ -146,7 +157,7 @@ namespace Confirm_server_by_Contracts
             public double QTY_DEMAND_DOP { get; set; }
             public DateTime Next_day { get; set; } = DateTime.Now;
             public long Chk_sum { get; set; }
-
+            
             public int CompareTo(Simple_demands_row other)
             {
                 if (other == null)
@@ -154,13 +165,8 @@ namespace Confirm_server_by_Contracts
                     return 1;
                 }
                 else
-                {
-                    int main = this.Part_no.CompareTo(other.Part_no);
-                    if (main != 0)
-                    {
-                        return main;
-                    }
-                    return this.Contract.CompareTo(other.Contract);
+                {                   
+                    return this._Id.CompareTo(other._Id);
                 }
             }
             /// <summary>
@@ -171,7 +177,7 @@ namespace Confirm_server_by_Contracts
             public bool Equals(Simple_demands_row other)
             {
                 if (other == null) return false;
-                return (this.Part_no.Equals(other.Part_no) && this.Contract.Equals(other.Contract));
+                return this._Id.Equals(other._Id) ;
             }
         }
     }

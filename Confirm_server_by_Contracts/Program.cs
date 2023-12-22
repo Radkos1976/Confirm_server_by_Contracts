@@ -69,15 +69,15 @@ namespace Confirm_server_by_Contracts
                     },
                     () =>
                     {
-                        //  migrate customer orders
+                        //  migrate customer orders                        
                         Cust_orders cust_Orders = new Cust_orders(true, active_token);
-                        cust_Orders = null;
+                        cust_Orders = null;                        
                     },
                     () =>
                     {
-                        // migrate all calendars
+                        // migrate all calendars                        
                         Calendar calendar = new Calendar(true, active_token);
-                        calendar = null;
+                        calendar = null;                        
                     },
                     () =>
                     {

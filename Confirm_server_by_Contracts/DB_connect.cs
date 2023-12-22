@@ -431,8 +431,8 @@ namespace DB_Conect
                     }
                     if (ID.Length > found.Count)
                     {
-                        throw new Exception(String.Format("Some Parameters of ID_column like field name:{0} have fields name width no existence in DataSet", ID_column));
-                    }
+                        throw new Exception(String.Format("Task {1},Some Parameters of ID_column like field name:{0} have fields name width no existence in DataSet", ID_column, Task_name));
+                    }                    
                     counter = 0;
                     int max_old_rows = Old_list.Count;
                     bool add_Record = false;
@@ -444,15 +444,17 @@ namespace DB_Conect
                         }
                         if (max_old_rows > counter)
                         {
-                            while (Compare_rows(rows, Old_list[counter], ID, Accessors, P_types) == 1)
+                            int compare = Compare_rows(rows, Old_list[counter], ID, Accessors, P_types);
+                            while (compare == 1)
                             {
                                 _operDEl.Add(Old_list[counter]);
                                 counter++;
+                                compare = Compare_rows(rows, Old_list[counter], ID, Accessors, P_types);
                                 if (max_old_rows <= counter) { break; }
                             }
                             if (max_old_rows > counter)
-                            {
-                                if (Compare_rows(rows, Old_list[counter], ID, Accessors, P_types) == 0)
+                            {                               
+                                if (compare == 0)
                                 {
                                     bool changed = false;
                                     int col = 0;
@@ -529,8 +531,7 @@ namespace DB_Conect
                         }
                         if (add_Record)
                         {
-                            _operINS.Add(rows);
-                            counter++;
+                            _operINS.Add(rows);                           
                             add_Record = false;
                         }
                     }
@@ -540,6 +541,7 @@ namespace DB_Conect
                         Delete = _operDEl,
                         Update = _operMOD
                     };
+                    Loger.Log(string.Format("Found modfications in Task {0}: INSERT {1}, DELETE {2}, UPDATE {3}", Task_name, _operINS.Count(), _operDEl.Count(), _operMOD.Count()));
                     modyfications = dataset;
                     return modyfications;
                 }
@@ -547,7 +549,7 @@ namespace DB_Conect
             }
             catch (Exception e)
             {
-                Loger.Log(String.Format("Error in compare procedure : {0}", e));
+                Loger.Log(String.Format("Error in compare procedure for Task {1} : {0}", e, Task_name));
                 Steps_executor.Step_error(Task_name);                
                 return modyfications;
             }
@@ -804,7 +806,10 @@ namespace DB_Conect
                             {
                                 npgsqlTransaction.Rollback();
                             }
-                            else { npgsqlTransaction.Commit(); }                            
+                            else 
+                            {                                 
+                                npgsqlTransaction.Commit();                               
+                            }                            
                         }
                     }
                     return 0;

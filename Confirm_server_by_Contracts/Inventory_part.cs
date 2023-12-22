@@ -32,8 +32,8 @@ namespace Confirm_server_by_Contracts
         }
         public async Task<int> Update_dataset(List<Inventory_part_row> pstgrdtset, List<Inventory_part_row> oradtset,string Task_name, CancellationToken cancellationToken)
         {
-            Changes_List<Inventory_part_row> tmp = rw.Changes(pstgrdtset, oradtset, new[] { "note_id" }, new[] { "note_id" }, "note_id", Task_name, cancellationToken);
-            int result = await PSTRG_Changes_to_dataTable(tmp, "mag", new[] { "note_id" }, null, null, Task_name, cancellationToken);
+            Changes_List<Inventory_part_row> tmp = rw.Changes(pstgrdtset, oradtset, new[] { "_id" }, new[] { "indeks", "contract" }, "", Task_name, cancellationToken);
+            int result = await PSTRG_Changes_to_dataTable(tmp, "mag", new[] { "indeks", "contract" }, null, null, Task_name, cancellationToken);
             return result;
         }
             
@@ -84,7 +84,18 @@ namespace Confirm_server_by_Contracts
 
 
         public class Inventory_part_row : IEquatable<Inventory_part_row>, IComparable<Inventory_part_row>
-        {           
+        {
+            public string _Id
+            {
+                get
+                {
+                    return string.Format("{0}_{1}", Indeks, Contract);
+                }
+                set
+                {
+
+                }
+            }
             public string Indeks { get; set; }
             public string Contract { get; set; }
             public string Opis { get; set; }
@@ -98,7 +109,7 @@ namespace Confirm_server_by_Contracts
             public double Inventory_value { get; set; }
             public long Note_id { get; set; }
 
-
+            
             /// <summary>
             /// default Comparer by Custid field
             /// </summary>
@@ -112,19 +123,14 @@ namespace Confirm_server_by_Contracts
                 }
                 else
                 {
-                    // change main atribute 
-                    // TO DOO: for beter performance whe need to check existence of note_id in other tables (transactions / demands) integer values  are  beter
-                    //int prim = this.Note_id.CompareTo(other.Note_id);
-                    int prim = this.Indeks.CompareTo(other.Indeks);
-                    if (prim != 0) { return prim; }
-                    return this.Contract.CompareTo(other.Contract);
+                    return this._Id.CompareTo(other._Id);
                 }
             }
             public bool Equals(Inventory_part_row other)
             {
                 if (other == null) return false;
                 // return (this.Note_id.Equals(other.Note_id) && this.Contract.Equals(other.Contract));
-                return (this.Indeks.Equals(other.Indeks) && this.Contract.Equals(other.Contract));
+                return this._Id.Equals(other._Id);
             }
         }
         public List<Inventory_part_row> Check_length(List<Inventory_part_row> source, CancellationToken cancellationToken)

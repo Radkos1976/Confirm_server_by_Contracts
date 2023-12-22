@@ -101,10 +101,10 @@ namespace Confirm_server_by_Contracts
                                 list_pstgr = await Get_PSTGR_List(Postegresql_conn.Contracts_kalendar[contract], cancellationToken);
                             }
                         );
-                        Changes_List<Calendar_row> tmp = rw.Changes(list_pstgr, list_ora, new[] { "calendar_id", "work_day", "counter" }, new[] { "calendar_id" }, "calendar_id", "Calendar", cancellationToken);
+                        Changes_List<Calendar_row> tmp = rw.Changes(list_pstgr, list_ora, new[] { "_id" }, new[] { "calendar_id", "work_day" }, "", "Calendar", cancellationToken);
                         list_ora = null;
                         list_pstgr = null;
-                        returned += await PSTRG_Changes_to_dataTable(tmp, "work_cal", new[] { "objid" }, null, new[] {
+                        returned += await PSTRG_Changes_to_dataTable(tmp, "work_cal", new[] { "calendar_id", "work_day" }, null, new[] {
                         String.Format(@"Delete from public.work_cal
                           where calendar_id not in ({0})", String.Join(", ", Postegresql_conn.Contracts_kalendar.Select(x => (String.Format("'{0}'",x.Value))).ToArray())) }, "Calendar", cancellationToken);
                     }                   
@@ -143,14 +143,26 @@ namespace Confirm_server_by_Contracts
                             WHERE CALENDAR_ID='{0}'", calendar_id), "Calendar", cancellationToken);
 
         public class Calendar_row : IEquatable<Calendar_row>, IComparable<Calendar_row>
-        { 
+        {  
+            public string _Id
+            {
+                get
+                {
+                    return string.Format("{0}_{1}", Work_day.Date, Calendar_id == null ? null : Postegresql_conn.Kalendar_eunm[Calendar_id]);
+                }
+                set 
+                { 
+                
+                }
+            }
             public string Calendar_id { get; set; }
             public int Counter { get; set; }
             public DateTime Work_day { get; set; }
             public string Day_type { get; set; }
             public double Working_time { get; set; }
             public int Working_periods { get; set; }            
-            public string Objersion { get; set; }
+            public string Objersion { get; set; }        
+            
             public int CompareTo(Calendar_row other)
             {
                 if (other == null)
@@ -159,16 +171,14 @@ namespace Confirm_server_by_Contracts
                 }
                 else
                 {
-                    int prim = this.Counter.CompareTo(other.Counter);
-                    if (prim != 0) { return prim; }
-                    return this.Calendar_id.CompareTo(other.Calendar_id);
+                    return this._Id.CompareTo(other._Id);
                 }
             }
            
             public bool Equals(Calendar_row other)
             {
                 if (other == null) return false;
-                return (this.Counter.Equals(other.Counter) && this.Calendar_id.Equals(other.Calendar_id));
+                return this._Id.Equals(other._Id);
             }
         }
         public List<Calendar_row> Check_length(List<Calendar_row> source)
