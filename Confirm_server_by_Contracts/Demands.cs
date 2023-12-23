@@ -9,7 +9,7 @@ using static Confirm_server_by_Contracts.Inventory_part;
 
 namespace Confirm_server_by_Contracts
 {
-    public class Simple_Demands: Update_pstgr_from_Ora<Simple_Demands.Simple_demands_row>
+    public class Simple_Demands : Update_pstgr_from_Ora<Simple_Demands.Simple_demands_row>
     {
         private readonly Update_pstgr_from_Ora<Simple_demands_row> rw;
 
@@ -18,8 +18,8 @@ namespace Confirm_server_by_Contracts
         {
             rw = new Update_pstgr_from_Ora<Simple_demands_row>("MAIN");
         }
-            
-        public async Task<List<Simple_demands_row>> Get_source_list(string regex, bool create_tuple_off, string transaction_name, CancellationToken cancellationToken) => Add_field_Next_day( await rw.Get_Ora("" +
+
+        public async Task<List<Simple_demands_row>> Get_source_list(string regex, bool create_tuple_off, string transaction_name, CancellationToken cancellationToken) => Add_field_Next_day(await rw.Get_Ora("" +
             string.Format(@"SELECT 
                 PART_NO,
                 contract,
@@ -126,28 +126,17 @@ namespace Confirm_server_by_Contracts
                 if (create_tuple_off)
                 {
                     bool tuple_exist = limit_part_no.Any(m => m.Item1 == row.Part_no & m.Item2 == row.Contract);
-                    if (!tuple_exist) 
+                    if (!tuple_exist)
                     {
                         limit_part_no.Add(new Tuple<string, string>(row.Part_no, row.Contract));
                     }
                 }
             }
             return source;
-        }
+        }       
                             
         public class Simple_demands_row : IEquatable<Simple_demands_row>, IComparable<Simple_demands_row>
-        {
-            public string _Id
-            {
-                get
-                {
-                    return string.Format("{0}_{1}_{2}", Part_no, Contract, Date_required);
-                }
-                set
-                {
-
-                }
-            }
+        {           
             public string Part_no { get; set; }
             public string Contract {  get; set; }
             public DateTime Date_required {  get; set; }
@@ -165,8 +154,12 @@ namespace Confirm_server_by_Contracts
                     return 1;
                 }
                 else
-                {                   
-                    return this._Id.CompareTo(other._Id);
+                {  
+                    int res = this.Part_no.CompareTo(other.Part_no);
+                    if (res != 0) { return res; }
+                    int nex_res = this.Contract.CompareTo(other.Contract);
+                    if (nex_res != 0) { return nex_res; }
+                    return this.Date_required.CompareTo(other.Date_required);
                 }
             }
             /// <summary>
@@ -177,7 +170,7 @@ namespace Confirm_server_by_Contracts
             public bool Equals(Simple_demands_row other)
             {
                 if (other == null) return false;
-                return this._Id.Equals(other._Id) ;
+                return this.Part_no.Equals(other.Part_no) && this.Contract.Equals(other.Contract) && this.Date_required.Equals(other.Date_required);
             }
         }
     }

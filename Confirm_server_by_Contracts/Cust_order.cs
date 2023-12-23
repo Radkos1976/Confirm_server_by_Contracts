@@ -99,7 +99,7 @@ namespace Confirm_server_by_Contracts
                 return await PSTRG_Changes_to_dataTable(tmp, "cust_ord", new[] { "id" }, null, new[] {
 
                     @"update public.cust_ord a
-                    SET zest =case when a.dop_connection_db = 'AUT' then
+                    SET zest = case when a.dop_connection_db = 'AUT' then
                      case when a.line_state= 'Aktywowana' then
                          case when dop_made = 0 then
                             case when substring(a.part_no,1,1) not in ('5','6','2') 
@@ -181,7 +181,7 @@ namespace Confirm_server_by_Contracts
                     Promised_Delivery_Date - Delivery_Leadtime PROM_DATE, 
                     To_Char(Promised_Delivery_Date - Delivery_Leadtime, 'IYYYIW') PROM_WEEK, 
                     LOAD_ID,
-                    ifsapp.CUST_ORDER_LOAD_LIST_API.Get_Ship_Date(LOAD_ID) SHIP_DATE, 
+                    to_date(ifsapp.CUST_ORDER_LOAD_LIST_API.Get_Ship_Date(LOAD_ID)) SHIP_DATE, 
                     nvl(a.PART_NO, a.CATALOG_NO) PART_NO,
                     nvl(ifsapp.inventory_part_api.Get_Description(CONTRACT, a.PART_NO), a.CATALOG_DESC) Descr,
                     a.CONFIGURATION_ID CONFIGURATION, 

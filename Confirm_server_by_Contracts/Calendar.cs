@@ -101,10 +101,10 @@ namespace Confirm_server_by_Contracts
                                 list_pstgr = await Get_PSTGR_List(Postegresql_conn.Contracts_kalendar[contract], cancellationToken);
                             }
                         );
-                        Changes_List<Calendar_row> tmp = rw.Changes(list_pstgr, list_ora, new[] { "_id" }, new[] { "calendar_id", "work_day" }, "", "Calendar", cancellationToken);
+                        Changes_List<Calendar_row> tmp = rw.Changes(list_pstgr, list_ora, new[] { "work_day", "calendar_id" }, new[] { "work_day", "calendar_id" }, "", "Calendar", cancellationToken);
                         list_ora = null;
                         list_pstgr = null;
-                        returned += await PSTRG_Changes_to_dataTable(tmp, "work_cal", new[] { "calendar_id", "work_day" }, null, new[] {
+                        returned += await PSTRG_Changes_to_dataTable(tmp, "work_cal", new[] { "work_day", "calendar_id" }, null, new[] {
                         String.Format(@"Delete from public.work_cal
                           where calendar_id not in ({0})", String.Join(", ", Postegresql_conn.Contracts_kalendar.Select(x => (String.Format("'{0}'",x.Value))).ToArray())) }, "Calendar", cancellationToken);
                     }                   
@@ -144,17 +144,6 @@ namespace Confirm_server_by_Contracts
 
         public class Calendar_row : IEquatable<Calendar_row>, IComparable<Calendar_row>
         {  
-            public string _Id
-            {
-                get
-                {
-                    return string.Format("{0}_{1}", Work_day.Date, Calendar_id == null ? null : Postegresql_conn.Kalendar_eunm[Calendar_id]);
-                }
-                set 
-                { 
-                
-                }
-            }
             public string Calendar_id { get; set; }
             public int Counter { get; set; }
             public DateTime Work_day { get; set; }
@@ -171,14 +160,16 @@ namespace Confirm_server_by_Contracts
                 }
                 else
                 {
-                    return this._Id.CompareTo(other._Id);
+                    int res = this.Work_day.CompareTo(other.Work_day);
+                    if (res != 0) { return res; }
+                    return this.Calendar_id.CompareTo(other.Calendar_id);
                 }
             }
            
             public bool Equals(Calendar_row other)
             {
                 if (other == null) return false;
-                return this._Id.Equals(other._Id);
+                return this.Work_day.Equals(other.Work_day) && this.Calendar_id.Equals(other.Calendar_id);
             }
         }
         public List<Calendar_row> Check_length(List<Calendar_row> source)

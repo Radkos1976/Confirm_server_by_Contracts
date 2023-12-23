@@ -449,8 +449,8 @@ namespace DB_Conect
                             {
                                 _operDEl.Add(Old_list[counter]);
                                 counter++;
-                                compare = Compare_rows(rows, Old_list[counter], ID, Accessors, P_types);
                                 if (max_old_rows <= counter) { break; }
+                                compare = Compare_rows(rows, Old_list[counter], ID, Accessors, P_types);                               
                             }
                             if (max_old_rows > counter)
                             {                               
@@ -572,7 +572,7 @@ namespace DB_Conect
                         var Tmp = await conO.GetSchemaAsync("Columns", new string[] { null, null, Table_name }, cancellationToken);
                         foreach (DataRow row in Tmp.Rows)
                         {
-                            Loger.Log(string.Format("CHecking Schema for {2} => Field Name {1} => Field Type {0}  => type field exist in Postgres_helpers.PostegresTyp {3}", row["data_type"].ToString(), row["column_name"].ToString(), Table_name, Postgres_helpers.PostegresTyp.Keys.Contains(row["data_type"].ToString())));
+                            //Loger.Log(string.Format("CHecking Schema for {2} => Field Name {1} => Field Type {0}  => type field exist in Postgres_helpers.PostegresTyp {3}", row["data_type"].ToString(), row["column_name"].ToString(), Table_name, Postgres_helpers.PostegresTyp.Keys.Contains(row["data_type"].ToString())));
                             if (!Postgres_helpers.PostegresTyp.Keys.Contains(row["data_type"].ToString()))
                             {
                                 Loger.Log(string.Format("Error Please contact width developer  => Schema for {0} , Field Name {1} =>  Field Type dont exist in system dictionary Postgres_helpers.PostegresTyp  => {2}", Table_name, row["column_name"].ToString(), row["data_type"].ToString()));
