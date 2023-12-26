@@ -43,7 +43,7 @@ namespace Confirm_server_by_Contracts
                         Inventory_part inventory_616_in_PSTGR = new Inventory_part("^616.*", true, null);
                         pstgr = await inventory_616_in_PSTGR.Get_PSTGR_List("Inventory part 616 presets ", active_token);
 
-                        (part_no_tup, part_no_zero_tup)  = inventory_616_in_PSTGR.Get_tuple_of_part_no(pstgr);
+                        (part_no_tup, part_no_zero_tup) = inventory_616_in_PSTGR.Get_tuple_of_part_no(pstgr);
                         if (part_no_tup.Count > 0)
                         {
                             inventory_616_in_PSTGR.limit_part_no  = part_no_tup;
@@ -62,6 +62,7 @@ namespace Confirm_server_by_Contracts
                     if (end_with_no_err1)
                     {
                         Inventory_part inventory_616 = new Inventory_part("^616.*", false, part_616.limit_part_no);
+                        part_616 = null;
                         oracle = inventory_616.Limit_in_and_create_Except(part_no_tup, part_no_zero_tup, oracle, false);
                         Parallel.Invoke(
                         async () =>
@@ -80,7 +81,7 @@ namespace Confirm_server_by_Contracts
                                 active_token);
                             Steps_executor.End_step("Inventory part 616 ");
                         });
-
+                        inventory_616 = null;
                         bool end_with_no_err = Steps_executor.Wait_for(new string[] { "Demands 616 ", "Inventory part 616 " }, "Main_loop 616 ", active_token);
                         if (end_with_no_err)
                         {
@@ -114,6 +115,7 @@ namespace Confirm_server_by_Contracts
                         Steps_executor.Register_step("Demands except 616 ");
                         no_616 = await part_except_616.Get_source_list("^(5|6(?!16)).*", false, "Demands except 616 ", active_token);
                         Steps_executor.End_step("Demands except 616 ");
+                        part_except_616 = null;
                     },
                     async () =>
                     {
@@ -124,6 +126,7 @@ namespace Confirm_server_by_Contracts
                             "Inventory part except 616 ",
                             active_token);
                         Steps_executor.End_step("Inventory part except 616 ");
+                        inventory_except_616 = null;
                     });
                     bool end_with_no_err = Steps_executor.Wait_for(new string[] { "Demands except 616 ", "Inventory part except 616 " }, "Main_loop except 616 ", active_token);
                     if (end_with_no_err)

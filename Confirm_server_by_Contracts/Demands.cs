@@ -1,10 +1,12 @@
 ﻿using DB_Conect;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
+using System.Security.Policy;
 using System.Threading;
 using System.Threading.Tasks;
-using static Confirm_server_by_Contracts.Inventory_part;
 
 
 namespace Confirm_server_by_Contracts
@@ -145,7 +147,7 @@ namespace Confirm_server_by_Contracts
             public double DEMAND_ZAM { get; set; }
             public double QTY_DEMAND_DOP { get; set; }
             public DateTime Next_day { get; set; } = DateTime.Now;
-            public long Chk_sum { get; set; }
+            public int Chk_sum { get; set; }
             
             public int CompareTo(Simple_demands_row other)
             {
@@ -174,11 +176,42 @@ namespace Confirm_server_by_Contracts
             }
         }
     }
-    public class Demands
+    public class Demands : Update_pstgr_from_Ora<Demands.Demands_row>
     {
-        public class Demands_row
+        public class Demands_row : IEquatable<Demands_row>, IComparable<Demands_row>
         {
+            public string Part_no { get; set; }
+            public DateTime Work_day { get; set; }
+            public int Expected_leadtime { get; set; }
+            public double Purch_qty { get; set; }
+            public double Qty_demand { get; set; }
+            public int Type_dmd { get; set; }
+            public double Balance { get; set; }
+            public double Bal_stock { get; set; }
+            public string Koor { get; set; }
+            public string Type { get; set; }
+            public DateTime Dat_shortage { get; set; }
+            public Guid Id { get; set; }
+            public double Chk_sum { get; set; }
+            public DateTime Objversion { get; set; }
+            public int Chksum { get; set; }
+            public bool InDB { get; set; }
+            public string Contract { get; set; }
 
+            public int CompareTo(Demands_row other)
+            {
+                int res = this.Part_no.CompareTo(other.Part_no);
+                if (res != 0) { return res; }
+                int nex_res = this.Contract.CompareTo(other.Contract);
+                if (nex_res != 0) { return nex_res; }
+                return this.Work_day.CompareTo(other.Work_day);
+            }
+
+            public bool Equals(Demands_row other)
+            {
+                if (other == null) return false;
+                return this.Part_no.Equals(other.Part_no) && this.Contract.Equals(other.Contract) && this.Work_day.Equals(other.Work_day);
+            }
         }
     }
 

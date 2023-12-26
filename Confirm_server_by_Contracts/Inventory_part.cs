@@ -1,9 +1,7 @@
 ﻿using DB_Conect;
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
 using System.Linq;
-using System.Runtime.Remoting.Messaging;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -39,7 +37,7 @@ namespace Confirm_server_by_Contracts
         }
         public async Task<int> Update_dataset(List<Inventory_part_row> pstgrdtset, List<Inventory_part_row> oradtset,string Task_name, CancellationToken cancellationToken)
         {
-            Changes_List<Inventory_part_row> tmp = rw.Changes(pstgrdtset, oradtset, new[] { "indeks", "contract" }, new[] { "indeks", "contract" }, "", Task_name, cancellationToken);
+            Changes_List<Inventory_part_row> tmp = rw.Changes(pstgrdtset, oradtset, new[] { "indeks", "contract" }, new[] { "indeks", "contract" }, null, Task_name, cancellationToken);
             int result = await PSTRG_Changes_to_dataTable(tmp, "mag", new[] { "indeks", "contract" }, null, null, Task_name, cancellationToken);
             return result;
         }
@@ -116,7 +114,8 @@ namespace Confirm_server_by_Contracts
             public double Mag { get; set; }
             public string Planner_buyer { get; set; }
             public string Rodzaj { get; set; }
-            public double Czas_dostawy { get; set; }
+            public int Czas_dostawy { get; set; }
+            public DateTime Data_gwarancji { get; set; }
             public double Weight_net { get; set; }
             public double Volume_net { get; set; }
             public double Inventory_value { get; set; }

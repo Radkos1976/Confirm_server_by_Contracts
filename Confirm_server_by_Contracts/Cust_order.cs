@@ -1,8 +1,6 @@
 ﻿using DB_Conect;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Metrics;
-using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -93,7 +91,7 @@ namespace Confirm_server_by_Contracts
                         list_pstgr = await Get_PSTGR_List(cancellationToken);
                     }
                 );
-                Changes_List<Orders_row> tmp = rw.Changes(list_pstgr, list_ora, new[] { "custid" }, new[] { "id", "zest", "objversion" }, "id", "cust_ord", cancellationToken);
+                Changes_List<Orders_row> tmp = rw.Changes(list_pstgr, list_ora, new[] { "custid" }, new[] { "id", "zest", "objversion" }, new[] { "id" }, "cust_ord", cancellationToken);
                 list_ora = null;
                 list_pstgr = null;
                 return await PSTRG_Changes_to_dataTable(tmp, "cust_ord", new[] { "id" }, null, new[] {

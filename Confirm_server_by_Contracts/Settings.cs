@@ -4,17 +4,9 @@ using System.Xml.Linq;
 using Npgsql;
 using Common;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
-using System.Runtime.CompilerServices;
 using System.Data;
-using System.Threading.Tasks;
-using System.Web;
 using System.Threading;
-using System.Diagnostics.Metrics;
-using System.Security.Cryptography.X509Certificates;
-using System.Runtime.InteropServices;
 using System.Diagnostics;
-using System.Globalization;
 
 namespace DB_Conect
 {
@@ -560,6 +552,7 @@ namespace DB_Conect
         /// String with data logs
         /// </summary>
         public static string Log_rek = "";
+        public static DateTime Started() { return serw_run; }
         public static void Log(string txt)
         {
             txt = String.Format("{0} => {1}", Time_stamp(), txt);

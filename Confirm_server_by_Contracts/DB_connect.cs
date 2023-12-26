@@ -8,7 +8,6 @@ using System.Reflection;
 using System.Collections.Concurrent;
 using System.Data;
 using System.Threading;
-using System.Xml;
 
 namespace DB_Conect
 {
@@ -394,7 +393,7 @@ namespace DB_Conect
         /// <param name="not_compare"></param>
         /// <param name="guid_col"></param>
         /// <returns>  </returns>
-        public Changes_List<T> Changes(List<T> Old_list, List<T> New_list, string[] ID_column, string[] not_compare, string guid_col, string Task_name, CancellationToken cancellationToken)
+        public Changes_List<T> Changes(List<T> Old_list, List<T> New_list, string[] ID_column, string[] not_compare, string[] guid_col, string Task_name, CancellationToken cancellationToken)
         {
             Changes_List<T> modyfications = new Changes_List<T>();
             try
@@ -406,7 +405,7 @@ namespace DB_Conect
                 List<int> found = new List<int>();
                 List<int> dont_check = new List<int>();
                 int counter = 0;
-                int guid_id = 10000;
+                List<int> guid_id = new List<int>();
                 Dictionary<int, Type> P_types = new Dictionary<int, Type>();
                 T Row = new T();
                 IPropertyAccessor[] Accessors = Row.GetType().GetProperties()
@@ -425,7 +424,10 @@ namespace DB_Conect
                         {
                             dont_check.Add(counter);
                         }
-                        if (pt_name == guid_col.ToLower()) { guid_id = counter; }
+                        if (guid_col.Contains(pt_name)) 
+                        { 
+                            guid_id.Add(counter); 
+                        }
                         P_types.Add(counter, p.PropertyInfo.PropertyType);
                         counter++;
                     }
@@ -500,9 +502,9 @@ namespace DB_Conect
                                         col = 0;
                                         foreach (var p in Accessors)
                                         {
-                                            if (guid_id == col)
+                                            if (guid_id.Contains(col))
                                             {
-                                                p.SetValue(Row, Accessors[guid_id].GetValue(Old_list[counter]));
+                                                p.SetValue(Row, Accessors[col].GetValue(Old_list[counter]));
                                             }
                                             else
                                             {

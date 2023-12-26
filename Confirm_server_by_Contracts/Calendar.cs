@@ -2,11 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using static Confirm_server_by_Contracts.Calendar;
-using static Confirm_server_by_Contracts.Cust_orders;
 
 namespace Confirm_server_by_Contracts
 {
@@ -14,7 +11,7 @@ namespace Confirm_server_by_Contracts
     /// Gets informations about active Calendars
     /// Class update its self
     /// </summary>       
-    public class Calendar : Update_pstgr_from_Ora<Calendar_row>
+    public class Calendar : Update_pstgr_from_Ora<Calendar.Calendar_row>
     {
         public bool Updated_on_init;
         public List<Calendar_row> Calendar_list;
@@ -101,7 +98,7 @@ namespace Confirm_server_by_Contracts
                                 list_pstgr = await Get_PSTGR_List(Postegresql_conn.Contracts_kalendar[contract], cancellationToken);
                             }
                         );
-                        Changes_List<Calendar_row> tmp = rw.Changes(list_pstgr, list_ora, new[] { "work_day", "calendar_id" }, new[] { "work_day", "calendar_id" }, "", "Calendar", cancellationToken);
+                        Changes_List<Calendar_row> tmp = rw.Changes(list_pstgr, list_ora, new[] { "work_day", "calendar_id" }, new[] { "work_day", "calendar_id" }, null, "Calendar", cancellationToken);
                         list_ora = null;
                         list_pstgr = null;
                         returned += await PSTRG_Changes_to_dataTable(tmp, "work_cal", new[] { "work_day", "calendar_id" }, null, new[] {
