@@ -1,42 +1,86 @@
 ﻿using DB_Conect;
 using Npgsql;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.ComTypes;
-using System.Security.Cryptography;
-using System.Security.Policy;
-using System.Text;
+using System.Net.Http.Headers;
+using System.Threading;
 using System.Threading.Tasks;
+
 using static Confirm_server_by_Contracts.Demands;
 using static Confirm_server_by_Contracts.Main_loop;
 
 
 namespace Confirm_server_by_Contracts
 {
-    public class Main_loop : Update_pstgr_from_Ora<Main_loop.Buyer_info_row>
+    public class Main_loop : Update_pstgr_from_Ora<Buyer_info_row>
     {
         private readonly Update_pstgr_from_Ora<Buyer_info_row> rw;
+        private readonly Update_pstgr_from_Ora<Demands_row> dmr;
 
         public Main_loop()
         {
             rw = new Update_pstgr_from_Ora<Buyer_info_row>("MAIN");
+            dmr = new Update_pstgr_from_Ora<Demands_row>("MAIN");
         }
 
-        public async Task<(List<Buyer_info_row>, List<Demands_row>)> Calculate (List<Simple_Demands.Simple_demands_row> DMND_ORA, List<Inventory_part.Inventory_part_row> StMag)
+        public  Task<int> Update_Main_Tables(string regex, string Task_name,
+            List<Simple_Demands.Simple_demands_row> Demands, List<Inventory_part.Inventory_part_row> Inv_Part,
+            CancellationToken cancellationToken)
+        {
+            List<Demands_row> DemandSet = new List<Demands_row>();
+            List<Buyer_info_row> DataSet = new List<Buyer_info_row>();
+
+            List<Demands_row> SourceDemandSet = new List<Demands_row>();
+            List<Buyer_info_row> SourceDataSet = new List<Buyer_info_row>();
+
+            Changes_List<Demands_row> Changes = new Changes_List<Demands_row>();
+            int returned = 0;
+            Parallel.Invoke(
+                async () =>
+                {
+                    (DataSet, DemandSet) = await Calculate(Demands, Inv_Part);
+                },
+                async() =>
+                {
+                    SourceDemandSet = await dmr.Get_PSTGR("" +
+                        string.Format(@"SELECT * FROM public.demands WHERE regexp_like(part_no, '{0}')", regex),
+                        Task_name, cancellationToken);
+                    Changes = dmr.Changes(SourceDemandSet, DemandSet,
+                        new[] { "part_no", "contract", "work_day" },
+                        new[] { "part_no", "contract", "work_day", "id", "dat_shortage" },
+                        new[] { "id", "dat_shortage" },
+                        Task_name, cancellationToken);
+                    returned += await dmr.PSTRG_Changes_to_dataTable(Changes, "demands",
+                        new[] { "id" }, null, null,
+                        Task_name, cancellationToken);
+                },
+                async() =>
+                {
+                    SourceDataSet = await rw.Get_PSTGR("" +
+                        string.Format(@"SELECT * FROM public.data WHERE regexp_like(indeks, '{0}')", regex),
+                        Task_name, cancellationToken);
+                    Changes_List<Buyer_info_row> Zak_changes = rw.Changes(SourceDataSet, DataSet,
+                        new[] { "indeks", "umiejsc", "data_dost" },
+                        new[] { "indeks", "umiejsc", "data_dost", "id", "Widoczny_od_dnia" },
+                        new[] { "id", "Widoczny_od_dnia" },
+                        Task_name, cancellationToken);
+                    returned += await rw.PSTRG_Changes_to_dataTable(Zak_changes, "data",
+                        new[] { "id" }, null, null,
+                        Task_name, cancellationToken);
+                    Zak_changes = null;
+                });
+                
+            return Task.FromResult(returned);
+        } 
+        public async Task<(List<Buyer_info_row>, List<Demands_row>)> Calculate (List<Simple_Demands.Simple_demands_row> DMND_ORA, 
+            List<Inventory_part.Inventory_part_row> StMag)
         {
             DateTime nullDAT = Loger.Serw_run.AddDays(1000);
             DateTime range_Dat = nullDAT;
+
             List<Buyer_info_row> DataSet = new List<Buyer_info_row>();
             List<Buyer_info_row> TmpDataSet = new List<Buyer_info_row>();
             List<Demands_row> DemandSet = new List<Demands_row>();
-            List<Shedul_row> Shedul = new List<Shedul_row>();
-            List<MShedul_row> MShedul = new List<MShedul_row>();
-            List<Eras_Shedul_row> Eras_Shedul = new List<Eras_Shedul_row>();
-
 
             using (NpgsqlConnection conB = new NpgsqlConnection(Postegresql_conn.Connection_pool["MAIN"].ToString()))
             {
@@ -174,7 +218,7 @@ namespace Confirm_server_by_Contracts
                     Bal_stock = Balane_mag,
                     Koor = KOOR,
                     Type = TYPE,
-                    Dat_shortage = start,
+                    Dat_shortage = Balane_mag < 0 ? start: (DateTime?)null,
                     Chk_sum = Chk_Sum,
                     Objversion = start,
                     Chksum = chksumD
@@ -207,7 +251,7 @@ namespace Confirm_server_by_Contracts
                             Wlk_dost = QTY_SUPPLY,
                             Data_dost = Date_reQ,
                             Typ_zdarzenia = state,
-                            Widoczny_od_dnia = start,
+                            Widoczny_od_dnia = state == "Opóźniona dostawa" ? start: (DateTime?)null,
                             Status_informacji = "NOT IMPLEMENT",
                             Refr_date = start,
                             Chk = Chk_Sum
@@ -439,7 +483,7 @@ namespace Confirm_server_by_Contracts
             public DateTime Data_braku { get; set; }
             public double Bil_dost_dzień { get; set; }
             public string Typ_zdarzenia { get; set; }
-            public DateTime Widoczny_od_dnia { get; set; }
+            public DateTime? Widoczny_od_dnia { get; set; }
             public double Sum_dost { get; set; }
             public double Sum_potrz { get; set; }
             public double Sum_dost_opóźnion { get; set; }

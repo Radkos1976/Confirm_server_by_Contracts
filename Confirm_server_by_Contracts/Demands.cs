@@ -1,10 +1,7 @@
 ﻿using DB_Conect;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
 using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
-using System.Security.Policy;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -190,7 +187,7 @@ namespace Confirm_server_by_Contracts
             public double Bal_stock { get; set; }
             public string Koor { get; set; }
             public string Type { get; set; }
-            public DateTime Dat_shortage { get; set; }
+            public DateTime? Dat_shortage { get; set; }
             public Guid Id { get; set; }
             public double Chk_sum { get; set; }
             public DateTime Objversion { get; set; }

@@ -104,6 +104,7 @@ namespace Confirm_server_by_Contracts
                         returned += await PSTRG_Changes_to_dataTable(tmp, "work_cal", new[] { "work_day", "calendar_id" }, null, new[] {
                         String.Format(@"Delete from public.work_cal
                           where calendar_id not in ({0})", String.Join(", ", Postegresql_conn.Contracts_kalendar.Select(x => (String.Format("'{0}'",x.Value))).ToArray())) }, "Calendar", cancellationToken);
+                        tmp = null;
                     }                   
                 }
                 return returned;

@@ -139,7 +139,7 @@ namespace Confirm_server_by_Contracts
                             left join
                             public.cust_ord b
                             on a.id=b.id
-                            where b.id is null)"}, "cust_ord", cancellationToken);
+                            where b.id is null)"}, "cust_ord", cancellationToken);                
             }
             catch (Exception e)
             {

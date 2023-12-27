@@ -502,7 +502,7 @@ namespace DB_Conect
                                         col = 0;
                                         foreach (var p in Accessors)
                                         {
-                                            if (guid_id.Contains(col))
+                                            if (guid_id.Contains(col) && Accessors[col].GetValue(Old_list[counter]) != null)
                                             {
                                                 p.SetValue(Row, Accessors[col].GetValue(Old_list[counter]));
                                             }
