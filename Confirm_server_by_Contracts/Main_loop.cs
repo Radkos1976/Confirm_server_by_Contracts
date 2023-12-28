@@ -125,6 +125,7 @@ namespace Confirm_server_by_Contracts
             Steps_executor.Register_step(string.Format("{0}:{1}", Task_name, "Parallel Calc"));
             bool end_with_no_err = Steps_executor.Wait_for(new string[] { string.Format("{0}:{1}", Task_name, "Calculate") }, string.Format("{0}:{1}", Task_name, "Parallel Calc"), cancellationToken);
             {
+                //new[] { string.Format("DELETE FROM public.ord_demands WHERE (part_no,contract) in ({0});", string.Join(",", Erase_dont_exist.Select(t => string.Format("( '{0}', '{1}')", t.Item1, t.Item2)))) }
                 Parallel.Invoke(
                 async () =>
                 {
@@ -164,7 +165,7 @@ namespace Confirm_server_by_Contracts
                         new[] { "id", "Widoczny_od_dnia" },
                         string.Format("{0}:{1}", Task_name, "Buyer_info"), cancellationToken);
                     returned += await rw.PSTRG_Changes_to_dataTable(Zak_changes, "data",
-                        new[] { "id" }, new[] { string.Format("DELETE FROM public.ord_demands WHERE (part_no,contract) in ({0});", string.Join(",", Erase_dont_exist.Select(t => string.Format("( '{0}', '{1}')", t.Item1, t.Item2)))) }, null,
+                        new[] { "id" }, null, null,
                         string.Format("{0}:{1}", Task_name, "Buyer_info"), cancellationToken);
                     Zak_changes = null;
                     Steps_executor.End_step(string.Format("{0}:{1}", Task_name, "Buyer_info"));
