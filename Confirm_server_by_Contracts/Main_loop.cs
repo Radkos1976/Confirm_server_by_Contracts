@@ -7,8 +7,9 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using static Confirm_server_by_Contracts.Demands;
+using static Confirm_server_by_Contracts.Inventory_part;
 using static Confirm_server_by_Contracts.Main_loop;
-
+using static Confirm_server_by_Contracts.Simple_Demands;
 
 namespace Confirm_server_by_Contracts
 {
@@ -181,8 +182,10 @@ namespace Confirm_server_by_Contracts
         /// <param name="DMND_ORA"></param>
         /// <param name="StMag"></param>
         /// <returns></returns>
-        public (List<Buyer_info_row>, List<Demands_row>) Calculate (List<Simple_Demands.Simple_demands_row> DMND_ORA, 
-            List<Inventory_part.Inventory_part_row> StMag, CancellationToken cancellationToken)
+        public (List<Buyer_info_row>, List<Demands_row>) Calculate (
+            List<Simple_demands_row> DMND_ORA, 
+            List<Inventory_part_row> StMag, 
+            CancellationToken cancellationToken)
         {
             DateTime nullDAT = Loger.Serw_run.AddDays(1000);            
 
@@ -227,12 +230,12 @@ namespace Confirm_server_by_Contracts
             int par = Convert.ToInt32(DateTime.Now.Date.ToOADate());
             if (par % 2 == 0) { par = 1; } else { par = 0; }
             DateTime DATNOW = DateTime.Now.Date;            
-            Simple_Demands.Simple_demands_row NEXT_row = DMND_ORA[0];
+            Simple_demands_row NEXT_row = DMND_ORA[0];
             
             DateTime rpt_short = nullDAT;
             DateTime dta_rap = nullDAT;
 
-            foreach (Simple_Demands.Simple_demands_row rek in DMND_ORA)
+            foreach (Simple_demands_row rek in DMND_ORA)
             { 
                 if (cancellationToken.IsCancellationRequested) { break; }
                 if (counter < max) { counter++; }
@@ -260,7 +263,7 @@ namespace Confirm_server_by_Contracts
                     rpt_short = nullDAT;
                     dta_rap = nullDAT;
                     
-                    while (Part_no != StMag[ind_mag].Indeks && Contract != StMag[ind_mag].Contract)
+                    while (!Part_no.Equals(StMag[ind_mag].Indeks) && !Contract.Equals(StMag[ind_mag].Contract))
                     {
                         Erase_dont_exist.Add(new Tuple<string, string>(StMag[ind_mag].Indeks, StMag[ind_mag].Contract));                        
                         ind_mag++;                        
