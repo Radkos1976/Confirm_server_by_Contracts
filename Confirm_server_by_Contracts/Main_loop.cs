@@ -308,6 +308,7 @@ namespace Confirm_server_by_Contracts
                 DemandSet.Add(new Demands_row
                 {
                     Part_no = Part_no,
+                    Contract = Contract,
                     Work_day = Date_reQ,
                     Expected_leadtime = leadtime,
                     Purch_qty = QTY_SUPPLY,
