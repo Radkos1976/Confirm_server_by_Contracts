@@ -608,7 +608,7 @@ namespace DB_Conect
         /// <returns></returns>
         public async Task<int> PSTRG_Changes_to_dataTable(Changes_List<T> _list, string name_table, string[] guid_col, string[] query_before, string[] query_after, string Task_name, CancellationToken cancellationToken)
         {
-
+            bool dblogon = false;
             try
             {
                 if (!cancellationToken.IsCancellationRequested)
@@ -631,25 +631,28 @@ namespace DB_Conect
                         await conO.OpenAsync(cancellationToken);
                         using (NpgsqlTransaction npgsqlTransaction = conO.BeginTransaction(IsolationLevel.ReadCommitted))
                         {
-                            using (NpgsqlCommand cmd = new NpgsqlCommand("" +
-                            @"UPDATE public.datatbles 
-                           SET start_update=current_timestamp, in_progress=true,updt_errors=false 
-                           WHERE table_name=@table_name", conO))
+                            if (dblogon)
                             {
-                                cmd.Parameters.Add("table_name", NpgsqlTypes.NpgsqlDbType.Varchar).Value = name_table;
-                                await cmd.PrepareAsync(cancellationToken);
-                                await cmd.ExecuteNonQueryAsync(cancellationToken);
-                            }
-                            if (query_before != null)
-                            {
-                                foreach (string comm in query_before)
+                                using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                                    @"UPDATE public.datatbles 
+                                   SET start_update=current_timestamp, in_progress=true,updt_errors=false 
+                                   WHERE table_name=@table_name", conO))
                                 {
-                                    using (NpgsqlCommand cmd = new NpgsqlCommand(comm, conO))
+                                    cmd.Parameters.Add("table_name", NpgsqlTypes.NpgsqlDbType.Varchar).Value = name_table;
+                                    await cmd.PrepareAsync(cancellationToken);
+                                    await cmd.ExecuteNonQueryAsync(cancellationToken);
+                                }
+                                if (query_before != null)
+                                {
+                                    foreach (string comm in query_before)
                                     {
-                                        await cmd.ExecuteNonQueryAsync(cancellationToken);
+                                        using (NpgsqlCommand cmd = new NpgsqlCommand(comm, conO))
+                                        {
+                                            await cmd.ExecuteNonQueryAsync(cancellationToken);
+                                        }
                                     }
                                 }
-                            }
+                            }                            
                             if (_list.Delete.Count > 0)
                             {
                                 string comand = "DELETE FROM " + name_table;
@@ -795,15 +798,18 @@ namespace DB_Conect
                                     }
                                 }
                             }
-                            using (NpgsqlCommand cmd = new NpgsqlCommand("" +
-                                                    @"UPDATE public.datatbles
+                            if (dblogon)
+                            {
+                                using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                                                   @"UPDATE public.datatbles
                                                     SET last_modify=current_timestamp, in_progress=false 
                                                     WHERE table_name=@table_name", conO))
-                            {
-                                cmd.Parameters.Add("table_name", NpgsqlTypes.NpgsqlDbType.Varchar).Value = name_table;
-                                await cmd.PrepareAsync(cancellationToken);
-                                await cmd.ExecuteNonQueryAsync(cancellationToken);
-                            }
+                                {
+                                    cmd.Parameters.Add("table_name", NpgsqlTypes.NpgsqlDbType.Varchar).Value = name_table;
+                                    await cmd.PrepareAsync(cancellationToken);
+                                    await cmd.ExecuteNonQueryAsync(cancellationToken);
+                                }
+                            }                               
                             if (cancellationToken.IsCancellationRequested)
                             {
                                 npgsqlTransaction.Rollback();
