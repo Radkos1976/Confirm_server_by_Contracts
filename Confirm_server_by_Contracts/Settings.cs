@@ -391,21 +391,21 @@ namespace DB_Conect
                 string contract = "";
                 Tuple<DateTime?, DateTime?> range = new Tuple<DateTime?, DateTime?>((DateTime?)null, (DateTime?)null);
                 while (!chk)
-                {                    
-                    (part_no, contract) = wait_task.Keys.First();
-                    range = wait_task[part_no, contract];
-                    chk = wait_task.ContainsKey(part_no, contract);
-                    if (chk)
+                {
+                    try
                     {
-                        try
+                        (part_no, contract) = wait_task.Keys.First();
+                        range = wait_task[part_no, contract];
+                        chk = wait_task.ContainsKey(part_no, contract);
+                        if (chk)
                         {
                             wait_task.Remove(part_no, contract);
                             on_work_task.Add(part_no, contract, range);
                         }
-                        catch 
-                        {
-                            chk = false;
-                        }
+                    }
+                    catch
+                    {
+                        chk = false;
                     }
                 }                   
                 
