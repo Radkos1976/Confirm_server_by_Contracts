@@ -300,7 +300,7 @@ namespace Confirm_server_by_Contracts
             Tuple<DateTime?, DateTime?> dates, string Task_name, CancellationToken cancellationToken) => await rw.Get_PSTGR("" +
                 string.Format("select * " +
                     "from public.ord_demands " +
-                    "where part_no = '{0}' AND CONTRACT = '{1}' DATE_REQUIRED between '{2}' and '{3}';", 
+                    "where part_no = '{0}' AND CONTRACT = '{1}' AND DATE_REQUIRED between '{2}' and '{3}';", 
                     part_no, contract, dates.Item1.ToString(), dates.Item2.ToString()),
                 Task_name, cancellationToken);
         /// <summary>
