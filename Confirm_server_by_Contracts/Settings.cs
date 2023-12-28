@@ -31,6 +31,7 @@ namespace DB_Conect
             {"bool",NpgsqlTypes.NpgsqlDbType.Boolean },
             {"boolean",NpgsqlTypes.NpgsqlDbType.Boolean },
             {"int2",NpgsqlTypes.NpgsqlDbType.Smallint },
+            {"smallint",NpgsqlTypes.NpgsqlDbType.Smallint },
             {"int4",NpgsqlTypes.NpgsqlDbType.Integer },
             {"integer",NpgsqlTypes.NpgsqlDbType.Integer},
             {"int8",NpgsqlTypes.NpgsqlDbType.Bigint },

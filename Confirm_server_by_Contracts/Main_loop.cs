@@ -244,8 +244,7 @@ namespace Confirm_server_by_Contracts
                     
                     while (Part_no != StMag[ind_mag].Indeks && Contract != StMag[ind_mag].Contract)
                     {
-                        Erase_dont_exist.Add(new Tuple<string, string>(StMag[ind_mag].Indeks, StMag[ind_mag].Contract));
-                        
+                        Erase_dont_exist.Add(new Tuple<string, string>(StMag[ind_mag].Indeks, StMag[ind_mag].Contract));                        
                         ind_mag++;                        
                     }
                     STAN_mag = StMag[ind_mag].Mag;
