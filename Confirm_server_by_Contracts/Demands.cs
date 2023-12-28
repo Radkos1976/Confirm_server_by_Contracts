@@ -242,9 +242,10 @@ namespace Confirm_server_by_Contracts
                 if (part_no != "")
                 {
                     string work = string.Format("Task_name {0}:{1}", part_no, contract);
-
+                    Steps_executor.Register_step(work);
                     result += await Update_dataset(part_no, contract, dates, work, cancellationToken);
                     Dataset_executor.Report_end(part_no, contract);
+                    Steps_executor.Wait_for(new string[] { work }, Task_name, cancellationToken);
                 }                
             }
             Steps_executor.End_step(Task_name);
@@ -280,9 +281,11 @@ namespace Confirm_server_by_Contracts
                 new[] { "dop", "dop_lin", "int_ord", "line_no", "rel_no", "id" }, 
                 new[] {"id"},
                 Task_name, cancellationToken);
-            return await rw.PSTRG_Changes_to_dataTable(Ch_dataset, "ord_demands",
+            int result = await rw.PSTRG_Changes_to_dataTable(Ch_dataset, "ord_demands",
                         new[] { "id" }, null, null,
                         Task_name, cancellationToken);
+            Steps_executor.End_step(Task_name);
+            return result;
         }
         /// <summary>
         /// Get Data from Postgresql by part_no,contract and date range's
