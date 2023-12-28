@@ -92,22 +92,22 @@ namespace Confirm_server_by_Contracts
                             Parallel.Invoke(
                             async () => {
                                 Order_Demands order_Demands_except1 = new Order_Demands();
-                                await order_Demands_except1.Update_from_executor("Main_loop except 616 ", active_token);
+                                await order_Demands_except1.Update_from_executor("Main_loop 616 Executor1", active_token);
                                 order_Demands_except1 = null;
                             },
                             async () => {
                                 Order_Demands order_Demands_except2 = new Order_Demands();
-                                await order_Demands_except2.Update_from_executor("Main_loop except 616 ", active_token);
+                                await order_Demands_except2.Update_from_executor("Main_loop 616 Executor2", active_token);
                                 order_Demands_except2 = null;
                             },
                             async () => {
                                 Order_Demands order_Demands_except3 = new Order_Demands();
-                                await order_Demands_except3.Update_from_executor("Main_loop except 616 ", active_token);
+                                await order_Demands_except3.Update_from_executor("Main_loop 616 Executor3", active_token);
                                 order_Demands_except3 = null;
                             },
                             async () => {
                                 Order_Demands order_Demands_except4 = new Order_Demands();
-                                await order_Demands_except4.Update_from_executor("Main_loop except 616 ", active_token);
+                                await order_Demands_except4.Update_from_executor("Main_loop 616 Executor4", active_token);
                                 order_Demands_except4 = null;
                             });
                             
@@ -172,22 +172,22 @@ namespace Confirm_server_by_Contracts
                         Parallel.Invoke(
                         async () => {
                             Order_Demands order_Demands_except1 = new Order_Demands();
-                            await order_Demands_except1.Update_from_executor("Main_loop except 616 ", active_token);
+                            await order_Demands_except1.Update_from_executor("Main_loop except 616 Executor1", active_token);
                             order_Demands_except1 = null;
                         },
                         async () => {
                             Order_Demands order_Demands_except2 = new Order_Demands();
-                            await order_Demands_except2.Update_from_executor("Main_loop except 616 ", active_token);
+                            await order_Demands_except2.Update_from_executor("Main_loop except 616 Executor2", active_token);
                             order_Demands_except2 = null;
                         },
                         async () => {
                             Order_Demands order_Demands_except3 = new Order_Demands();
-                            await order_Demands_except3.Update_from_executor("Main_loop except 616 ", active_token);
+                            await order_Demands_except3.Update_from_executor("Main_loop except 616 Executor3", active_token);
                             order_Demands_except3 = null;
                         },
                         async () => {
                             Order_Demands order_Demands_except4 = new Order_Demands();
-                            await order_Demands_except4.Update_from_executor("Main_loop except 616 ", active_token);
+                            await order_Demands_except4.Update_from_executor("Main_loop except 616 Executor4", active_token);
                             order_Demands_except4 = null;
                         });
                         Order_Demands order_Demands = new Order_Demands();
