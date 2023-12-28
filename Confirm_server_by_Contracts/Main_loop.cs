@@ -251,7 +251,6 @@ namespace Confirm_server_by_Contracts
                 if (counter < max) { counter++; }
                 // Zmiana obliczanego indeksu
                 bool var = !(rek.Part_no.Equals(Part_no) & rek.Contract.Equals(Contract));
-
                 if (var)
                 {
                     //type_DMD - maska bitowa 0001 - zlec ;0010 - DOP ;0100-zam-klient
