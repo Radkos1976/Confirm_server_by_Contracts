@@ -500,7 +500,7 @@ namespace Confirm_server_by_Contracts
                             owa_opt_lock.checksum(ROWID||QTY_SUPPLY||DATE_REQUIRED||STATUS_CODE) chksum 
                         FROM 
                             ifsapp.ARRIVED_PUR_ORDER_EXT 
-                        WHERE part_no = '{0}' AND CONTRACT = '{1}' AND DATE_REQUIRED between '{2}' and '{3}' ) a", part_no, contract, dates.Item1.Value.ToString("yyyy-MM-dd"), dates.Item2.Value.ToString("yyyy’-‘MM’-‘dd")),
+                        WHERE part_no = '{0}' AND CONTRACT = '{1}' AND DATE_REQUIRED between '{2}' and '{3}' ) a", part_no, contract, dates.Item1.Value.ToString("yyyy-MM-dd"), dates.Item2.Value.ToString("yyyy-MM-dd")),
                 Task_name, cancellationToken);
 
         public class Order_Demands_row : IEquatable<Order_Demands_row>, IComparable<Order_Demands_row>
