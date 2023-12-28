@@ -84,6 +84,10 @@ namespace Confirm_server_by_Contracts
                     }                                       
                 }                
             }
+            if (changes_List.Insert.Count > 0)
+            {
+                min_max(changes_List.Insert);
+            }
             min_max(changes_List.Insert);
             min_max(changes_List.Delete);
             min_max(changes_List.Update);
@@ -240,7 +244,7 @@ namespace Confirm_server_by_Contracts
                 if (cancellationToken.IsCancellationRequested) { break; }
                 if (counter < max) { counter++; }
                 // Zmiana obliczanego indeksu                
-                if (!rek.Part_no.Equals(Part_no) && !rek.Contract.Equals(Contract))
+                if (!rek.Part_no.Equals(Part_no) & !rek.Contract.Equals(Contract))
                 {
                     //type_DMD - maska bitowa 0001 - zlec ;0010 - DOP ;0100-zam-klient
                     TYP_dmd = 0;
@@ -263,7 +267,7 @@ namespace Confirm_server_by_Contracts
                     rpt_short = nullDAT;
                     dta_rap = nullDAT;
                     
-                    while (!Part_no.Equals(StMag[ind_mag].Indeks) && !Contract.Equals(StMag[ind_mag].Contract))
+                    while (!(Part_no.Equals(StMag[ind_mag].Indeks) & Contract.Equals(StMag[ind_mag].Contract)))
                     {
                         Erase_dont_exist.Add(new Tuple<string, string>(StMag[ind_mag].Indeks, StMag[ind_mag].Contract));                        
                         ind_mag++;                        
