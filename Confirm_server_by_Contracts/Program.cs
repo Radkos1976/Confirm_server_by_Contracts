@@ -89,9 +89,27 @@ namespace Confirm_server_by_Contracts
                             Steps_executor.Register_step("Main_loop 616 ");
                             Main_loop main_Loop = new Main_loop();
                             int result = await main_Loop.Update_Main_Tables("^616.*", "Main_loop 616 ", only_616, oracle, active_token);
-                            Order_Demands order_Demands = new Order_Demands();
-                            await order_Demands.Update_from_executor("Main_loop 616 ", active_token);
-                            order_Demands = null;
+                            Parallel.Invoke(
+                            async () => {
+                                Order_Demands order_Demands_except1 = new Order_Demands();
+                                await order_Demands_except1.Update_from_executor("Main_loop except 616 ", active_token);
+                                order_Demands_except1 = null;
+                            },
+                            async () => {
+                                Order_Demands order_Demands_except2 = new Order_Demands();
+                                await order_Demands_except2.Update_from_executor("Main_loop except 616 ", active_token);
+                                order_Demands_except2 = null;
+                            },
+                            async () => {
+                                Order_Demands order_Demands_except3 = new Order_Demands();
+                                await order_Demands_except3.Update_from_executor("Main_loop except 616 ", active_token);
+                                order_Demands_except3 = null;
+                            },
+                            async () => {
+                                Order_Demands order_Demands_except4 = new Order_Demands();
+                                await order_Demands_except4.Update_from_executor("Main_loop except 616 ", active_token);
+                                order_Demands_except4 = null;
+                            });
                             Steps_executor.End_step("Main_loop 616 ");
                         }
                     }
@@ -148,9 +166,30 @@ namespace Confirm_server_by_Contracts
                     bool end_with_no_err = Steps_executor.Wait_for(new string[] { "Demands except 616 ", "Inventory part except 616 " }, "Main_loop except 616 ", active_token);
                     if (end_with_no_err)
                     {
-                        Steps_executor.Register_step("Main_loop except 616 ");
+                        Steps_executor.Register_step("Main_loop except 616 ");                        
                         Main_loop main_Loop = new Main_loop();
                         int result = await main_Loop.Update_Main_Tables("^616.*", "Main_loop except 616 ", no_616, oracle, active_token);
+                        Parallel.Invoke(
+                        async () => {
+                            Order_Demands order_Demands_except1 = new Order_Demands();
+                            await order_Demands_except1.Update_from_executor("Main_loop except 616 ", active_token);
+                            order_Demands_except1 = null;
+                        },
+                        async () => {
+                            Order_Demands order_Demands_except2 = new Order_Demands();
+                            await order_Demands_except2.Update_from_executor("Main_loop except 616 ", active_token);
+                            order_Demands_except2 = null;
+                        },
+                        async () => {
+                            Order_Demands order_Demands_except3 = new Order_Demands();
+                            await order_Demands_except3.Update_from_executor("Main_loop except 616 ", active_token);
+                            order_Demands_except3 = null;
+                        },
+                        async () => {
+                            Order_Demands order_Demands_except4 = new Order_Demands();
+                            await order_Demands_except4.Update_from_executor("Main_loop except 616 ", active_token);
+                            order_Demands_except4 = null;
+                        });
                         Order_Demands order_Demands = new Order_Demands();
                         await order_Demands.Update_from_executor("Main_loop except 616 ", active_token);
                         order_Demands = null;
@@ -158,6 +197,7 @@ namespace Confirm_server_by_Contracts
                     }
                 }
             });
+
 
             Loger.Srv_stop();
             Steps_executor.cts.Dispose();
