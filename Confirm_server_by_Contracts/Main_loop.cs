@@ -2,7 +2,6 @@
 using Npgsql;
 using System;
 using System.Collections.Generic;
-using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -16,14 +15,87 @@ namespace Confirm_server_by_Contracts
     {
         private readonly Update_pstgr_from_Ora<Buyer_info_row> rw;
         private readonly Update_pstgr_from_Ora<Demands_row> dmr;
-
+        public DateTime Range_Dat { get; set; }
+        public Dictionary<string, string, DateTime> max_dates = new Dictionary<string, string, DateTime>();
         public Main_loop()
         {
             rw = new Update_pstgr_from_Ora<Buyer_info_row>("MAIN");
             dmr = new Update_pstgr_from_Ora<Demands_row>("MAIN");
+            using (NpgsqlConnection conB = new NpgsqlConnection(Postegresql_conn.Connection_pool["MAIN"].ToString()))
+            {
+                conB.Open();
+                {
+                    using (NpgsqlCommand cmd = new NpgsqlCommand("select date_fromnow(10);", conB))
+                    {
+                        Range_Dat = (DateTime)cmd.ExecuteScalar();
+                    }
+                }
+                conB.Close();
+            }
         }
+        /// <summary>
+        /// Fill Dataset executor with changes in Demands
+        /// </summary>
+        /// <param name="changes_List"></param>
+        /// <returns></returns>
+        private void Fill_executor(Changes_List<Demands_row> changes_List, CancellationToken cancellationToken)
+        {
+            Dictionary<string, string, Tuple<DateTime, DateTime>> range_dates = 
+                new Dictionary<string, string, Tuple<DateTime, DateTime>>();
+            void min_max(List<Demands_row> changes)
+            {
+                foreach (Demands_row demand in changes)
+                {
+                    if (cancellationToken.IsCancellationRequested) { break; }
+                    if (demand.Work_day <= max_dates[demand.Part_no, demand.Contract]) {
+                        if (range_dates.ContainsKey(demand.Part_no, demand.Contract))
+                        {
+                            (DateTime min_d, DateTime max_d) =
+                                range_dates[demand.Part_no, demand.Contract];
+                            int changed = 0;
+                            if (min_d > demand.Work_day)
+                            {
+                                changed = 1;
+                            }
+                            else if (max_d < demand.Work_day && max_dates[demand.Part_no, demand.Contract] <= demand.Work_day)
+                            {
+                                changed = 2;
+                            }
 
-        public  Task<int> Update_Main_Tables(string regex, string Task_name,
+                            if (changed > 0)
+                            {
+                                range_dates[demand.Part_no, demand.Contract] =
+                                    new Tuple<DateTime, DateTime>(changed == 1 ? demand.Work_day : min_d, changed == 2 ? demand.Work_day : max_d);
+                            }
+                        }
+                        else
+                        {
+                            range_dates.Add(demand.Part_no, demand.Contract,
+                                new Tuple<DateTime, DateTime>(demand.Work_day, demand.Work_day));
+                        }
+                    }                    
+                }                
+            }
+            min_max(changes_List.Insert);
+            min_max(changes_List.Delete);
+            min_max(changes_List.Update);
+            foreach(Tuple<string, string> set in range_dates.Keys)
+            {
+                (DateTime min_d, DateTime max_d) =
+                            range_dates[set.Item1, set.Item2];
+                Dataset_executor.Add_task(set.Item1, set.Item2, min_d, max_d);
+            }
+        }
+        /// <summary>
+        /// Update Tables => DEMANDS and DATA (Dataset for Buyers)
+        /// </summary>
+        /// <param name="regex"></param>
+        /// <param name="Task_name"></param>
+        /// <param name="Demands"></param>
+        /// <param name="Inv_Part"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public Task<int> Update_Main_Tables(string regex, string Task_name,
             List<Simple_Demands.Simple_demands_row> Demands, List<Inventory_part.Inventory_part_row> Inv_Part,
             CancellationToken cancellationToken)
         {
@@ -38,7 +110,7 @@ namespace Confirm_server_by_Contracts
             Parallel.Invoke(
                 async () =>
                 {
-                    (DataSet, DemandSet) = await Calculate(Demands, Inv_Part);
+                    (DataSet, DemandSet) = await Calculate(Demands, Inv_Part, cancellationToken);
                 },
                 async() =>
                 {
@@ -50,16 +122,24 @@ namespace Confirm_server_by_Contracts
                         new[] { "part_no", "contract", "work_day", "id", "dat_shortage" },
                         new[] { "id", "dat_shortage" },
                         Task_name, cancellationToken);
-                    returned += await dmr.PSTRG_Changes_to_dataTable(Changes, "demands",
-                        new[] { "id" }, null, null,
-                        Task_name, cancellationToken);
+                    Parallel.Invoke(
+                    () => {
+                        Fill_executor(Changes, cancellationToken);
+                    },
+                    async () =>
+                    {
+                        returned += await dmr.PSTRG_Changes_to_dataTable(Changes, "demands",
+                            new[] { "id" }, null, null,
+                            Task_name, cancellationToken);
+                    });
+                    Changes = null;
                 },
                 async() =>
                 {
-                    SourceDataSet = await rw.Get_PSTGR("" +
+                    SourceDataSet = Limit_length(await rw.Get_PSTGR("" +
                         string.Format(@"SELECT * FROM public.data WHERE regexp_like(indeks, '{0}')", regex),
-                        Task_name, cancellationToken);
-                    Changes_List<Buyer_info_row> Zak_changes = rw.Changes(SourceDataSet, DataSet,
+                        Task_name, cancellationToken));
+                    Changes_List<Buyer_info_row> Zak_changes = rw.Changes(SourceDataSet, Limit_length(DataSet),
                         new[] { "indeks", "umiejsc", "data_dost" },
                         new[] { "indeks", "umiejsc", "data_dost", "id", "Widoczny_od_dnia" },
                         new[] { "id", "Widoczny_od_dnia" },
@@ -68,31 +148,23 @@ namespace Confirm_server_by_Contracts
                         new[] { "id" }, null, null,
                         Task_name, cancellationToken);
                     Zak_changes = null;
-                });
-                
+                });                
             return Task.FromResult(returned);
         } 
-        public async Task<(List<Buyer_info_row>, List<Demands_row>)> Calculate (List<Simple_Demands.Simple_demands_row> DMND_ORA, 
-            List<Inventory_part.Inventory_part_row> StMag)
+        /// <summary>
+        /// Csalculate dataset for Buyers and Demands
+        /// </summary>
+        /// <param name="DMND_ORA"></param>
+        /// <param name="StMag"></param>
+        /// <returns></returns>
+        public Task<(List<Buyer_info_row>, List<Demands_row>)> Calculate (List<Simple_Demands.Simple_demands_row> DMND_ORA, 
+            List<Inventory_part.Inventory_part_row> StMag, CancellationToken cancellationToken)
         {
-            DateTime nullDAT = Loger.Serw_run.AddDays(1000);
-            DateTime range_Dat = nullDAT;
+            DateTime nullDAT = Loger.Serw_run.AddDays(1000);            
 
             List<Buyer_info_row> DataSet = new List<Buyer_info_row>();
             List<Buyer_info_row> TmpDataSet = new List<Buyer_info_row>();
-            List<Demands_row> DemandSet = new List<Demands_row>();
-
-            using (NpgsqlConnection conB = new NpgsqlConnection(Postegresql_conn.Connection_pool["MAIN"].ToString()))
-            {
-                await conB.OpenAsync();
-                {
-                    using (NpgsqlCommand cmd = new NpgsqlCommand("select date_fromnow(10);", conB))
-                    {
-                        range_Dat = (DateTime)cmd.ExecuteScalar();
-                    }
-                }
-                conB.Close();
-            }
+            List<Demands_row> DemandSet = new List<Demands_row>();            
 
             string Part_no = "";
             string Contract = "";
@@ -133,11 +205,12 @@ namespace Confirm_server_by_Contracts
             DateTime DATNOW = DateTime.Now.Date;            
             Simple_Demands.Simple_demands_row NEXT_row = DMND_ORA[0];
             
-            DateTime rpt_short;
+            DateTime rpt_short = nullDAT;
             DateTime dta_rap = nullDAT;
 
             foreach (Simple_Demands.Simple_demands_row rek in DMND_ORA)
-            {
+            { 
+                if (cancellationToken.IsCancellationRequested) { break; }
                 if (counter < max) { counter++; }
                 // Zmiana obliczanego indeksu                
                 if (!rek.Part_no.Equals(Part_no) && !rek.Contract.Equals(Contract))
@@ -165,7 +238,8 @@ namespace Confirm_server_by_Contracts
                     
                     while (Part_no != StMag[ind_mag].Indeks && Contract != StMag[ind_mag].Contract)
                     {
-                        ind_mag++;
+                        max_dates.Add(StMag[ind_mag].Indeks, StMag[ind_mag].Contract, StMag[ind_mag].Data_gwarancji);
+                        ind_mag++;                        
                     }
                     STAN_mag = StMag[ind_mag].Mag;
                     gwar_DT = StMag[ind_mag].Data_gwarancji;
@@ -189,12 +263,13 @@ namespace Confirm_server_by_Contracts
                 Balane_mag = STAN_mag - SUM_QTY_DEMAND;
                 if (dta_rap == nullDAT)
                 {
-                    if (Balane_mag < 0 && Date_reQ < range_Dat)
+                    if (Balane_mag < 0 && Date_reQ < Range_Dat)
                     {
                         dta_rap = Date_reQ;
                     }
                 }
-                if ((STAN_mag + SUM_QTY_SUPPLY - SUM_QTY_DEMAND < 0 || (Balane_mag < 0 && Date_reQ <= DATNOW)) && Data_Braku == nullDAT)
+                if ((STAN_mag + SUM_QTY_SUPPLY - SUM_QTY_DEMAND < 0 || 
+                    (Balane_mag < 0 && Date_reQ <= DATNOW)) && Data_Braku == nullDAT)
                 {
                     Data_Braku = Date_reQ;
                     widoczny = start;
@@ -306,6 +381,14 @@ namespace Confirm_server_by_Contracts
                 {
                     if (Date_reQ > DATNOW && (bilans < 0 || balance < 0))
                     {
+                        if (Date_reQ > gwar_DT)
+                        {
+                            rpt_short = Date_reQ;
+                        }
+                        else
+                        {
+                            rpt_short = gwar_DT;
+                        }
                         string state = balance < 0 ? "Brakujące ilości" : "Dostawa na dzisiejsze ilości";
                         DataSet.Add(new Buyer_info_row
                         {
@@ -383,8 +466,12 @@ namespace Confirm_server_by_Contracts
                 {
                     Data_Braku = nullDAT;
                 }
+                if (Part_no != NEXT_row.Part_no && Contract != NEXT_row.Contract)
+                {
+                    max_dates.Add(StMag[ind_mag].Indeks, StMag[ind_mag].Contract, rpt_short);
+                }
             }
-            return (DataSet, DemandSet);
+            return Task.FromResult((DataSet, DemandSet));
         }
 
         public class Eras_Shedul_row : IEquatable<Eras_Shedul_row>, IComparable<Eras_Shedul_row>
@@ -464,6 +551,23 @@ namespace Confirm_server_by_Contracts
             {
                 return this.Part_no.Equals(other.Part_no) && this.Dat.Equals(other.Dat);
             }
+        }
+        public List<Buyer_info_row> Limit_length (List<Buyer_info_row> dataset)
+        {
+            Dictionary<string, int> calendar_len = Get_limit_of_fields.buyer_info_len;
+            foreach (Buyer_info_row row in dataset)
+            {
+                row.Indeks = row.Indeks.LimitDictLen("indeks", calendar_len);
+                row.Umiejsc = row.Umiejsc.LimitDictLen("umiejsc", calendar_len); 
+                row.Opis = row.Opis.LimitDictLen("opis", calendar_len);
+                row.Kolekcja = row.Kolekcja.LimitDictLen("kolekcja", calendar_len);
+                row.Planner_buyer = row.Planner_buyer.LimitDictLen("planner_buyer", calendar_len);
+                row.Rodzaj = row.Rodzaj.LimitDictLen("rodzaj", calendar_len);
+                row.Typ_zdarzenia = row.Typ_zdarzenia.LimitDictLen("typ_zdarzenia", calendar_len);
+                row.Status_informacji = row.Status_informacji.LimitDictLen("status_informacji", calendar_len);
+                row.Informacja = row.Informacja.LimitDictLen("informacja", calendar_len);
+            }
+            return dataset;
         }
 
         public class Buyer_info_row : IEquatable<Buyer_info_row>, IComparable<Buyer_info_row>

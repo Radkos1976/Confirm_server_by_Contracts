@@ -1,10 +1,13 @@
 ﻿using DB_Conect;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
-
+using static Confirm_server_by_Contracts.Order_Demands;
 
 namespace Confirm_server_by_Contracts
 {
@@ -169,7 +172,10 @@ namespace Confirm_server_by_Contracts
             public bool Equals(Simple_demands_row other)
             {
                 if (other == null) return false;
-                return this.Part_no.Equals(other.Part_no) && this.Contract.Equals(other.Contract) && this.Date_required.Equals(other.Date_required);
+                return 
+                    this.Part_no.Equals(other.Part_no) && 
+                    this.Contract.Equals(other.Contract) && 
+                    this.Date_required.Equals(other.Date_required);
             }
         }
     }
@@ -197,6 +203,10 @@ namespace Confirm_server_by_Contracts
 
             public int CompareTo(Demands_row other)
             {
+                if (other == null)
+                {
+                    return 1;
+                }
                 int res = this.Part_no.CompareTo(other.Part_no);
                 if (res != 0) { return res; }
                 int nex_res = this.Contract.CompareTo(other.Contract);
@@ -207,7 +217,347 @@ namespace Confirm_server_by_Contracts
             public bool Equals(Demands_row other)
             {
                 if (other == null) return false;
-                return this.Part_no.Equals(other.Part_no) && this.Contract.Equals(other.Contract) && this.Work_day.Equals(other.Work_day);
+                return 
+                    this.Part_no.Equals(other.Part_no) && 
+                    this.Contract.Equals(other.Contract) && 
+                    this.Work_day.Equals(other.Work_day);
+            }
+        }
+    }
+    public class Order_Demands: Update_pstgr_from_Ora<Order_Demands_row>
+    {
+        private readonly Update_pstgr_from_Ora<Order_Demands_row> rw;
+        public Order_Demands()
+        {
+            rw = new Update_pstgr_from_Ora<Order_Demands_row>("MAIN");
+        }
+
+        public async Task<int> Update_from_executor(string  Task_name, CancellationToken cancellationToken)
+        {
+            int result = 0;
+            while (Dataset_executor.Count() > 0 && !cancellationToken.IsCancellationRequested)
+            {
+                (string part_no, string contract, Tuple<DateTime?, DateTime?> dates) = Dataset_executor.Run_next();
+                if (part_no != "")
+                {
+                    result += await Update_dataset(part_no, contract, dates, Task_name, cancellationToken);
+                    Dataset_executor.Report_end(part_no, contract);
+                }                
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Update selected rows in dataset
+        /// </summary>
+        /// <param name="part_no"></param>
+        /// <param name="contract"></param>
+        /// <param name="dates"></param>
+        /// <param name="Task_name"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        private async Task<int> Update_dataset(string part_no, string contract,
+            Tuple<DateTime?, DateTime?> dates, string Task_name, CancellationToken cancellationToken)
+        {
+            
+            List<Order_Demands_row> Old = new List<Order_Demands_row>();
+            List<Order_Demands_row> New = new List<Order_Demands_row>();
+            Parallel.Invoke(
+                    async() => 
+                    {
+                        Old = await Get_postgres(part_no, contract, dates, Task_name, cancellationToken);
+                    },
+                    async () =>
+                    {
+                        New = await Get_oracle(part_no, contract, dates, Task_name, cancellationToken);
+                    });
+            Changes_List<Order_Demands_row> Ch_dataset = Changes(Old, New, 
+                new[] {"dop", "dop_lin", "int_ord", "line_no", "rel_no"}, 
+                new[] { "dop", "dop_lin", "int_ord", "line_no", "rel_no", "id" }, 
+                new[] {"id"},
+                Task_name, cancellationToken);
+            return await rw.PSTRG_Changes_to_dataTable(Ch_dataset, "ord_demands",
+                        new[] { "id" }, null, null,
+                        Task_name, cancellationToken);
+        }
+        /// <summary>
+        /// Get Data from Postgresql by part_no,contract and date range's
+        /// </summary>
+        /// <param name="part_no"></param>
+        /// <param name="contract"></param>
+        /// <param name="dates"></param>
+        /// <param name="Task_name"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        private async Task<List<Order_Demands_row>> Get_postgres(string part_no, string contract,
+            Tuple<DateTime?, DateTime?> dates, string Task_name, CancellationToken cancellationToken) => await rw.Get_PSTGR("" +
+                string.Format("select * " +
+                    "from public.ord_demands " +
+                    "where part_no = '{0}' AND CONTRACT = '{1}' DATE_REQUIRED between '{2}' and '{3}';", 
+                    part_no, contract, dates.Item1.ToString(), dates.Item2.ToString()),
+                Task_name, cancellationToken);
+        /// <summary>
+        /// Get Data from Oracle by part_no,contract and date range's
+        /// </summary>
+        /// <param name="part_no"></param>
+        /// <param name="contract"></param>
+        /// <param name="dates"></param>
+        /// <param name="Task_name"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        private async Task<List<Order_Demands_row>> Get_oracle(string part_no, string contract,
+            Tuple<DateTime?, DateTime?> dates, string Task_name, CancellationToken cancellationToken) => await rw.Get_Ora("" +
+                string.Format(@"SELECT  
+                    a.DOP,
+                    Nvl(a.LINE_ITEM_NO,a.DOP_LIN) DOP_LIN,
+                    Nvl(ifsapp.dop_order_api.Get_Revised_Due_Date(a.DOP,1),a.DATE_REQUIRED) Data_dop,
+                    Nvl(ifsapp.work_time_calendar_api.Get_Work_Days_Between(
+                        ifsapp.site_api.Get_Manuf_Calendar_Id(a.CONTRACT), 
+                        ifsapp.dop_order_api.Get_Revised_Start_Date(a.DOP, a.DOP_LIN), 
+                        ifsapp.dop_order_api.Get_Revised_Due_Date(a.DOP, 1)) + ifsapp.dop_order_api.Dop_Order_Slack(a.DOP, a.DOP_LIN) + 1, 0) DAy_shift,
+                    a.ORDER_NO,
+                    a.LINE_NO,
+                    a.REL_NO,
+                    Decode(LENGTH(TRIM(TRANSLATE(a.ORDER_NO, ' +-.0123456789',' '))),NULL,a.ORDER_NO,owa_opt_lock.checksum(a.ORDER_NO)*-1) int_ord,
+                    a.CONTRACT,
+                    a.ORDER_SUPPLY_DEMAND_TYPE,
+                    a.WRKC,
+                    a.NEXT_WRKC,
+                    a.PART_NO,
+                    ifsapp.inventory_part_api.Get_Description(CONTRACT, a.PART_NO) Descr,
+                    a.PART_CODE,
+                    a.DATE_REQUIRED,
+                    a.ORD_STATE,
+                    a.ORD_DATE,
+                    a.PROD_QTY,
+                    a.QTY_SUPPLY,
+                    a.QTY_DEMAND,
+                    To_Date(creat_date) creat_date,
+                    chksum 
+                    from 
+                    (
+                        SELECT 
+                            Nvl(ifsapp.dop_supply_shop_ord_api.Get_C_Dop_Id(order_no, line_no, rel_no), 0) DOP,
+                            Nvl(REPLACE(SubStr(ifsapp.shop_ord_api.Get_Source(order_no, line_no, rel_no),
+                                InStr(ifsapp.shop_ord_api.Get_Source(order_no, line_no, rel_no), '^', 10)), '^', ''), 0) DOP_LIN,
+                            order_no,
+                            line_no,
+                            rel_no,
+                            LINE_ITEM_NO,
+                            ifsapp.shop_ord_api.Get_Part_No(order_no, line_no, rel_no) Cust_part_no,
+                            CONTRACT,
+                            ORDER_SUPPLY_DEMAND_TYPE,
+                            ifsapp.shop_order_operation_list_api.Get_Next_Op_Work_Center(order_no, line_no, rel_no, 
+                                ifsapp.shop_order_operation_list_api.Get_Prev_Non_Parallel_Op(order_no, line_no, rel_no, 1, 0)) WRKC,
+                            ifsapp.shop_order_operation_list_api.Get_Next_Op_Work_Center(order_no, line_no, rel_no, 
+                                ifsapp.shop_order_operation_list_api.Get_Prev_Non_Parallel_Op(order_no, line_no, rel_no, 2, 0)) NEXT_WRKC,
+                            PART_NO,
+                            STATUS_CODE PART_CODE,
+                            DATE_REQUIRED,
+                            ifsapp.shop_ord_api.Get_State(order_no, line_no, rel_no) ORD_STATE,
+                            ifsapp.shop_ord_api.Get_Revised_Due_Date(order_no, line_no, rel_no) ORD_date,
+                            Nvl(ifsapp.shop_ord_api.Get_Revised_Qty_Due(order_no, line_no, rel_no)-ifsapp.shop_ord_api.Get_Qty_Complete(order_no, line_no, rel_no), 0) Prod_QTY,
+                            0 QTY_SUPPLY,
+                            QTY_DEMAND,
+                            ifsapp.shop_ord_api.Get_Date_Entered(order_no, line_no, rel_no) creat_date,
+                            owa_opt_lock.checksum(ROWID||QTY_DEMAND||QTY_PEGGED||QTY_RESERVED||To_Char(ifsapp.shop_order_operation_api.Get_Op_Start_Date(order_no,line_no,rel_no,ifsapp.shop_order_operation_list_api.Get_Prev_Non_Parallel_Op (order_no,line_no,rel_no,2,0)),'YYYYMMDDHH24miss')) chksum  
+                        FROM 
+                                ifsapp.shop_material_alloc_demand 
+                        WHERE part_no = '{0}' AND CONTRACT = '{1}' DATE_REQUIRED between '{2}' and '{3}' 
+                        UNION ALL 
+                        sELECT To_Number(ORDER_NO) DOP,
+                            LINE_NO DOP_LIN,
+                            '0' ORDER_NO,
+                            '*' LINE_NO,
+                            '*' REL_NO,
+                            LINE_ITEM_NO,
+                            NULL Cust_part_no,
+                            CONTRACT,
+                            ORDER_SUPPLY_DEMAND_TYPE,
+                            ' ' WRKC,
+                            ' ' NEXT_WRKC,
+                            PART_NO,
+                            STATUS_CODE PART_CODE,
+                            DATE_REQUIRED,
+                            ifsapp.dop_head_api.Get_Status(ORDER_NO) ORD_STATE,
+                            ifsapp.dop_head_api.Get_Due_Date(ORDER_NO) ORD_DATE,
+                            ifsapp.dop_head_api.Get_Qty_Demand(order_no) PROD_QTY,
+                            0 QTY_SUPPLY,
+                            QTY_DEMAND,
+                            NULL creat_date,
+                            owa_opt_lock.checksum(order_no||QTY_DEMAND||DATE_REQUIRED||ORDER_NO||LINE_NO||INFO) chksum  
+                        FROM 
+                            ifsapp.dop_order_demand_ext 
+                        WHERE part_no = '{0}' AND CONTRACT = '{1}' DATE_REQUIRED between '{2}' and '{3}' 
+                        UNION ALL 
+                        SELECT 
+                            ifsapp.customer_order_line_api.Get_Pre_Accounting_Id(ORDER_NO, LINE_NO, REL_NO, LINE_ITEM_NO) DOP,
+                            '0' DOP_LIN,
+                            ORDER_NO,
+                            LINE_NO,
+                            REL_NO,
+                            LINE_ITEM_NO,
+                            PART_NO Cust_part_no,
+                            CONTRACT,
+                            ORDER_SUPPLY_DEMAND_TYPE,
+                            ' ' WRKC,
+                            ' ' NEXT_WRKC,
+                            PART_NO,
+                            STATUS_CODE PART_CODE,
+                            DATE_REQUIRED,
+                            STATUS_CODE ORD_STATE,
+                            DATE_REQUIRED ORD_DATE,
+                            0 PROD_QTY,
+                            0 QTY_SUPPLY,
+                            QTY_DEMAND,
+                            ifsapp.customer_order_line_api.Get_Date_Entered(order_no, line_no, rel_no, line_item_no) creat_date,
+                            owa_opt_lock.checksum(ROW_ID||QTY_DEMAND||DATE_REQUIRED||QTY_PEGGED||QTY_RESERVED) chksum 
+                        FROM 
+                            ifsapp.customer_order_line_demand_oe 
+                        WHERE part_no = '{0}' AND CONTRACT = '{1}' DATE_REQUIRED between '{2}' and '{3}'  
+                        UNION ALL 
+                        SELECT 
+                            0 DOP,
+                            '0' DOP_LIN,
+                            a.ORDER_NO,
+                            a.LINE_NO,
+                            a.REL_NO,
+                            a.LINE_ITEM_NO,
+                            a.PART_NO Cust_part_no,
+                            a.CONTRACT,
+                            a.ORDER_SUPPLY_DEMAND_TYPE,
+                            ' ' WRKC,
+                            ' ' NEXT_WRKC,
+                            a.PART_NO,
+                            a.STATUS_CODE PART_CODE,
+                            a.DATE_REQUIRED,
+                            a.STATUS_CODE ORD_STATE,
+                            a.DATE_REQUIRED ORD_DATE,
+                            0 PROD_QTY,
+                            0 QTY_SUPPLY,
+                            a.QTY_DEMAND,
+                            b.DATE_ENTERED creat_date,
+                            owa_opt_lock.checksum(a.ROWID||QTY_DEMAND||DATE_REQUIRED||a.STATUS_CODE) chksum  
+                        FROM 
+                            ifsapp.material_requis_line_demand_oe a, 
+                            ifsapp.material_requis_line b 
+                        WHERE b.OBJID = a.ROW_ID and a.part_no = '{0}' AND a.CONTRACT = '{1}' a.DATE_REQUIRED between '{2}' and '{3}'  
+                        UNION ALL  
+                        SELECT 
+                            0 DOP,
+                            '0' DOP_LIN,
+                            ORDER_NO,
+                            LINE_NO,
+                            REL_NO,
+                            LINE_ITEM_NO,
+                            PART_NO Cust_part_no,
+                            CONTRACT,
+                            ORDER_SUPPLY_DEMAND_TYPE,
+                            ' ' WRKC,
+                            ' ' NEXT_WRKC,
+                            PART_NO,
+                            STATUS_CODE PART_CODE,
+                            DATE_REQUIRED,
+                            STATUS_CODE ORD_STATE,
+                            DATE_REQUIRED ORD_DATE,
+                            0 PROD_QTY,
+                            QTY_SUPPLY,
+                            0 QTY_DEMAND,
+                            ifsapp.customer_order_line_api.Get_Date_Entered(order_no, line_no, rel_no, line_item_no) creat_date,
+                            owa_opt_lock.checksum(ROWID||QTY_SUPPLY||DATE_REQUIRED) chksum 
+                        FROM 
+                            ifsapp.purchase_order_line_supply 
+                        WHERE part_no = '{0}' AND CONTRACT = '{1}' DATE_REQUIRED between '{2}' and '{3}'  
+                        UNION ALL 
+                        SELECT 
+                            0 DOP,
+                            '0' DOP_LIN,
+                            ORDER_NO,
+                            LINE_NO,
+                            REL_NO,
+                            LINE_ITEM_NO,
+                            PART_NO Cust_part_no,
+                            CONTRACT,
+                            ORDER_SUPPLY_DEMAND_TYPE,
+                            ' ' WRKC,
+                            ' ' NEXT_WRKC,
+                            PART_NO,
+                            STATUS_CODE PART_CODE,
+                            DATE_REQUIRED,
+                            STATUS_CODE ORD_STATE,
+                            DATE_REQUIRED ORD_DATE,
+                            0 PROD_QTY,
+                            QTY_SUPPLY,
+                            0 QTY_DEMAND,
+                            ifsapp.customer_order_line_api.Get_Date_Entered(order_no, line_no, rel_no, line_item_no) creat_date,
+                            owa_opt_lock.checksum(ROWID||QTY_SUPPLY||DATE_REQUIRED||STATUS_CODE) chksum 
+                        FROM 
+                            ifsapp.ARRIVED_PUR_ORDER_EXT 
+                        WHERE part_no = '{0}' AND CONTRACT = '{1}' DATE_REQUIRED between '{2}' and '{3}' ) a", part_no, contract, dates.Item1.ToString(), dates.Item2.ToString()),
+                Task_name, cancellationToken);
+
+        public class Order_Demands_row : IEquatable<Order_Demands_row>, IComparable<Order_Demands_row>
+        {
+            public int Dop { get; set; }
+            public int Dop_lin { get; set; }
+            public DateTime Data_dop { get; set; }
+            public int Day_shift { get; set; }
+            public string Order_no { get; set; }
+            public string Line_no { get; set; }
+            public string Rel_no { get; set; }
+            public int Int_ord { get; set; }
+            public string Contract { get; set; }
+            public string Order_supp_dmd { get; set; }
+            public string Wrkc { get; set; }
+            public string Next_wrkc { get; set; }
+            public string Part_no { get; set; }
+            public string Descr { get; set; }
+            public string Part_code { get; set; }
+            public DateTime Date_required { get; set; }
+            public string Ord_state { get; set; }
+            public DateTime Ord_date { get; set; }
+            public double Prod_qty { get; set; }
+            public double Qty_supply { get; set; }
+            public double Qty_demand { get; set; }
+            public DateTime Dat_creat { get; set; }
+            public int Chksum { get; set; }
+            public Guid Id { get; set; }
+
+            //dop desc,dop_lin,int_ord,LINE_NO,REL_NO
+            public int CompareTo(Order_Demands_row other)
+            {
+                int res = this.Dop.CompareTo(other.Dop);
+                if (res != 0) 
+                { 
+                    return res; 
+                }
+                int nex_res = this.Dop_lin.CompareTo(other.Dop_lin);
+                if (nex_res != 0) 
+                {
+                    return nex_res; 
+                }
+                int second = this.Int_ord.CompareTo(other.Int_ord);
+                if (second != 0) 
+                { 
+                    return second; 
+                }
+                int second_nxt = this.Line_no.CompareTo(other.Line_no);
+                if (second_nxt !=  0) 
+                { 
+                    return second_nxt; 
+                }
+                return 
+                    this.Rel_no.CompareTo(other.Rel_no);
+            }
+
+            public bool Equals(Order_Demands_row other)
+            {
+                return 
+                    this.Dop.Equals(other.Dop) && 
+                    this.Dop_lin.Equals(other.Dop_lin) && 
+                    this.Int_ord.Equals(other.Int_ord) && 
+                    this.Line_no.Equals(other.Line_no) && 
+                    this.Rel_no.Equals(other.Rel_no);
             }
         }
     }

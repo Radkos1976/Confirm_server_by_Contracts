@@ -1,6 +1,7 @@
 ﻿using DB_Conect;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -18,7 +19,7 @@ namespace Confirm_server_by_Contracts
             new ParallelOptions { MaxDegreeOfParallelism = 50 },
             new Action[]
             {
-                () =>
+                async () =>
                 {
                     // migrate demands and inventory_part and run main_loop for each non 616%  part_no
                     Steps_executor.Register_step("Demands 616 ");
@@ -86,7 +87,11 @@ namespace Confirm_server_by_Contracts
                         if (end_with_no_err)
                         {
                             Steps_executor.Register_step("Main_loop 616 ");
-
+                            Main_loop main_Loop = new Main_loop();
+                            int result = await main_Loop.Update_Main_Tables("^616.*", "Main_loop 616 ", only_616, oracle, active_token);
+                            Order_Demands order_Demands = new Order_Demands();
+                            await order_Demands.Update_from_executor("Main_loop 616 ", active_token);
+                            order_Demands = null;
                             Steps_executor.End_step("Main_loop 616 ");
                         }
                     }
@@ -103,12 +108,14 @@ namespace Confirm_server_by_Contracts
                     Calendar calendar = new Calendar(true, active_token);
                     calendar = null;
                 },
-                () =>
+                async () =>
                 {
                     // migrate demands and inventory_part and run main_loop for each non 616%  part_no
                     Simple_Demands part_except_616 = new Simple_Demands();
                     Inventory_part inventory_except_616 = new Inventory_part("^(5|6(?!16)).*", false, null);
-                    List<Simple_Demands.Simple_demands_row> no_616;
+                    List<Simple_Demands.Simple_demands_row> no_616 = new List<Simple_Demands.Simple_demands_row>();
+                    List<Inventory_part.Inventory_part_row>  pstgr = new List<Inventory_part.Inventory_part_row>();
+                    List<Inventory_part.Inventory_part_row>  oracle= new List<Inventory_part.Inventory_part_row>();
                     Parallel.Invoke(
                     async () =>
                     {
@@ -120,19 +127,33 @@ namespace Confirm_server_by_Contracts
                     async () =>
                     {
                         Steps_executor.Register_step("Inventory part except 616 ");
+                        Parallel.Invoke(
+                            async () =>
+                            {
+                                oracle = await inventory_except_616.Get_Ora_list("Inventory part except 616 ", active_token);
+                            },
+                            async () =>
+                            {
+                                pstgr = await inventory_except_616.Get_PSTGR_List("Inventory part except 616 ", active_token);
+                            });
                         int result = await inventory_except_616.Update_dataset(
-                            await inventory_except_616.Get_PSTGR_List("Inventory part except 616 ", active_token),
-                            await inventory_except_616.Get_Ora_list("Inventory part except 616 ", active_token),
+                            pstgr,
+                            oracle,
                             "Inventory part except 616 ",
                             active_token);
                         Steps_executor.End_step("Inventory part except 616 ");
                         inventory_except_616 = null;
+                        pstgr = null;
                     });
                     bool end_with_no_err = Steps_executor.Wait_for(new string[] { "Demands except 616 ", "Inventory part except 616 " }, "Main_loop except 616 ", active_token);
                     if (end_with_no_err)
                     {
                         Steps_executor.Register_step("Main_loop except 616 ");
-
+                        Main_loop main_Loop = new Main_loop();
+                        int result = await main_Loop.Update_Main_Tables("^616.*", "Main_loop except 616 ", no_616, oracle, active_token);
+                        Order_Demands order_Demands = new Order_Demands();
+                        await order_Demands.Update_from_executor("Main_loop except 616 ", active_token);
+                        order_Demands = null;
                         Steps_executor.End_step("Main_loop except 616 ");
                     }
                 }

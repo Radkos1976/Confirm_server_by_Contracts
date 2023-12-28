@@ -9,7 +9,7 @@ namespace Confirm_server_by_Contracts
 {
     /// <summary>
     /// Gets informations about active Calendars
-    /// Class update its self
+    /// ,Class update its self
     /// </summary>       
     public class Calendar : Update_pstgr_from_Ora<Calendar.Calendar_row>
     {

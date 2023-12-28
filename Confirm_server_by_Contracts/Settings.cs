@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Threading;
 using System.Diagnostics;
+using System.Collections;
 
 namespace DB_Conect
 {
@@ -78,6 +79,10 @@ namespace DB_Conect
             base.Add(Tuple.Create(key1, key2), value);
         }
 
+        public void Remove(TKey1 key1, TKey2 key2)
+        {
+            base.Remove(Tuple.Create(key1, key2));
+        }
         public bool ContainsKey(TKey1 key1, TKey2 key2)
         {
             return base.ContainsKey(Tuple.Create(key1, key2));
@@ -118,7 +123,6 @@ namespace DB_Conect
             }
             return Base_Day;
         }
-
     }
 
     /// <summary>
@@ -364,6 +368,46 @@ namespace DB_Conect
                 }                
             }         
             return (Conn_set, Contracts);
+        }
+    }
+    /// <summary>
+    /// List of ent for scan in DB
+    /// </summary>
+    public class Dataset_executor
+    {
+        private static readonly Dictionary<string, string, Tuple<DateTime?, DateTime?>> wait_task = new Dictionary<string, string, Tuple<DateTime?, DateTime?>>();
+        private static readonly Dictionary<string, string, Tuple<DateTime?, DateTime?>> on_work_task = new Dictionary<string, string, Tuple<DateTime?, DateTime?>>();
+        public static void Add_task(string part_no, string contract, DateTime Start, DateTime End)
+        {
+            wait_task.Add(part_no, contract, new Tuple<DateTime?, DateTime?>(Start, End));
+        }
+        public static (string, string, Tuple<DateTime?, DateTime?>) Run_next ()
+        {
+            if (wait_task.Count > 0)
+            {
+                bool chk = false;
+                string part_no = "";
+                string contract = "";
+                Tuple<DateTime?, DateTime?> range = new Tuple<DateTime?, DateTime?>((DateTime?)null, (DateTime?)null);
+                while (!chk)
+                {                    
+                    (part_no, contract) = wait_task.Keys.First();
+                    range = wait_task[part_no, contract];
+                    chk = wait_task.ContainsKey(part_no, contract);
+                }                   
+                wait_task.Remove(part_no, contract);
+                on_work_task.Add(part_no, contract, range);
+                return (part_no, contract, range);
+            }
+            return ("", "", new Tuple<DateTime?, DateTime?>((DateTime?)null, (DateTime?)null));
+        }
+        public static int Count()
+        {
+            return wait_task.Count;
+        }
+        public static void Report_end (string part_no, string contract)
+        {
+            on_work_task.Remove(part_no, contract);
         }
     }
 
