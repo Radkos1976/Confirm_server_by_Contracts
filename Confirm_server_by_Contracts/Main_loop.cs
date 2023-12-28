@@ -15,8 +15,9 @@ namespace Confirm_server_by_Contracts
     {
         private readonly Update_pstgr_from_Ora<Buyer_info_row> rw;
         private readonly Update_pstgr_from_Ora<Demands_row> dmr;
-        public DateTime Range_Dat { get; set; }
-        public Dictionary<string, string, DateTime> max_dates = new Dictionary<string, string, DateTime>();
+        private DateTime Range_Dat { get; set; }
+        private Dictionary<string, string, DateTime> max_dates = new Dictionary<string, string, DateTime>();
+        private List<Tuple<string, string>> Erase_dont_exist = new List<Tuple<string, string>>();
         public Main_loop()
         {
             rw = new Update_pstgr_from_Ora<Buyer_info_row>("MAIN");
@@ -38,42 +39,47 @@ namespace Confirm_server_by_Contracts
         /// </summary>
         /// <param name="changes_List"></param>
         /// <returns></returns>
-        private void Fill_executor(Changes_List<Demands_row> changes_List, CancellationToken cancellationToken)
+        private void Fill_executor(Changes_List<Demands_row> changes_List, string Task_name, CancellationToken cancellationToken)
         {
             Dictionary<string, string, Tuple<DateTime, DateTime>> range_dates = 
                 new Dictionary<string, string, Tuple<DateTime, DateTime>>();
+            Loger.Log(string.Format("Fill Dataset_executor {0}", Task_name));
             void min_max(List<Demands_row> changes)
             {
                 foreach (Demands_row demand in changes)
                 {
                     if (cancellationToken.IsCancellationRequested) { break; }
-                    if (demand.Work_day <= max_dates[demand.Part_no, demand.Contract]) {
-                        if (range_dates.ContainsKey(demand.Part_no, demand.Contract))
+                    if (max_dates.ContainsKey(demand.Part_no, demand.Contract))
+                    {
+                        if (demand.Work_day <= max_dates[demand.Part_no, demand.Contract])
                         {
-                            (DateTime min_d, DateTime max_d) =
-                                range_dates[demand.Part_no, demand.Contract];
-                            int changed = 0;
-                            if (min_d > demand.Work_day)
+                            if (range_dates.ContainsKey(demand.Part_no, demand.Contract))
                             {
-                                changed = 1;
-                            }
-                            else if (max_d < demand.Work_day && max_dates[demand.Part_no, demand.Contract] <= demand.Work_day)
-                            {
-                                changed = 2;
-                            }
+                                (DateTime min_d, DateTime max_d) =
+                                    range_dates[demand.Part_no, demand.Contract];
+                                int changed = 0;
+                                if (min_d > demand.Work_day)
+                                {
+                                    changed = 1;
+                                }
+                                else if (max_d < demand.Work_day && max_dates[demand.Part_no, demand.Contract] <= demand.Work_day)
+                                {
+                                    changed = 2;
+                                }
 
-                            if (changed > 0)
+                                if (changed > 0)
+                                {
+                                    range_dates[demand.Part_no, demand.Contract] =
+                                        new Tuple<DateTime, DateTime>(changed == 1 ? demand.Work_day : min_d, changed == 2 ? demand.Work_day : max_d);
+                                }
+                            }
+                            else
                             {
-                                range_dates[demand.Part_no, demand.Contract] =
-                                    new Tuple<DateTime, DateTime>(changed == 1 ? demand.Work_day : min_d, changed == 2 ? demand.Work_day : max_d);
+                                range_dates.Add(demand.Part_no, demand.Contract,
+                                    new Tuple<DateTime, DateTime>(demand.Work_day, demand.Work_day));
                             }
                         }
-                        else
-                        {
-                            range_dates.Add(demand.Part_no, demand.Contract,
-                                new Tuple<DateTime, DateTime>(demand.Work_day, demand.Work_day));
-                        }
-                    }                    
+                    }                                       
                 }                
             }
             min_max(changes_List.Insert);
@@ -124,7 +130,7 @@ namespace Confirm_server_by_Contracts
                         Task_name, cancellationToken);
                     Parallel.Invoke(
                     () => {
-                        Fill_executor(Changes, cancellationToken);
+                        Fill_executor(Changes, Task_name, cancellationToken);
                     },
                     async () =>
                     {
@@ -238,6 +244,7 @@ namespace Confirm_server_by_Contracts
                     
                     while (Part_no != StMag[ind_mag].Indeks && Contract != StMag[ind_mag].Contract)
                     {
+
                         max_dates.Add(StMag[ind_mag].Indeks, StMag[ind_mag].Contract, StMag[ind_mag].Data_gwarancji);
                         ind_mag++;                        
                     }
@@ -468,7 +475,8 @@ namespace Confirm_server_by_Contracts
                 }
                 if (Part_no != NEXT_row.Part_no && Contract != NEXT_row.Contract)
                 {
-                    max_dates.Add(StMag[ind_mag].Indeks, StMag[ind_mag].Contract, rpt_short);
+                    
+                    .Add(StMag[ind_mag].Indeks, StMag[ind_mag].Contract, rpt_short);
                 }
             }
             return Task.FromResult((DataSet, DemandSet));
