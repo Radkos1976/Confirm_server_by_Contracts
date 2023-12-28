@@ -2,6 +2,7 @@
 using Npgsql;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,7 +18,7 @@ namespace Confirm_server_by_Contracts
         private readonly Update_pstgr_from_Ora<Demands_row> dmr;
         private DateTime Range_Dat { get; set; }
         private Dictionary<string, string, DateTime> max_dates = new Dictionary<string, string, DateTime>();
-        private List<Tuple<string, string>> Erase_dont_exist = new List<Tuple<string, string>>();
+        public List<Tuple<string, string>> Erase_dont_exist = new List<Tuple<string, string>>();
         public Main_loop()
         {
             rw = new Update_pstgr_from_Ora<Buyer_info_row>("MAIN");
@@ -163,7 +164,7 @@ namespace Confirm_server_by_Contracts
                         new[] { "id", "Widoczny_od_dnia" },
                         string.Format("{0}:{1}", Task_name, "Buyer_info"), cancellationToken);
                     returned += await rw.PSTRG_Changes_to_dataTable(Zak_changes, "data",
-                        new[] { "id" }, null, null,
+                        new[] { "id" }, new[] { string.Format("DELETE FROM public.ord_demands WHERE (part_no,contract) in ({0});", string.Join(",", Erase_dont_exist.Select(t => string.Format("( '{0}', '{1}')", t.Item1, t.Item2)))) }, null,
                         string.Format("{0}:{1}", Task_name, "Buyer_info"), cancellationToken);
                     Zak_changes = null;
                     Steps_executor.End_step(string.Format("{0}:{1}", Task_name, "Buyer_info"));
