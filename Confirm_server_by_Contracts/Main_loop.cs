@@ -192,7 +192,7 @@ namespace Confirm_server_by_Contracts
             double Balane_mag ;
             double dmnNext;
             int chksumD;
-            int leadtime = 0;
+            double leadtime = 0;
             DateTime widoczny;
             int counter = -1;
             int max = DMND_ORA.Count;

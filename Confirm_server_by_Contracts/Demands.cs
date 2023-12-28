@@ -185,7 +185,7 @@ namespace Confirm_server_by_Contracts
         {
             public string Part_no { get; set; }
             public DateTime Work_day { get; set; }
-            public int Expected_leadtime { get; set; }
+            public double Expected_leadtime { get; set; }
             public double Purch_qty { get; set; }
             public double Qty_demand { get; set; }
             public int Type_dmd { get; set; }
