@@ -182,7 +182,7 @@ namespace Confirm_server_by_Contracts
         /// <param name="DMND_ORA"></param>
         /// <param name="StMag"></param>
         /// <returns></returns>
-        public Task<(List<Buyer_info_row>, List<Demands_row>)> Calculate (List<Simple_Demands.Simple_demands_row> DMND_ORA, 
+        public (List<Buyer_info_row>, List<Demands_row>) Calculate (List<Simple_Demands.Simple_demands_row> DMND_ORA, 
             List<Inventory_part.Inventory_part_row> StMag, CancellationToken cancellationToken)
         {
             DateTime nullDAT = Loger.Serw_run.AddDays(1000);            
@@ -499,7 +499,7 @@ namespace Confirm_server_by_Contracts
                     max_dates.Add(Part_no, Contract, rpt_short);
                 }
             }
-            return Task.FromResult((DataSet, DemandSet));
+            return (DataSet, DemandSet);
         }
 
         public class Eras_Shedul_row : IEquatable<Eras_Shedul_row>, IComparable<Eras_Shedul_row>
