@@ -420,11 +420,11 @@ namespace DB_Conect
                             ID[Array.IndexOf(ID_column, pt_name)] = counter;
                             found.Add(counter);
                         }
-                        if (not_compare.Contains(pt_name))
+                        if (not_compare != null && not_compare.Contains(pt_name))
                         {
                             dont_check.Add(counter);
                         }
-                        if (guid_col.Contains(pt_name)) 
+                        if (guid_col != null && guid_col.Contains(pt_name)) 
                         { 
                             guid_id.Add(counter); 
                         }
