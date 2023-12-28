@@ -402,6 +402,7 @@ namespace Confirm_server_by_Contracts
                             });
                         }
                     }
+                    TmpDataSet.Clear();
                 }
                 if (QTY_SUPPLY > 0)
                 {
