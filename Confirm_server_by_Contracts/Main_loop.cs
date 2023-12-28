@@ -115,10 +115,10 @@ namespace Confirm_server_by_Contracts
             Changes_List<Demands_row> Changes = new Changes_List<Demands_row>();
             int returned = 0;
             Parallel.Invoke(
-                async () =>
+                () =>
                 {
                     Steps_executor.Register_step(string.Format("{0}:{1}", Task_name, "Calculate"));
-                    (DataSet, DemandSet) = await Calculate(Demands, Inv_Part, cancellationToken);
+                    (DataSet, DemandSet) = Calculate(Demands, Inv_Part, cancellationToken);
                     Demands = null; Inv_Part = null;
                     Steps_executor.End_step(string.Format("{0}:{1}", Task_name, "Calculate"));
                 });
