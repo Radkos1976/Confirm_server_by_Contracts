@@ -114,7 +114,7 @@ namespace Confirm_server_by_Contracts
             public double Mag { get; set; }
             public string Planner_buyer { get; set; }
             public string Rodzaj { get; set; }
-            public int Czas_dostawy { get; set; }
+            public double Czas_dostawy { get; set; }
             public DateTime Data_gwarancji { get; set; }
             public double Weight_net { get; set; }
             public double Volume_net { get; set; }
