@@ -395,9 +395,20 @@ namespace DB_Conect
                     (part_no, contract) = wait_task.Keys.First();
                     range = wait_task[part_no, contract];
                     chk = wait_task.ContainsKey(part_no, contract);
+                    if (chk)
+                    {
+                        try
+                        {
+                            wait_task.Remove(part_no, contract);
+                            on_work_task.Add(part_no, contract, range);
+                        }
+                        catch 
+                        {
+                            chk = false;
+                        }
+                    }
                 }                   
-                wait_task.Remove(part_no, contract);
-                on_work_task.Add(part_no, contract, range);
+                
                 return (part_no, contract, range);
             }
             return ("", "", new Tuple<DateTime?, DateTime?>((DateTime?)null, (DateTime?)null));

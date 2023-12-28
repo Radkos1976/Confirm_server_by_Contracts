@@ -84,15 +84,15 @@ namespace Confirm_server_by_Contracts
                     }                                       
                 }                
             }
-            if (changes_List.Insert.Count > 0)
+            if (changes_List.Insert!=null)
             {
                 min_max(changes_List.Insert);
             }
-            if (changes_List.Delete.Count > 0)
+            if (changes_List.Delete != null)
             {
                 min_max(changes_List.Delete);
             }
-            if (changes_List.Update.Count > 0)
+            if (changes_List.Update != null)
             {
                 min_max(changes_List.Update);
             }
