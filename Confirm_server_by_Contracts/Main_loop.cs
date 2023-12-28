@@ -88,9 +88,15 @@ namespace Confirm_server_by_Contracts
             {
                 min_max(changes_List.Insert);
             }
-            min_max(changes_List.Insert);
-            min_max(changes_List.Delete);
-            min_max(changes_List.Update);
+            if (changes_List.Delete.Count > 0)
+            {
+                min_max(changes_List.Delete);
+            }
+            if (changes_List.Update.Count > 0)
+            {
+                min_max(changes_List.Update);
+            }
+            
             foreach(Tuple<string, string> set in range_dates.Keys)
             {
                 (DateTime min_d, DateTime max_d) =
@@ -244,7 +250,7 @@ namespace Confirm_server_by_Contracts
                 if (cancellationToken.IsCancellationRequested) { break; }
                 if (counter < max) { counter++; }
                 // Zmiana obliczanego indeksu                
-                if (!rek.Part_no.Equals(Part_no) & !rek.Contract.Equals(Contract))
+                if (!(rek.Part_no.Equals(Part_no) & rek.Contract.Equals(Contract)))
                 {
                     //type_DMD - maska bitowa 0001 - zlec ;0010 - DOP ;0100-zam-klient
                     TYP_dmd = 0;
