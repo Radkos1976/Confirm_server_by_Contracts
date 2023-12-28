@@ -116,13 +116,21 @@ namespace Confirm_server_by_Contracts
             Parallel.Invoke(
                 async () =>
                 {
+                    Steps_executor.Register_step(string.Format("{0}:{1}", Task_name, "Calculate"));
                     (DataSet, DemandSet) = await Calculate(Demands, Inv_Part, cancellationToken);
-                },
-                async() =>
+                    Demands = null; Inv_Part = null;
+                    Steps_executor.End_step(string.Format("{0}:{1}", Task_name, "Calculate"));
+                });
+            Steps_executor.Register_step(string.Format("{0}:{1}", Task_name, "Parallel Calc"));
+            bool end_with_no_err = Steps_executor.Wait_for(new string[] { string.Format("{0}:{1}", Task_name, "Calculate") }, string.Format("{0}:{1}", Task_name, "Parallel Calc"), cancellationToken);
+            {
+                Parallel.Invoke(
+                async () =>
                 {
+                    Steps_executor.Register_step(string.Format("{0}:{1}", Task_name, "Update Demands"));
                     SourceDemandSet = await dmr.Get_PSTGR("" +
                         string.Format(@"SELECT * FROM public.demands WHERE regexp_like(part_no, '{0}')", regex),
-                        Task_name, cancellationToken);
+                        string.Format("{0}:{1}", Task_name, "Update Demands"), cancellationToken);
                     Changes = dmr.Changes(SourceDemandSet, DemandSet,
                         new[] { "part_no", "contract", "work_day" },
                         new[] { "part_no", "contract", "work_day", "id", "dat_shortage" },
@@ -130,31 +138,40 @@ namespace Confirm_server_by_Contracts
                         Task_name, cancellationToken);
                     Parallel.Invoke(
                     () => {
-                        Fill_executor(Changes, Task_name, cancellationToken);
+                        Steps_executor.Register_step(string.Format("{0}:{1}", Task_name, "Fill_executor"));
+                        Fill_executor(Changes, string.Format("{0}:{1}", Task_name, "Fill_executor"), cancellationToken);
+                        Steps_executor.End_step(string.Format("{0}:{1}", Task_name, "Fill_executor"));
                     },
                     async () =>
                     {
                         returned += await dmr.PSTRG_Changes_to_dataTable(Changes, "demands",
                             new[] { "id" }, null, null,
-                            Task_name, cancellationToken);
+                            string.Format("{0}:{1}", Task_name, "Update Demands"), cancellationToken);
+                        Steps_executor.End_step(string.Format("{0}:{1}", Task_name, "Update Demands"));
                     });
                     Changes = null;
                 },
-                async() =>
+                async () =>
                 {
+                    Steps_executor.Register_step(string.Format("{0}:{1}", Task_name, "Buyer_info"));
                     SourceDataSet = Limit_length(await rw.Get_PSTGR("" +
                         string.Format(@"SELECT * FROM public.data WHERE regexp_like(indeks, '{0}')", regex),
-                        Task_name, cancellationToken));
+                        string.Format("{0}:{1}", Task_name, "Buyer_info"), cancellationToken));
                     Changes_List<Buyer_info_row> Zak_changes = rw.Changes(SourceDataSet, Limit_length(DataSet),
                         new[] { "indeks", "umiejsc", "data_dost" },
                         new[] { "indeks", "umiejsc", "data_dost", "id", "Widoczny_od_dnia" },
                         new[] { "id", "Widoczny_od_dnia" },
-                        Task_name, cancellationToken);
+                        string.Format("{0}:{1}", Task_name, "Buyer_info"), cancellationToken);
                     returned += await rw.PSTRG_Changes_to_dataTable(Zak_changes, "data",
                         new[] { "id" }, null, null,
-                        Task_name, cancellationToken);
+                        string.Format("{0}:{1}", Task_name, "Buyer_info"), cancellationToken);
                     Zak_changes = null;
-                });                
+                    Steps_executor.End_step(string.Format("{0}:{1}", Task_name, "Buyer_info"));
+                });
+            }            
+            end_with_no_err = Steps_executor.Wait_for(new string[] { string.Format("{0}:{1}", Task_name, "Buyer_info"), string.Format("{0}:{1}", Task_name, "Update Demands"), string.Format("{0}:{1}", Task_name, "Fill_executor") }, string.Format("{0}:{1}", Task_name, "Parallel Calc"), cancellationToken);
+            Steps_executor.End_step(string.Format("{0}:{1}", Task_name, "Parallel Calc"));
+            Steps_executor.End_step(Task_name);
             return Task.FromResult(returned);
         } 
         /// <summary>
