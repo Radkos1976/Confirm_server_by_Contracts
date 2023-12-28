@@ -19,7 +19,7 @@ namespace Confirm_server_by_Contracts
             new ParallelOptions { MaxDegreeOfParallelism = 50 },
             new Action[]
             {
-                async () =>
+                () =>
                 {
                     // migrate demands and inventory_part and run main_loop for each non 616%  part_no
                     Steps_executor.Register_step("Demands 616 ");
@@ -88,7 +88,7 @@ namespace Confirm_server_by_Contracts
                         {
                             Steps_executor.Register_step("Main_loop 616 ");
                             Main_loop main_Loop = new Main_loop();
-                            int result = await main_Loop.Update_Main_Tables("^616.*", "Main_loop 616 ", only_616, oracle, active_token);
+                            int result = main_Loop.Update_Main_Tables("^616.*", "Main_loop 616 ", only_616, oracle, active_token);
                             Parallel.Invoke(
                             async () => {
                                 Order_Demands order_Demands_except1 = new Order_Demands();
@@ -168,7 +168,7 @@ namespace Confirm_server_by_Contracts
                     {
                         Steps_executor.Register_step("Main_loop except 616 ");                        
                         Main_loop main_Loop = new Main_loop();
-                        int result = await main_Loop.Update_Main_Tables("^(5|6(?!16)).*", "Main_loop except 616 ", no_616, oracle, active_token);
+                        int result = main_Loop.Update_Main_Tables("^(5|6(?!16)).*", "Main_loop except 616 ", no_616, oracle, active_token);
                         Parallel.Invoke(
                         async () => {
                             Order_Demands order_Demands_except1 = new Order_Demands();

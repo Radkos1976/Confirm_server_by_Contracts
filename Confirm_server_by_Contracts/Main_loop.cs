@@ -102,7 +102,7 @@ namespace Confirm_server_by_Contracts
         /// <param name="Inv_Part"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public Task<int> Update_Main_Tables(string regex, string Task_name,
+        public int Update_Main_Tables(string regex, string Task_name,
             List<Simple_Demands.Simple_demands_row> Demands, List<Inventory_part.Inventory_part_row> Inv_Part,
             CancellationToken cancellationToken)
         {
@@ -114,14 +114,12 @@ namespace Confirm_server_by_Contracts
 
             Changes_List<Demands_row> Changes = new Changes_List<Demands_row>();
             int returned = 0;
-            Parallel.Invoke(
-                () =>
-                {
-                    Steps_executor.Register_step(string.Format("{0}:{1}", Task_name, "Calculate"));
-                    (DataSet, DemandSet) = Calculate(Demands, Inv_Part, cancellationToken);
-                    Demands = null; Inv_Part = null;
-                    Steps_executor.End_step(string.Format("{0}:{1}", Task_name, "Calculate"));
-                });
+
+            Steps_executor.Register_step(string.Format("{0}:{1}", Task_name, "Calculate"));
+            (DataSet, DemandSet) = Calculate(Demands, Inv_Part, cancellationToken);
+            Demands = null; Inv_Part = null;
+            Steps_executor.End_step(string.Format("{0}:{1}", Task_name, "Calculate"));
+
             Steps_executor.Register_step(string.Format("{0}:{1}", Task_name, "Parallel Calc"));
             bool end_with_no_err = Steps_executor.Wait_for(new string[] { string.Format("{0}:{1}", Task_name, "Calculate") }, string.Format("{0}:{1}", Task_name, "Parallel Calc"), cancellationToken);
             {
@@ -139,7 +137,8 @@ namespace Confirm_server_by_Contracts
                         new[] { "id", "dat_shortage" },
                         Task_name, cancellationToken);
                     Parallel.Invoke(
-                    () => {
+                    () =>
+                    {
                         Steps_executor.Register_step(string.Format("{0}:{1}", Task_name, "Fill_executor"));
                         Fill_executor(Changes, string.Format("{0}:{1}", Task_name, "Fill_executor"), cancellationToken);
                         Steps_executor.End_step(string.Format("{0}:{1}", Task_name, "Fill_executor"));
@@ -170,11 +169,11 @@ namespace Confirm_server_by_Contracts
                     Zak_changes = null;
                     Steps_executor.End_step(string.Format("{0}:{1}", Task_name, "Buyer_info"));
                 });
-            }            
+            }
             end_with_no_err = Steps_executor.Wait_for(new string[] { string.Format("{0}:{1}", Task_name, "Buyer_info"), string.Format("{0}:{1}", Task_name, "Update Demands"), string.Format("{0}:{1}", Task_name, "Fill_executor") }, string.Format("{0}:{1}", Task_name, "Parallel Calc"), cancellationToken);
             Steps_executor.End_step(string.Format("{0}:{1}", Task_name, "Parallel Calc"));
             Steps_executor.End_step(Task_name);
-            return Task.FromResult(returned);
+            return returned;
         } 
         /// <summary>
         /// Csalculate dataset for Buyers and Demands
