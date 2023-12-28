@@ -238,6 +238,7 @@ namespace Confirm_server_by_Contracts
             Steps_executor.Register_step(Task_name);
             while (Dataset_executor.Count() > 0 && !cancellationToken.IsCancellationRequested)
             {
+                if (cancellationToken.IsCancellationRequested) { break; }
                 (string part_no, string contract, Tuple<DateTime?, DateTime?> dates) = Dataset_executor.Run_next();
                 if (part_no != "")
                 {

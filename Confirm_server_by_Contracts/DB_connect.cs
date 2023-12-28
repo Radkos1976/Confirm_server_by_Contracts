@@ -608,7 +608,7 @@ namespace DB_Conect
         /// <returns></returns>
         public async Task<int> PSTRG_Changes_to_dataTable(Changes_List<T> _list, string name_table, string[] guid_col, string[] query_before, string[] query_after, string Task_name, CancellationToken cancellationToken)
         {
-            bool dblogon = false;
+            bool dblogon = true;
             try
             {
                 if (!cancellationToken.IsCancellationRequested)
@@ -629,30 +629,30 @@ namespace DB_Conect
                     using (NpgsqlConnection conO = new NpgsqlConnection(npC))
                     {
                         await conO.OpenAsync(cancellationToken);
-                        using (NpgsqlTransaction npgsqlTransaction = conO.BeginTransaction(IsolationLevel.ReadCommitted))
+                        if (dblogon)
                         {
-                            if (dblogon)
-                            {
-                                using (NpgsqlCommand cmd = new NpgsqlCommand("" +
-                                    @"UPDATE public.datatbles 
+                            using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                                @"UPDATE public.datatbles 
                                    SET start_update=current_timestamp, in_progress=true,updt_errors=false 
                                    WHERE table_name=@table_name", conO))
+                            {
+                                cmd.Parameters.Add("table_name", NpgsqlTypes.NpgsqlDbType.Varchar).Value = name_table;
+                                await cmd.PrepareAsync(cancellationToken);
+                                await cmd.ExecuteNonQueryAsync(cancellationToken);
+                            }
+                            if (query_before != null)
+                            {
+                                foreach (string comm in query_before)
                                 {
-                                    cmd.Parameters.Add("table_name", NpgsqlTypes.NpgsqlDbType.Varchar).Value = name_table;
-                                    await cmd.PrepareAsync(cancellationToken);
-                                    await cmd.ExecuteNonQueryAsync(cancellationToken);
-                                }
-                                if (query_before != null)
-                                {
-                                    foreach (string comm in query_before)
+                                    using (NpgsqlCommand cmd = new NpgsqlCommand(comm, conO))
                                     {
-                                        using (NpgsqlCommand cmd = new NpgsqlCommand(comm, conO))
-                                        {
-                                            await cmd.ExecuteNonQueryAsync(cancellationToken);
-                                        }
+                                        await cmd.ExecuteNonQueryAsync(cancellationToken);
                                     }
                                 }
-                            }                            
+                            }
+                        }
+                        using (NpgsqlTransaction npgsqlTransaction = conO.BeginTransaction(IsolationLevel.ReadCommitted))
+                        {                                                       
                             if (_list.Delete.Count > 0)
                             {
                                 string comand = "DELETE FROM " + name_table;
