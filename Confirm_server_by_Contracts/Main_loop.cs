@@ -244,8 +244,8 @@ namespace Confirm_server_by_Contracts
                     
                     while (Part_no != StMag[ind_mag].Indeks && Contract != StMag[ind_mag].Contract)
                     {
-
-                        max_dates.Add(StMag[ind_mag].Indeks, StMag[ind_mag].Contract, StMag[ind_mag].Data_gwarancji);
+                        Erase_dont_exist.Add(new Tuple<string, string>(StMag[ind_mag].Indeks, StMag[ind_mag].Contract));
+                        
                         ind_mag++;                        
                     }
                     STAN_mag = StMag[ind_mag].Mag;
@@ -475,8 +475,8 @@ namespace Confirm_server_by_Contracts
                 }
                 if (Part_no != NEXT_row.Part_no && Contract != NEXT_row.Contract)
                 {
-                    
-                    .Add(StMag[ind_mag].Indeks, StMag[ind_mag].Contract, rpt_short);
+
+                    max_dates.Add(StMag[ind_mag].Indeks, StMag[ind_mag].Contract, rpt_short);
                 }
             }
             return Task.FromResult((DataSet, DemandSet));
