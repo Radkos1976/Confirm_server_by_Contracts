@@ -551,13 +551,21 @@ namespace DB_Conect
             (int state, _, DateTime? started) = Step_Status(step);
             if (started == null || state == 2)
             {
-                Loger.Log(String.Format("Step {0} was registered", step));
-                Active_steps.Add(step, DateTime.Now);
-                if (state == 2)
+                try
                 {
-                    Steps_with_error.Remove(step);
+                    Loger.Log(String.Format("Step {0} was registered", step));
+                    Active_steps.Add(step, DateTime.Now);
+                    if (state == 2)
+                    {
+                        Steps_with_error.Remove(step);
+                    }
+                    return true;
                 }
-                return true;
+                catch
+                {
+                    return false;
+                }
+                 
             }
             return false;
         }
