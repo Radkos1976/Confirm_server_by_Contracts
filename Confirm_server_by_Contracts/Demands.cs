@@ -370,7 +370,7 @@ namespace Confirm_server_by_Contracts
                             owa_opt_lock.checksum(ROWID||QTY_DEMAND||QTY_PEGGED||QTY_RESERVED||To_Char(ifsapp.shop_order_operation_api.Get_Op_Start_Date(order_no,line_no,rel_no,ifsapp.shop_order_operation_list_api.Get_Prev_Non_Parallel_Op (order_no,line_no,rel_no,2,0)),'YYYYMMDDHH24miss')) chksum  
                         FROM 
                                 ifsapp.shop_material_alloc_demand 
-                        WHERE part_no = '{0}' AND CONTRACT = '{1}' DATE_REQUIRED between '{2}' and '{3}' 
+                        WHERE part_no = '{0}' AND CONTRACT = '{1}' AND DATE_REQUIRED between '{2}' and '{3}' 
                         UNION ALL 
                         sELECT To_Number(ORDER_NO) DOP,
                             LINE_NO DOP_LIN,
@@ -395,7 +395,7 @@ namespace Confirm_server_by_Contracts
                             owa_opt_lock.checksum(order_no||QTY_DEMAND||DATE_REQUIRED||ORDER_NO||LINE_NO||INFO) chksum  
                         FROM 
                             ifsapp.dop_order_demand_ext 
-                        WHERE part_no = '{0}' AND CONTRACT = '{1}' DATE_REQUIRED between '{2}' and '{3}' 
+                        WHERE part_no = '{0}' AND CONTRACT = '{1}' AND DATE_REQUIRED between '{2}' and '{3}' 
                         UNION ALL 
                         SELECT 
                             ifsapp.customer_order_line_api.Get_Pre_Accounting_Id(ORDER_NO, LINE_NO, REL_NO, LINE_ITEM_NO) DOP,
@@ -421,7 +421,7 @@ namespace Confirm_server_by_Contracts
                             owa_opt_lock.checksum(ROW_ID||QTY_DEMAND||DATE_REQUIRED||QTY_PEGGED||QTY_RESERVED) chksum 
                         FROM 
                             ifsapp.customer_order_line_demand_oe 
-                        WHERE part_no = '{0}' AND CONTRACT = '{1}' DATE_REQUIRED between '{2}' and '{3}'  
+                        WHERE part_no = '{0}' AND CONTRACT = '{1}' AND DATE_REQUIRED between '{2}' and '{3}'  
                         UNION ALL 
                         SELECT 
                             0 DOP,
@@ -448,7 +448,7 @@ namespace Confirm_server_by_Contracts
                         FROM 
                             ifsapp.material_requis_line_demand_oe a, 
                             ifsapp.material_requis_line b 
-                        WHERE b.OBJID = a.ROW_ID and a.part_no = '{0}' AND a.CONTRACT = '{1}' a.DATE_REQUIRED between '{2}' and '{3}'  
+                        WHERE b.OBJID = a.ROW_ID and a.part_no = '{0}' AND a.CONTRACT = '{1}' AND a.DATE_REQUIRED between '{2}' and '{3}'  
                         UNION ALL  
                         SELECT 
                             0 DOP,
@@ -474,7 +474,7 @@ namespace Confirm_server_by_Contracts
                             owa_opt_lock.checksum(ROWID||QTY_SUPPLY||DATE_REQUIRED) chksum 
                         FROM 
                             ifsapp.purchase_order_line_supply 
-                        WHERE part_no = '{0}' AND CONTRACT = '{1}' DATE_REQUIRED between '{2}' and '{3}'  
+                        WHERE part_no = '{0}' AND CONTRACT = '{1}' AND DATE_REQUIRED between '{2}' and '{3}'  
                         UNION ALL 
                         SELECT 
                             0 DOP,
@@ -500,7 +500,7 @@ namespace Confirm_server_by_Contracts
                             owa_opt_lock.checksum(ROWID||QTY_SUPPLY||DATE_REQUIRED||STATUS_CODE) chksum 
                         FROM 
                             ifsapp.ARRIVED_PUR_ORDER_EXT 
-                        WHERE part_no = '{0}' AND CONTRACT = '{1}' DATE_REQUIRED between '{2}' and '{3}' ) a", part_no, contract, dates.Item1.ToString(), dates.Item2.ToString()),
+                        WHERE part_no = '{0}' AND CONTRACT = '{1}' AND DATE_REQUIRED between '{2}' and '{3}' ) a", part_no, contract, dates.Item1.ToString(), dates.Item2.ToString()),
                 Task_name, cancellationToken);
 
         public class Order_Demands_row : IEquatable<Order_Demands_row>, IComparable<Order_Demands_row>
