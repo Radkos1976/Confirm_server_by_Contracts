@@ -475,7 +475,7 @@ namespace Confirm_server_by_Contracts
                 if (Part_no != NEXT_row.Part_no && Contract != NEXT_row.Contract)
                 {
 
-                    max_dates.Add(StMag[ind_mag].Indeks, StMag[ind_mag].Contract, rpt_short);
+                    max_dates.Add(Part_no, Contract, rpt_short);
                 }
             }
             return Task.FromResult((DataSet, DemandSet));
