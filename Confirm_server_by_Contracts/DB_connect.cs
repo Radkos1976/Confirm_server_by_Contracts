@@ -961,23 +961,32 @@ namespace DB_Conect
             {
                 await conO.OpenAsync(cancellationToken);
                 using (NpgsqlTransaction npgsqlTransaction = conO.BeginTransaction())
-                {
-                    foreach (string comm in commands)
+                { 
+                    try
                     {
-                        using (NpgsqlCommand cmd = new NpgsqlCommand(comm, conO))
+                        foreach (string comm in commands)
                         {
-                            await cmd.ExecuteNonQueryAsync(cancellationToken);
+                            using (NpgsqlCommand cmd = new NpgsqlCommand(comm, conO))
+                            {
+                                await cmd.ExecuteNonQueryAsync(cancellationToken);
+                            }
+                        }
+                        if (cancellationToken.IsCancellationRequested)
+                        {
+                            npgsqlTransaction.Rollback();
+                            return 1;
+                        }
+                        else
+                        {
+                            npgsqlTransaction.Commit();
+                            return 0;
                         }
                     }
-                    if (cancellationToken.IsCancellationRequested)
+                    catch (Exception ex)
                     {
+                        Loger.Log(string.Format("Error in Execute => {0}", ex));
                         npgsqlTransaction.Rollback();
                         return 1;
-                    }
-                    else
-                    {
-                        npgsqlTransaction.Commit();
-                        return 0;
                     }
                 }
             }
