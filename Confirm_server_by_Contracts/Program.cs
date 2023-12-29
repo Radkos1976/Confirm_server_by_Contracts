@@ -188,7 +188,7 @@ namespace Confirm_server_by_Contracts
             Steps_executor.Register_step("Prepare data for Reports");
             bool with_no_err = Steps_executor.Wait_for(new string[] { "Main_loop except 616 ", "Main_loop 616 ", 
                 "Main_loop except 616 Executor1", "Main_loop except 616 Executor2" , "Main_loop except 616 Executor3",
-                "Main_loop 616 Executor1", "Main_loop 616 Executor2", "Main_loop 616 Executor",
+                "Main_loop 616 Executor1", "Main_loop 616 Executor2", "Main_loop 616 Executor3",
                 "Calendar", "cust_ord"}, "Main_loop except 616 ", active_token);
 
             if (with_no_err)
