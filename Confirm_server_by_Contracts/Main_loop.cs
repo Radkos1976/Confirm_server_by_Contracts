@@ -144,7 +144,7 @@ namespace Confirm_server_by_Contracts
                         string.Format("{0}:{1}", Task_name, "Update Demands"), cancellationToken);
                     Changes = dmr.Changes(SourceDemandSet, DemandSet,
                         new[] { "part_no", "contract", "work_day" },
-                        new[] { "part_no", "contract", "work_day", "id", "dat_shortage" },
+                        new[] { "part_no", "contract", "work_day", "id", "dat_shortage", "objversion" },
                         new[] { "id", "dat_shortage" },
                         Task_name, cancellationToken);
                     Parallel.Invoke(
