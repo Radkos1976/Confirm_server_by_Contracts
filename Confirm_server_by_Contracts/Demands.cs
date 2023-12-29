@@ -242,7 +242,7 @@ namespace Confirm_server_by_Contracts
                 (string part_no, string contract, Tuple<DateTime?, DateTime?> dates) = Dataset_executor.Run_next();
                 if (part_no != "")
                 {
-                    result += await Update_dataset(part_no, contract, dates, Task_name, cancellationToken);
+                    result += await Update_dataset(part_no, contract, dates, string.Format("{0}:{1}:{2}", Task_name, part_no, contract), cancellationToken);
                     Dataset_executor.Report_end(part_no, contract);
                 }               
             }

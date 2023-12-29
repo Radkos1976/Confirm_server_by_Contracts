@@ -974,6 +974,7 @@ namespace DB_Conect
                         }
                         if (cancellationToken.IsCancellationRequested)
                         {
+                            Steps_executor.Step_error(Task_name);
                             npgsqlTransaction.Rollback();
                             return 1;
                         }
