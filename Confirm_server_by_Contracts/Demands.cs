@@ -336,7 +336,7 @@ namespace Confirm_server_by_Contracts
                     a.PROD_QTY,
                     a.QTY_SUPPLY,
                     a.QTY_DEMAND,
-                    To_Date(creat_date) creat_date,
+                    To_Date(creat_date) dat_creat,
                     chksum 
                     from 
                     (
