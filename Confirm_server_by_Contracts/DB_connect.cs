@@ -473,6 +473,7 @@ namespace DB_Conect
                                                 if (val2 != null)
                                                 {
                                                     changed = true;
+                                                    break;
                                                 }
                                             }
                                             else
@@ -482,6 +483,7 @@ namespace DB_Conect
                                                     if (val1 != null)
                                                     {
                                                         changed = true;
+                                                        break;
                                                     }
                                                 }
                                                 else
