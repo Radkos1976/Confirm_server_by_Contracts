@@ -127,7 +127,7 @@ namespace Confirm_server_by_Contracts
                 {
                     // migrate demands and inventory_part and run main_loop for each non 616%  part_no
                     Simple_Demands part_except_616 = new Simple_Demands();
-                    Inventory_part inventory_except_616 = new Inventory_part("^(5|6(?!16)).*", false, null);
+                    Inventory_part inventory_except_616 = new Inventory_part("^(5|6[^616]).+", false, null);
                     List<Simple_Demands.Simple_demands_row> no_616 = new List<Simple_Demands.Simple_demands_row>();
                     List<Inventory_part.Inventory_part_row>  pstgr = new List<Inventory_part.Inventory_part_row>();
                     List<Inventory_part.Inventory_part_row>  oracle= new List<Inventory_part.Inventory_part_row>();
@@ -135,7 +135,7 @@ namespace Confirm_server_by_Contracts
                     async () =>
                     {
                         Steps_executor.Register_step("Demands except 616 ");
-                        no_616 = await part_except_616.Get_source_list("^(5|6(?!16)).*", false, "Demands except 616 ", active_token);
+                        no_616 = await part_except_616.Get_source_list("^(5|6[^616]).+", false, "Demands except 616 ", active_token);
                         Steps_executor.End_step("Demands except 616 ");
                         part_except_616 = null;
                     },
@@ -165,7 +165,7 @@ namespace Confirm_server_by_Contracts
                     {
                         Steps_executor.Register_step("Main_loop except 616 ");                        
                         Main_loop main_Loop = new Main_loop();
-                        int result = main_Loop.Update_Main_Tables("^(5|6(?!16)).*", "Main_loop except 616 ", no_616, oracle, active_token);
+                        int result = main_Loop.Update_Main_Tables("^(5|6[^616]).+", "Main_loop except 616 ", no_616, oracle, active_token);
                         Parallel.Invoke(
                         async () => {
                             Order_Demands order_Demands_except1 = new Order_Demands();
