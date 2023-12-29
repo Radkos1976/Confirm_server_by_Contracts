@@ -427,7 +427,7 @@ namespace DB_Conect
             }
             return ("", "", new Tuple<DateTime?, DateTime?>((DateTime?)null, (DateTime?)null));
         }
-        public void Clear()
+        public static void Clear()
         {
             wait_task.Clear();
             on_work_task.Clear();
