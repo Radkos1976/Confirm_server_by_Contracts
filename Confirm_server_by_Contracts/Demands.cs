@@ -245,8 +245,7 @@ namespace Confirm_server_by_Contracts
                     result += await Update_dataset(part_no, contract, dates, Task_name, cancellationToken);
                     Dataset_executor.Report_end(part_no, contract);
                 }               
-            }
-            Steps_executor.End_step(Task_name);
+            }            
             return result;
         }
 
