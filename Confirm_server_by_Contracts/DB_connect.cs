@@ -608,7 +608,7 @@ namespace DB_Conect
         /// <returns></returns>
         public async Task<int> PSTRG_Changes_to_dataTable(Changes_List<T> _list, string name_table, string[] guid_col, string[] query_before, string[] query_after, string Task_name, CancellationToken cancellationToken)
         {
-            bool dblogon = true;
+            bool dblogon = false;
             try
             {
                 if (!cancellationToken.IsCancellationRequested)
