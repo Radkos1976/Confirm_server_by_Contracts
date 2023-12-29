@@ -460,7 +460,7 @@ namespace DB_Conect
             if (Active_steps.ContainsKey(step)) { return (0, "Active", Active_steps[step]); }
             if (Reccent_steps.ContainsKey(step)) { return (1, "Ready", Reccent_steps[step]); }
             if (Steps_with_error.ContainsKey(step)) { return (2, "Error", Steps_with_error[step]); }
-            return (0, "Not Started", null);
+            return (3, "Not Started", null);
         }
         /// <summary>
         /// Wait for end all Steps in array of string
@@ -570,7 +570,6 @@ namespace DB_Conect
                     {
                         try_ = false;
                     }
-
 
                 }                
             }
