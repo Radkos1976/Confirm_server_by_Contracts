@@ -321,233 +321,193 @@ namespace Confirm_server_by_Contracts
             
             DateTime rpt_short = nullDAT;
             DateTime dta_rap = nullDAT;
-
-            foreach (Simple_demands_row rek in DMND_ORA)
-            { 
-                if (cancellationToken.IsCancellationRequested) { break; }
-                if (counter < max) { counter++; }
-                // Zmiana obliczanego indeksu
-                bool var = !(rek.Part_no.Equals(Part_no) & rek.Contract.Equals(Contract));
-                if (var)
+            try
+            {
+                foreach (Simple_demands_row rek in DMND_ORA)
                 {
-                    //type_DMD - maska bitowa 0001 - zlec ;0010 - DOP ;0100-zam-klient
-                    TYP_dmd = 0;
-                    Data_Braku = nullDAT;
-                    SUM_QTY_SUPPLY = 0;
-                    SUM_QTY_DEMAND = 0;
-                    Sum_dost_op = 0;
-                    Chk_Sum = 0;
-                    balance = 0;
-                    Balane_mag = 0;
-                    bilans = 0;
+                    if (cancellationToken.IsCancellationRequested) { break; }
+                    if (counter < max) { counter++; }
+                    // Zmiana obliczanego indeksu
+                    bool var = !(rek.Part_no.Equals(Part_no) && rek.Contract.Equals(Contract));
+                    if (var)
+                    {
+                        //type_DMD - maska bitowa 0001 - zlec ;0010 - DOP ;0100-zam-klient
+                        TYP_dmd = 0;
+                        Data_Braku = nullDAT;
+                        SUM_QTY_SUPPLY = 0;
+                        SUM_QTY_DEMAND = 0;
+                        Sum_dost_op = 0;
+                        Chk_Sum = 0;
+                        balance = 0;
+                        Balane_mag = 0;
+                        bilans = 0;
+                        dmnNext = 0;
+                        Sum_dost_op = 0;
+                        Sum_potrz_op = 0;
+
+
+                        Part_no = rek.Part_no;
+                        Contract = rek.Contract;
+
+                        rpt_short = nullDAT;
+                        dta_rap = nullDAT;
+
+                        while (!(StMag[ind_mag].Indeks.Equals(Part_no) && StMag[ind_mag].Contract.Equals(Contract)))
+                        {
+                            Erase_dont_exist.Add(new Tuple<string, string>(StMag[ind_mag].Indeks, StMag[ind_mag].Contract));
+                            ind_mag++;
+                        }
+                        STAN_mag = StMag[ind_mag].Mag;
+                        gwar_DT = StMag[ind_mag].Data_gwarancji;
+                        leadtime = StMag[ind_mag].Czas_dostawy;
+                        KOOR = StMag[ind_mag].Planner_buyer;
+                        TYPE = StMag[ind_mag].Rodzaj ?? "NULL";
+                    }
+                    Date_reQ = rek.Date_required;
+                    QTY_SUPPLY = rek.Qty_supply;
+                    QTY_DEMAND = rek.QTY_DEMAND;
+                    DEMAND_ZAM = rek.DEMAND_ZAM;
+                    QTY_DEMAND_DOP = rek.QTY_DEMAND_DOP;
+                    chksumD = rek.Chk_sum;
+                    // Sprawdź pochodzenie potrzeby 
+                    if (QTY_DEMAND_DOP > 0) { TYP_dmd = (byte)(TYP_dmd | b_DOP); }
+                    if (DEMAND_ZAM > 0) { TYP_dmd = (byte)(TYP_dmd | b_ZAM); }
+                    if (QTY_DEMAND != QTY_DEMAND_DOP + DEMAND_ZAM) { TYP_dmd = (byte)(TYP_dmd | b_zlec); }
+                    balance = STAN_mag + SUM_QTY_SUPPLY - SUM_QTY_DEMAND;
+                    SUM_QTY_SUPPLY += QTY_SUPPLY;
+                    SUM_QTY_DEMAND += QTY_DEMAND;
+                    Balane_mag = STAN_mag - SUM_QTY_DEMAND;
+                    if (dta_rap == nullDAT)
+                    {
+                        if (Balane_mag < 0 && Date_reQ < Range_Dat)
+                        {
+                            dta_rap = Date_reQ;
+                        }
+                    }
+                    if ((STAN_mag + SUM_QTY_SUPPLY - SUM_QTY_DEMAND < 0 ||
+                        (Balane_mag < 0 && Date_reQ <= DATNOW)) && Data_Braku == nullDAT)
+                    {
+                        Data_Braku = Date_reQ;
+                        widoczny = start;
+                    }
+                    Chk_Sum = (leadtime + SUM_QTY_SUPPLY + SUM_QTY_DEMAND) * TYP_dmd - (QTY_SUPPLY + QTY_DEMAND) + par;
                     dmnNext = 0;
-                    Sum_dost_op = 0;
-                    Sum_potrz_op = 0;
-                    
+                    if (counter < max - 1)
+                    {
+                        NEXT_row = DMND_ORA[counter + 1];
+                    }
+                    bilans = STAN_mag + SUM_QTY_SUPPLY - SUM_QTY_DEMAND - QTY_SUPPLY;
+                    DemandSet.Add(new Demands_row
+                    {
+                        Part_no = Part_no,
+                        Contract = Contract,
+                        Work_day = Date_reQ,
+                        Expected_leadtime = leadtime,
+                        Purch_qty = QTY_SUPPLY,
+                        Qty_demand = QTY_DEMAND,
+                        Type_dmd = TYP_dmd,
+                        Balance = balance,
+                        Bal_stock = Balane_mag,
+                        Koor = KOOR,
+                        Type = TYPE,
+                        Dat_shortage = Balane_mag < 0 ? start : (DateTime?)null,
+                        Chk_sum = Chk_Sum,
+                        Objversion = start,
+                        Chksum = chksumD
+                    });
 
-                    Part_no = rek.Part_no;
-                    Contract = rek.Contract;
-
-                    rpt_short = nullDAT;
-                    dta_rap = nullDAT;
-                    
-                    while (!(StMag[ind_mag].Indeks.Equals(Part_no) & StMag[ind_mag].Contract.Equals(Contract)))
+                    if (Date_reQ <= DATNOW)
                     {
-                        Erase_dont_exist.Add(new Tuple<string, string>(StMag[ind_mag].Indeks, StMag[ind_mag].Contract));                        
-                        ind_mag++;                        
-                    }
-                    STAN_mag = StMag[ind_mag].Mag;
-                    gwar_DT = StMag[ind_mag].Data_gwarancji;
-                    leadtime = StMag[ind_mag].Czas_dostawy;
-                    KOOR = StMag[ind_mag].Planner_buyer;
-                    TYPE = StMag[ind_mag].Rodzaj ?? "NULL";
-                }
-                Date_reQ = rek.Date_required;
-                QTY_SUPPLY = rek.Qty_supply;
-                QTY_DEMAND = rek.QTY_DEMAND;
-                DEMAND_ZAM = rek.DEMAND_ZAM;
-                QTY_DEMAND_DOP = rek.QTY_DEMAND_DOP;
-                chksumD = rek.Chk_sum;
-                // Sprawdź pochodzenie potrzeby 
-                if (QTY_DEMAND_DOP > 0) { TYP_dmd = (byte)(TYP_dmd | b_DOP); }
-                if (DEMAND_ZAM > 0) { TYP_dmd = (byte)(TYP_dmd | b_ZAM); }
-                if (QTY_DEMAND != QTY_DEMAND_DOP + DEMAND_ZAM) { TYP_dmd = (byte)(TYP_dmd | b_zlec); }
-                balance = STAN_mag + SUM_QTY_SUPPLY - SUM_QTY_DEMAND;
-                SUM_QTY_SUPPLY += QTY_SUPPLY;
-                SUM_QTY_DEMAND += QTY_DEMAND;
-                Balane_mag = STAN_mag - SUM_QTY_DEMAND;
-                if (dta_rap == nullDAT)
-                {
-                    if (Balane_mag < 0 && Date_reQ < Range_Dat)
-                    {
-                        dta_rap = Date_reQ;
-                    }
-                }
-                if ((STAN_mag + SUM_QTY_SUPPLY - SUM_QTY_DEMAND < 0 || 
-                    (Balane_mag < 0 && Date_reQ <= DATNOW)) && Data_Braku == nullDAT)
-                {
-                    Data_Braku = Date_reQ;
-                    widoczny = start;
-                }
-                Chk_Sum = (leadtime + SUM_QTY_SUPPLY + SUM_QTY_DEMAND) * TYP_dmd - (QTY_SUPPLY + QTY_DEMAND) + par;
-                dmnNext = 0;
-                if (counter < max - 1)
-                {
-                    NEXT_row = DMND_ORA[counter + 1];
-                }
-                bilans = STAN_mag + SUM_QTY_SUPPLY - SUM_QTY_DEMAND - QTY_SUPPLY;
-                DemandSet.Add(new Demands_row
-                {
-                    Part_no = Part_no,
-                    Contract = Contract,
-                    Work_day = Date_reQ,
-                    Expected_leadtime = leadtime,
-                    Purch_qty = QTY_SUPPLY,
-                    Qty_demand = QTY_DEMAND,
-                    Type_dmd = TYP_dmd,
-                    Balance = balance,
-                    Bal_stock = Balane_mag,
-                    Koor = KOOR,
-                    Type = TYPE,
-                    Dat_shortage = Balane_mag < 0 ? start: (DateTime?)null,
-                    Chk_sum = Chk_Sum,
-                    Objversion = start,
-                    Chksum = chksumD
-                });
-
-                if (Date_reQ <= DATNOW)
-                {
-                    Sum_dost_op += QTY_SUPPLY;
-                    Sum_potrz_op += QTY_DEMAND;
-                    if (STAN_mag - Sum_potrz_op < 0 && Date_reQ == DATNOW)
-                    {
-                        rpt_short = Date_reQ;
-                    }
-
-                    if (QTY_SUPPLY > 0)
-                    {
-                        string state = Date_reQ == DATNOW ? "Dzisiejsza dostawa" : "Opóźniona dostawa";
-                        TmpDataSet.Add(new Buyer_info_row
-                        {
-                            Indeks = Part_no,
-                            Umiejsc = StMag[ind_mag].Contract,
-                            Opis = StMag[ind_mag].Opis,
-                            Kolekcja = StMag[ind_mag].Kolekcja,
-                            Mag = STAN_mag,
-                            Planner_buyer = KOOR,
-                            Rodzaj = StMag[ind_mag].Rodzaj,
-                            Czas_dostawy = StMag[ind_mag].Czas_dostawy,
-                            Data_gwarancji = gwar_DT,
-                            Przyczyna = TYP_dmd,
-                            Wlk_dost = QTY_SUPPLY,
-                            Data_dost = Date_reQ,
-                            Typ_zdarzenia = state,
-                            Widoczny_od_dnia = state == "Opóźniona dostawa" ? start: (DateTime?)null,
-                            Status_informacji = "NOT IMPLEMENT",
-                            Refr_date = start,
-                            Chk = Chk_Sum
-                        });
-                    }
-                }
-                if (TmpDataSet.Count > 0)
-                {
-                    if (Date_reQ > DATNOW || (Part_no != NEXT_row.Part_no && Contract != NEXT_row.Contract))
-                    {
-                        if (dta_rap == nullDAT)
-                        {
-                            if (STAN_mag - Sum_potrz_op < 0)
-                            {
-                                dta_rap = Date_reQ;
-                            }
-                        }
-                        foreach (Buyer_info_row row in TmpDataSet)
-                        {
-                            DataSet.Add(new Buyer_info_row
-                            {
-                                Indeks = row.Indeks,
-                                Umiejsc = row.Umiejsc,
-                                Opis = row.Opis,
-                                Kolekcja = row.Kolekcja,
-                                Mag = row.Mag,
-                                Planner_buyer = row.Planner_buyer,
-                                Rodzaj = row.Rodzaj,
-                                Czas_dostawy = row.Czas_dostawy,
-                                Data_gwarancji = row.Data_gwarancji,
-                                Przyczyna = row.Przyczyna,
-                                Data_dost = row.Data_dost,
-                                Wlk_dost = row.Wlk_dost,
-                                Typ_zdarzenia = row.Typ_zdarzenia,
-                                Widoczny_od_dnia = row.Widoczny_od_dnia,
-                                Status_informacji = row.Status_informacji,
-                                Refr_date = row.Refr_date,
-                                Bilans = STAN_mag - Sum_potrz_op,
-                                Bil_dost_dzień = STAN_mag - Sum_potrz_op - dmnNext,
-                                Data_braku = Data_Braku != nullDAT ? Data_Braku : Date_reQ,
-                                Sum_dost = Sum_dost_op,
-                                Sum_potrz = Sum_potrz_op,
-                                Sum_dost_opóźnion = Sum_dost_op,
-                                Sum_potrz_opóźnion = Sum_potrz_op,
-                                Chk = row.Chk,
-                                Id = System.Guid.NewGuid()
-                            });
-                        }
-                    }
-                    TmpDataSet.Clear();
-                }
-                if (QTY_SUPPLY > 0)
-                {
-                    if (Date_reQ > DATNOW && (bilans < 0 || balance < 0))
-                    {
-                        if (Date_reQ > gwar_DT)
+                        Sum_dost_op += QTY_SUPPLY;
+                        Sum_potrz_op += QTY_DEMAND;
+                        if (STAN_mag - Sum_potrz_op < 0 && Date_reQ == DATNOW)
                         {
                             rpt_short = Date_reQ;
                         }
-                        else
+
+                        if (QTY_SUPPLY > 0)
                         {
-                            rpt_short = gwar_DT;
+                            string state = Date_reQ == DATNOW ? "Dzisiejsza dostawa" : "Opóźniona dostawa";
+                            TmpDataSet.Add(new Buyer_info_row
+                            {
+                                Indeks = Part_no,
+                                Umiejsc = StMag[ind_mag].Contract,
+                                Opis = StMag[ind_mag].Opis,
+                                Kolekcja = StMag[ind_mag].Kolekcja,
+                                Mag = STAN_mag,
+                                Planner_buyer = KOOR,
+                                Rodzaj = StMag[ind_mag].Rodzaj,
+                                Czas_dostawy = StMag[ind_mag].Czas_dostawy,
+                                Data_gwarancji = gwar_DT,
+                                Przyczyna = TYP_dmd,
+                                Wlk_dost = QTY_SUPPLY,
+                                Data_dost = Date_reQ,
+                                Typ_zdarzenia = state,
+                                Widoczny_od_dnia = state == "Opóźniona dostawa" ? start : (DateTime?)null,
+                                Status_informacji = "NOT IMPLEMENT",
+                                Refr_date = start,
+                                Chk = Chk_Sum
+                            });
                         }
-                        string state = balance < 0 ? "Brakujące ilości" : "Dostawa na dzisiejsze ilości";
-                        DataSet.Add(new Buyer_info_row
-                        {
-                            Indeks = Part_no,
-                            Umiejsc = StMag[ind_mag].Contract,
-                            Opis = StMag[ind_mag].Opis,
-                            Kolekcja = StMag[ind_mag].Kolekcja,
-                            Mag = STAN_mag,
-                            Planner_buyer = KOOR,
-                            Rodzaj = StMag[ind_mag].Rodzaj,
-                            Czas_dostawy = StMag[ind_mag].Czas_dostawy,
-                            Data_gwarancji = gwar_DT,
-                            Przyczyna = TYP_dmd,
-                            Data_dost = Date_reQ,
-                            Wlk_dost = QTY_SUPPLY,
-                            Bilans = balance,
-                            Bil_dost_dzień = bilans,
-                            Data_braku = Data_Braku != nullDAT ? Data_Braku : Date_reQ,
-                            Typ_zdarzenia = state,
-                            Widoczny_od_dnia = start,
-                            Sum_dost = SUM_QTY_SUPPLY,
-                            Sum_potrz = SUM_QTY_DEMAND,
-                            Sum_dost_opóźnion = Sum_dost_op,
-                            Sum_potrz_opóźnion = Sum_potrz_op,
-                            Status_informacji = "NOT IMPLEMENT",
-                            Refr_date = start,
-                            Chk = Chk_Sum,
-                            Id = System.Guid.NewGuid()
-                        });
                     }
-                }
-                else
-                {
-                    if (bilans < 0)
+                    if (TmpDataSet.Count > 0)
                     {
-                        if ((Part_no != NEXT_row.Part_no && Contract != NEXT_row.Contract)|| (Date_reQ <= gwar_DT && NEXT_row.Date_required > gwar_DT))
+                        if (Date_reQ > DATNOW || (Part_no != NEXT_row.Part_no && Contract != NEXT_row.Contract))
                         {
-                            string state = Date_reQ <= gwar_DT ? "Braki w gwarantowanej dacie" : "Brak zamówień zakupu";
-                            if (Date_reQ <= gwar_DT)
+                            if (dta_rap == nullDAT)
+                            {
+                                if (STAN_mag - Sum_potrz_op < 0)
+                                {
+                                    dta_rap = Date_reQ;
+                                }
+                            }
+                            foreach (Buyer_info_row row in TmpDataSet)
+                            {
+                                DataSet.Add(new Buyer_info_row
+                                {
+                                    Indeks = row.Indeks,
+                                    Umiejsc = row.Umiejsc,
+                                    Opis = row.Opis,
+                                    Kolekcja = row.Kolekcja,
+                                    Mag = row.Mag,
+                                    Planner_buyer = row.Planner_buyer,
+                                    Rodzaj = row.Rodzaj,
+                                    Czas_dostawy = row.Czas_dostawy,
+                                    Data_gwarancji = row.Data_gwarancji,
+                                    Przyczyna = row.Przyczyna,
+                                    Data_dost = row.Data_dost,
+                                    Wlk_dost = row.Wlk_dost,
+                                    Typ_zdarzenia = row.Typ_zdarzenia,
+                                    Widoczny_od_dnia = row.Widoczny_od_dnia,
+                                    Status_informacji = row.Status_informacji,
+                                    Refr_date = row.Refr_date,
+                                    Bilans = STAN_mag - Sum_potrz_op,
+                                    Bil_dost_dzień = STAN_mag - Sum_potrz_op - dmnNext,
+                                    Data_braku = Data_Braku != nullDAT ? Data_Braku : Date_reQ,
+                                    Sum_dost = Sum_dost_op,
+                                    Sum_potrz = Sum_potrz_op,
+                                    Sum_dost_opóźnion = Sum_dost_op,
+                                    Sum_potrz_opóźnion = Sum_potrz_op,
+                                    Chk = row.Chk,
+                                    Id = System.Guid.NewGuid()
+                                });
+                            }
+                        }
+                        TmpDataSet.Clear();
+                    }
+                    if (QTY_SUPPLY > 0)
+                    {
+                        if (Date_reQ > DATNOW && (bilans < 0 || balance < 0))
+                        {
+                            if (Date_reQ > gwar_DT)
                             {
                                 rpt_short = Date_reQ;
                             }
+                            else
+                            {
+                                rpt_short = gwar_DT;
+                            }
+                            string state = balance < 0 ? "Brakujące ilości" : "Dostawa na dzisiejsze ilości";
                             DataSet.Add(new Buyer_info_row
                             {
                                 Indeks = Part_no,
@@ -562,7 +522,7 @@ namespace Confirm_server_by_Contracts
                                 Przyczyna = TYP_dmd,
                                 Data_dost = Date_reQ,
                                 Wlk_dost = QTY_SUPPLY,
-                                Bilans = bilans,
+                                Bilans = balance,
                                 Bil_dost_dzień = bilans,
                                 Data_braku = Data_Braku != nullDAT ? Data_Braku : Date_reQ,
                                 Typ_zdarzenia = state,
@@ -578,15 +538,63 @@ namespace Confirm_server_by_Contracts
                             });
                         }
                     }
-                }
-                if ((STAN_mag + SUM_QTY_SUPPLY - SUM_QTY_DEMAND >= 0 && Date_reQ > DATNOW) && Data_Braku != nullDAT)
-                {
-                    Data_Braku = nullDAT;
-                }
-                if (Part_no != NEXT_row.Part_no && Contract != NEXT_row.Contract)
-                {
-                    max_dates.Add(Part_no, Contract, rpt_short);
-                }
+                    else
+                    {
+                        if (bilans < 0)
+                        {
+                            if ((Part_no != NEXT_row.Part_no && Contract != NEXT_row.Contract) || (Date_reQ <= gwar_DT && NEXT_row.Date_required > gwar_DT))
+                            {
+                                string state = Date_reQ <= gwar_DT ? "Braki w gwarantowanej dacie" : "Brak zamówień zakupu";
+                                if (Date_reQ <= gwar_DT)
+                                {
+                                    rpt_short = Date_reQ;
+                                }
+                                DataSet.Add(new Buyer_info_row
+                                {
+                                    Indeks = Part_no,
+                                    Umiejsc = StMag[ind_mag].Contract,
+                                    Opis = StMag[ind_mag].Opis,
+                                    Kolekcja = StMag[ind_mag].Kolekcja,
+                                    Mag = STAN_mag,
+                                    Planner_buyer = KOOR,
+                                    Rodzaj = StMag[ind_mag].Rodzaj,
+                                    Czas_dostawy = StMag[ind_mag].Czas_dostawy,
+                                    Data_gwarancji = gwar_DT,
+                                    Przyczyna = TYP_dmd,
+                                    Data_dost = Date_reQ,
+                                    Wlk_dost = QTY_SUPPLY,
+                                    Bilans = bilans,
+                                    Bil_dost_dzień = bilans,
+                                    Data_braku = Data_Braku != nullDAT ? Data_Braku : Date_reQ,
+                                    Typ_zdarzenia = state,
+                                    Widoczny_od_dnia = start,
+                                    Sum_dost = SUM_QTY_SUPPLY,
+                                    Sum_potrz = SUM_QTY_DEMAND,
+                                    Sum_dost_opóźnion = Sum_dost_op,
+                                    Sum_potrz_opóźnion = Sum_potrz_op,
+                                    Status_informacji = "NOT IMPLEMENT",
+                                    Refr_date = start,
+                                    Chk = Chk_Sum,
+                                    Id = System.Guid.NewGuid()
+                                });
+                            }
+                        }
+                    }
+                    if ((STAN_mag + SUM_QTY_SUPPLY - SUM_QTY_DEMAND >= 0 && Date_reQ > DATNOW) && Data_Braku != nullDAT)
+                    {
+                        Data_Braku = nullDAT;
+                    }
+                    if (Part_no != NEXT_row.Part_no && Contract != NEXT_row.Contract)
+                    {
+                        max_dates.Add(Part_no, Contract, rpt_short);
+                    }
+                }          
+            
+            }
+            catch (Exception ex)
+            {
+                Loger.Log("Error in Main_loop " + ex);
+
             }
             return (DataSet, DemandSet);
         }
