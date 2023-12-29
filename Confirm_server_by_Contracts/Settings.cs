@@ -549,11 +549,12 @@ namespace DB_Conect
         public static bool Register_step(string step)
         {
             bool try_ = false;
-            (int state, _, DateTime? started) = Step_Status(step);
-            if (started == null || state == 2)
+            while (!try_)
             {
-                while (!try_)
+                (int state, _, DateTime? started) = Step_Status(step);
+                if (started == null || state == 2)
                 {
+
                     try
                     {
                         Loger.Log(String.Format("Step {0} was registered", step));
@@ -569,8 +570,9 @@ namespace DB_Conect
                     {
                         try_ = false;
                     }
+
+
                 }                
-                 
             }
             return false;
         }
