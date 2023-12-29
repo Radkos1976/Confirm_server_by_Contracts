@@ -378,8 +378,6 @@ namespace DB_Conect
     {
         private static readonly Dictionary<string, string, Tuple<DateTime?, DateTime?>> wait_task = new Dictionary<string, string, Tuple<DateTime?, DateTime?>>();
         private static readonly Dictionary<string, string, Tuple<DateTime?, DateTime?>> on_work_task = new Dictionary<string, string, Tuple<DateTime?, DateTime?>>();
-        private static string proc_part_no { get; set; }
-        private static string proc_contract {get; set; }
         public static void Add_task(string part_no, string contract, DateTime Start, DateTime End)
         {
             wait_task.Add(part_no, contract, new Tuple<DateTime?, DateTime?>(Start, End));
@@ -391,7 +389,6 @@ namespace DB_Conect
                 bool chk = false;
                 string part_no = "";
                 string contract = "";
-                
                 Tuple<DateTime?, DateTime?> range = new Tuple<DateTime?, DateTime?>((DateTime?)null, (DateTime?)null);
                 while (!chk)
                 {
@@ -399,36 +396,18 @@ namespace DB_Conect
                     {
                         if (wait_task.Count > 0)
                         {
-                            while (!chk && wait_task.Count > 0)
+                            (part_no, contract) = wait_task.Keys.First();
+                            range = wait_task[part_no, contract];
+                            chk = wait_task.ContainsKey(part_no, contract);
+                            if (chk)
                             {
-                                while (!chk)
-                                {
-                                    (part_no, contract) = wait_task.Keys.First();
-                                    if ((proc_part_no, proc_contract) != (part_no, contract))
-                                    {
-                                        chk = true;
-                                        (proc_part_no, proc_contract) = (part_no, contract);
-                                    }
-                                    else
-                                    {
-                                        Thread.Sleep(10);
-                                    }
-                                    if (wait_task.Count > 0) { break; }
-                                }
-                                range = wait_task[part_no, contract];
-                                chk = wait_task.ContainsKey(part_no, contract);
-                                if (chk)
-                                {
-                                    wait_task.Remove(part_no, contract);
-                                    on_work_task.Add(part_no, contract, range);
-                                }
+                                wait_task.Remove(part_no, contract);
+                                on_work_task.Add(part_no, contract, range);
                             }
-                            part_no = "";
-                            contract = "";
-                            range = new Tuple<DateTime?, DateTime?>((DateTime?)null, (DateTime?)null);
                         }
                         else
-                        {                            
+                        {
+                            chk= true;
                             part_no = "";
                             contract = "";
                             range = new Tuple<DateTime?, DateTime?>((DateTime?)null, (DateTime?)null);
@@ -439,13 +418,13 @@ namespace DB_Conect
                     {
                         chk = false;
                     }
-                }                  
+                }                   
                 
                 return (part_no, contract, range);
             }
             return ("", "", new Tuple<DateTime?, DateTime?>((DateTime?)null, (DateTime?)null));
         }
-        public static void Clear()
+        public void Clear()
         {
             wait_task.Clear();
             on_work_task.Clear();
