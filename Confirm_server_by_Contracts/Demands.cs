@@ -528,7 +528,7 @@ namespace Confirm_server_by_Contracts
             public double Prod_qty { get; set; }
             public double Qty_supply { get; set; }
             public double Qty_demand { get; set; }
-            public DateTime Dat_creat { get; set; }
+            public DateTime? Dat_creat { get; set; }
             public int Chksum { get; set; }
             public Guid Id { get; set; }
 
