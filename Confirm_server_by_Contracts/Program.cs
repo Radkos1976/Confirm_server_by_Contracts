@@ -16,7 +16,7 @@ namespace Confirm_server_by_Contracts
         {
             Loger.Srv_start();
             CancellationToken active_token = Steps_executor.cts.Token;
-            string npC = Postegresql_conn.Connection_pool["MAIN"].ToString();
+            
             Parallel.Invoke(
             new ParallelOptions { MaxDegreeOfParallelism = 50 },
             new Action[]
@@ -200,9 +200,17 @@ namespace Confirm_server_by_Contracts
 
             if (with_no_err)
             {
-                string[] query_set = new [] {
-                    "REFRESH MATERIALIZED VIEW bilans_val"
-                    ,
+                run_query query = new run_query();
+                Parallel.Invoke(
+                        async () =>
+                        {
+                            await query.Execute_in_Postgres(new[] {
+                    "REFRESH MATERIALIZED VIEW bilans_val" }, active_token);
+                        });
+                Parallel.Invoke(
+                        async () =>
+                        {
+                            await query.Execute_in_Postgres(new[] {
                     @"DELETE FROM public.ord_demands 
                     where ord_demands.id in 
                     (
@@ -265,30 +273,9 @@ namespace Confirm_server_by_Contracts
                         ) as b 
                         where indb is null or indb!=chk_in
                     ) as up 
-                    where demands.id=up.id;"
-                };
-                using (NpgsqlConnection conO = new NpgsqlConnection(npC))
-                {
-                    conO.OpenAsync(active_token);
-                    using (NpgsqlTransaction npgsqlTransaction = conO.BeginTransaction())
-                    {
-                        foreach (string comm in query_set)
-                        {
-                            using (NpgsqlCommand cmd = new NpgsqlCommand(comm, conO))
-                            {
-                                cmd.ExecuteNonQuery();
-                            }
-                        }
-                        if (active_token.IsCancellationRequested)
-                        {
-                            npgsqlTransaction.Rollback();
-                        }
-                        else
-                        {
-                            npgsqlTransaction.Commit();
-                        }
-                    }
-                }
+                    where demands.id=up.id;" }, active_token);
+                        });
+
             }
             Loger.Srv_stop();
             Steps_executor.cts.Dispose();

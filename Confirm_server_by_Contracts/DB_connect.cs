@@ -947,4 +947,41 @@ namespace DB_Conect
     {
 
     }
+    
+    public class run_query
+    {
+        public string npC;
+        public run_query() 
+        {
+            npC = Postegresql_conn.Connection_pool["MAIN"].ToString();
+        }
+        public async Task<int> Execute_in_Postgres(string[] commands, CancellationToken cancellationToken)
+        {
+            using (NpgsqlConnection conO = new NpgsqlConnection(npC))
+            {
+                await conO.OpenAsync(cancellationToken);
+                using (NpgsqlTransaction npgsqlTransaction = conO.BeginTransaction())
+                {
+                    foreach (string comm in commands)
+                    {
+                        using (NpgsqlCommand cmd = new NpgsqlCommand(comm, conO))
+                        {
+                            await cmd.ExecuteNonQueryAsync(cancellationToken);
+                        }
+                    }
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        npgsqlTransaction.Rollback();
+                        return 1;
+                    }
+                    else
+                    {
+                        npgsqlTransaction.Commit();
+                        return 0;
+                    }
+                }
+            }
+        }
+
+    }
 }
