@@ -171,8 +171,8 @@ namespace Confirm_server_by_Contracts
                         string.Format("{0}:{1}", Task_name, "Buyer_info"), cancellationToken));
                     Changes_List<Buyer_info_row> Zak_changes = rw.Changes(SourceDataSet, Limit_length(DataSet),
                         new[] { "indeks", "umiejsc", "data_dost" },
-                        new[] { "indeks", "umiejsc", "data_dost", "status_informacji", "informacja", "id", "Widoczny_od_dnia" },
-                        new[] { "id", "Widoczny_od_dnia", "informacja" },
+                        new[] { "indeks", "umiejsc", "data_dost", "status_informacji", "informacja", "id", "widoczny_od_dnia" },
+                        new[] { "id", "widoczny_od_dnia", "informacja" },
                         string.Format("{0}:{1}", Task_name, "Buyer_info"), cancellationToken);
                     returned += await rw.PSTRG_Changes_to_dataTable(Zak_changes, "data",
                         new[] { "id" }, null, new[] {"" +
