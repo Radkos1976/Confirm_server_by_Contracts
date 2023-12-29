@@ -280,8 +280,7 @@ namespace Confirm_server_by_Contracts
                 Task_name, cancellationToken);
             int result = await rw.PSTRG_Changes_to_dataTable(Ch_dataset, "ord_demands",
                         new[] { "id" }, null, null,
-                        Task_name, cancellationToken);
-            Steps_executor.End_step(Task_name);
+                        Task_name, cancellationToken);            
             return result;
         }
         /// <summary>
