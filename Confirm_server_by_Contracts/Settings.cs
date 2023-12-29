@@ -416,9 +416,12 @@ namespace DB_Conect
                     }
                     catch
                     {
+                        part_no = "";
+                        contract = "";
+                        range = new Tuple<DateTime?, DateTime?>((DateTime?)null, (DateTime?)null);
                         chk = false;
                     }
-                }                   
+                }                 
                 
                 return (part_no, contract, range);
             }
