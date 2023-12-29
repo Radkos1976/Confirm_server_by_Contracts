@@ -548,23 +548,28 @@ namespace DB_Conect
         /// <returns></returns>
         public static bool Register_step(string step)
         {
+            bool try_ = false;
             (int state, _, DateTime? started) = Step_Status(step);
             if (started == null || state == 2)
             {
-                try
+                while (!try_)
                 {
-                    Loger.Log(String.Format("Step {0} was registered", step));
-                    Active_steps.Add(step, DateTime.Now);
-                    if (state == 2)
+                    try
                     {
-                        Steps_with_error.Remove(step);
+                        Loger.Log(String.Format("Step {0} was registered", step));
+                        Active_steps.Add(step, DateTime.Now);
+                        if (state == 2)
+                        {
+                            Steps_with_error.Remove(step);
+                        }
+                        try_ = true;
+                        return true;
                     }
-                    return true;
-                }
-                catch
-                {
-                    return false;
-                }
+                    catch
+                    {
+                        try_ = false;
+                    }
+                }                
                  
             }
             return false;
