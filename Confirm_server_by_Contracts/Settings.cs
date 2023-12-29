@@ -392,37 +392,38 @@ namespace DB_Conect
                 Tuple<DateTime?, DateTime?> range = new Tuple<DateTime?, DateTime?>((DateTime?)null, (DateTime?)null);
                 while (!chk)
                 {
-                    try
+                    while (!chk)
                     {
-                        if (wait_task.Count > 0)
+                        if (wait_task.Count() > 0)
                         {
-                            (part_no, contract) = wait_task.Keys.First();
-                            range = wait_task[part_no, contract];
-                            chk = wait_task.ContainsKey(part_no, contract);
-                            if (chk)
+                            try
                             {
-                                wait_task.Remove(part_no, contract);
-                                on_work_task.Add(part_no, contract, range);
+                                (part_no, contract) = wait_task.Keys.First();
+                                range = wait_task[part_no, contract];
+                                chk = wait_task.ContainsKey(part_no, contract);
+                                if (chk)
+                                {
+                                    wait_task.Remove(part_no, contract);
+                                    on_work_task.Add(part_no, contract, range);
+                                }
+                            }
+                            catch
+                            {
+                                part_no = "";
+                                contract = "";
+                                range = new Tuple<DateTime?, DateTime?>((DateTime?)null, (DateTime?)null);
+                                chk = false;
                             }
                         }
                         else
                         {
-                            chk= true;
+                            chk = true;
                             part_no = "";
                             contract = "";
                             range = new Tuple<DateTime?, DateTime?>((DateTime?)null, (DateTime?)null);
                         }
-                        
                     }
-                    catch
-                    {
-                        part_no = "";
-                        contract = "";
-                        range = new Tuple<DateTime?, DateTime?>((DateTime?)null, (DateTime?)null);
-                        chk = false;
-                    }
-                }                 
-                
+                }               
                 return (part_no, contract, range);
             }
             return ("", "", new Tuple<DateTime?, DateTime?>((DateTime?)null, (DateTime?)null));
