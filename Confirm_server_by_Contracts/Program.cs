@@ -95,20 +95,17 @@ namespace Confirm_server_by_Contracts
                             async () => {
                                 Order_Demands order_Demands_except1 = new Order_Demands();
                                 await order_Demands_except1.Update_from_executor("Main_loop 616 Executor1", active_token);
-                                order_Demands_except1 = null;
-                                Steps_executor.End_step("Main_loop 616 Executor1");
+                                order_Demands_except1 = null;                               
                             },
                             async () => {
                                 Order_Demands order_Demands_except2 = new Order_Demands();
                                 await order_Demands_except2.Update_from_executor("Main_loop 616 Executor2", active_token);
-                                order_Demands_except2 = null;
-                                Steps_executor.End_step("Main_loop 616 Executor2");
+                                order_Demands_except2 = null;                               
                             },
                             async () => {
                                 Order_Demands order_Demands_except3 = new Order_Demands();
                                 await order_Demands_except3.Update_from_executor("Main_loop 616 Executor3", active_token);
-                                order_Demands_except3 = null;
-                                Steps_executor.End_step("Main_loop 616 Executor3");
+                                order_Demands_except3 = null;                                
                             });
                             
                         }
@@ -173,20 +170,17 @@ namespace Confirm_server_by_Contracts
                         async () => {
                             Order_Demands order_Demands_except1 = new Order_Demands();
                             await order_Demands_except1.Update_from_executor("Main_loop except 616 Executor1", active_token);
-                            order_Demands_except1 = null;
-                            Steps_executor.End_step("Main_loop except 616 Executor1");
+                            order_Demands_except1 = null;                            
                         },
                         async () => {
                             Order_Demands order_Demands_except2 = new Order_Demands();
                             await order_Demands_except2.Update_from_executor("Main_loop except 616 Executor2", active_token);
-                            order_Demands_except2 = null;
-                            Steps_executor.End_step("Main_loop except 616 Executor2");
+                            order_Demands_except2 = null;                            
                         },
                         async () => {
                             Order_Demands order_Demands_except3 = new Order_Demands();
                             await order_Demands_except3.Update_from_executor("Main_loop except 616 Executor3", active_token);
-                            order_Demands_except3 = null;
-                            Steps_executor.End_step("Main_loop except 616 Executor3");
+                            order_Demands_except3 = null;                            
                         }); 
                     }
                 }
