@@ -955,8 +955,9 @@ namespace DB_Conect
         {
             npC = Postegresql_conn.Connection_pool["MAIN"].ToString();
         }
-        public async Task<int> Execute_in_Postgres(string[] commands, CancellationToken cancellationToken)
+        public async Task<int> Execute_in_Postgres(string[] commands, string Task_name, CancellationToken cancellationToken)
         {
+            Steps_executor.Register_step(Task_name);
             using (NpgsqlConnection conO = new NpgsqlConnection(npC))
             {
                 await conO.OpenAsync(cancellationToken);
@@ -979,6 +980,7 @@ namespace DB_Conect
                         else
                         {
                             npgsqlTransaction.Commit();
+                            Steps_executor.End_step(Task_name);
                             return 0;
                         }
                     }
@@ -986,10 +988,12 @@ namespace DB_Conect
                     {
                         Loger.Log(string.Format("Error in Execute => {0}", ex));
                         npgsqlTransaction.Rollback();
+                        Steps_executor.Step_error(Task_name);
                         return 1;
                     }
                 }
             }
+            
         }
 
     }

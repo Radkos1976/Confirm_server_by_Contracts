@@ -204,7 +204,7 @@ namespace Confirm_server_by_Contracts
                         async () =>
                         {
                             await query.Execute_in_Postgres(new[] {
-                    "REFRESH MATERIALIZED VIEW bilans_val" }, active_token);
+                    "REFRESH MATERIALIZED VIEW bilans_val" }, "Refresh bilans_val", active_token);
                         });
                 Parallel.Invoke(
                 async () =>
@@ -272,7 +272,7 @@ namespace Confirm_server_by_Contracts
                         ) as b 
                         where indb is null or indb!=chk_in
                     ) as up 
-                    where demands.id=up.id;" }, active_token);
+                    where demands.id=up.id;" }, "Refresh Demand and Order_demands", active_token);
                 });
 
             }
