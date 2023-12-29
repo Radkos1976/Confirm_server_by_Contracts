@@ -276,7 +276,7 @@ namespace Confirm_server_by_Contracts
                         {
                             using (NpgsqlCommand cmd = new NpgsqlCommand(comm, conO))
                             {
-                                cmd.ExecuteNonQueryAsync(active_token);
+                                cmd.ExecuteNonQuery();
                             }
                         }
                         if (active_token.IsCancellationRequested)
