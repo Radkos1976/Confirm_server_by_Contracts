@@ -106,11 +106,6 @@ namespace Confirm_server_by_Contracts
                                 Order_Demands order_Demands_except3 = new Order_Demands();
                                 await order_Demands_except3.Update_from_executor("Main_loop 616 Executor3", active_token);
                                 order_Demands_except3 = null;
-                            },
-                            async () => {
-                                Order_Demands order_Demands_except4 = new Order_Demands();
-                                await order_Demands_except4.Update_from_executor("Main_loop 616 Executor4", active_token);
-                                order_Demands_except4 = null;
                             });
                             
                         }
@@ -186,17 +181,15 @@ namespace Confirm_server_by_Contracts
                             Order_Demands order_Demands_except3 = new Order_Demands();
                             await order_Demands_except3.Update_from_executor("Main_loop except 616 Executor3", active_token);
                             order_Demands_except3 = null;
-                        },
-                        async () => {
-                            Order_Demands order_Demands_except4 = new Order_Demands();
-                            await order_Demands_except4.Update_from_executor("Main_loop except 616 Executor4", active_token);
-                            order_Demands_except4 = null;
                         }); 
                     }
                 }
             });
             Steps_executor.Register_step("Prepare data for Reports");
-            bool with_no_err = Steps_executor.Wait_for(new string[] { "Main_loop except 616 ", "Main_loop 616 ", "Calendar", "cust_ord"}, "Main_loop except 616 ", active_token);
+            bool with_no_err = Steps_executor.Wait_for(new string[] { "Main_loop except 616 ", "Main_loop 616 ", 
+                "Main_loop except 616 Executor1", "Main_loop except 616 Executor2" , "Main_loop except 616 Executor3",
+                "Main_loop 616 Executor1", "Main_loop 616 Executor2", "Main_loop 616 Executor",
+                "Calendar", "cust_ord"}, "Main_loop except 616 ", active_token);
 
             if (with_no_err)
             {
@@ -208,9 +201,9 @@ namespace Confirm_server_by_Contracts
                     "REFRESH MATERIALIZED VIEW bilans_val" }, active_token);
                         });
                 Parallel.Invoke(
-                        async () =>
-                        {
-                            await query.Execute_in_Postgres(new[] {
+                async () =>
+                {
+                    await query.Execute_in_Postgres(new[] {
                     @"DELETE FROM public.ord_demands 
                     where ord_demands.id in 
                     (
@@ -274,7 +267,7 @@ namespace Confirm_server_by_Contracts
                         where indb is null or indb!=chk_in
                     ) as up 
                     where demands.id=up.id;" }, active_token);
-                        });
+                });
 
             }
             Loger.Srv_stop();
