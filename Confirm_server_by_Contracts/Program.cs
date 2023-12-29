@@ -270,23 +270,22 @@ namespace Confirm_server_by_Contracts
                 using (NpgsqlConnection conO = new NpgsqlConnection(npC))
                 {
                     conO.OpenAsync(active_token);
-                    foreach (string comm in query_set)
+                    using (NpgsqlTransaction npgsqlTransaction = conO.BeginTransaction())
                     {
-                        using (NpgsqlTransaction npgsqlTransaction = conO.BeginTransaction())
+                        foreach (string comm in query_set)
                         {
                             using (NpgsqlCommand cmd = new NpgsqlCommand(comm, conO))
                             {
                                 cmd.ExecuteNonQueryAsync(active_token);
                             }
-
-                            if (active_token.IsCancellationRequested)
-                            {
-                                npgsqlTransaction.Rollback();
-                            }
-                            else
-                            {
-                                npgsqlTransaction.Commit();
-                            }
+                        }
+                        if (active_token.IsCancellationRequested)
+                        {
+                            npgsqlTransaction.Rollback();
+                        }
+                        else
+                        {
+                            npgsqlTransaction.Commit();
                         }
                     }
                 }
