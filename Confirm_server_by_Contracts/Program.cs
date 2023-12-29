@@ -1,4 +1,5 @@
 ﻿using DB_Conect;
+using Npgsql;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -15,6 +16,7 @@ namespace Confirm_server_by_Contracts
         {
             Loger.Srv_start();
             CancellationToken active_token = Steps_executor.cts.Token;
+            string npC = Postegresql_conn.Connection_pool["MAIN"].ToString();
             Parallel.Invoke(
             new ParallelOptions { MaxDegreeOfParallelism = 50 },
             new Action[]
@@ -126,7 +128,7 @@ namespace Confirm_server_by_Contracts
                     Calendar calendar = new Calendar(true, active_token);
                     calendar = null;
                 },
-                async () =>
+                () =>
                 {
                     // migrate demands and inventory_part and run main_loop for each non 616%  part_no
                     Simple_Demands part_except_616 = new Simple_Demands();
@@ -189,16 +191,106 @@ namespace Confirm_server_by_Contracts
                             Order_Demands order_Demands_except4 = new Order_Demands();
                             await order_Demands_except4.Update_from_executor("Main_loop except 616 Executor4", active_token);
                             order_Demands_except4 = null;
-                        });
-                        Order_Demands order_Demands = new Order_Demands();
-                        await order_Demands.Update_from_executor("Main_loop except 616 ", active_token);
-                        order_Demands = null;
-                        Steps_executor.End_step("Main_loop except 616 ");
+                        }); 
                     }
                 }
             });
+            Steps_executor.Register_step("Prepare data for Reports");
+            bool with_no_err = Steps_executor.Wait_for(new string[] { "Main_loop except 616 ", "Main_loop 616 ", "Calendar", "cust_ord"}, "Main_loop except 616 ", active_token);
 
+            if (with_no_err)
+            {
+                string[] query_set = new [] {
+                    "REFRESH MATERIALIZED VIEW bilans_val"
+                    ,
+                    @"DELETE FROM public.ord_demands 
+                    where ord_demands.id in 
+                    (
+                    select 
+                        id 
+                    from
+                    (
+                        (
+                            select 
+                                ord_demands.id,
+                                part_no,
+                                contract,
+                                date_required 
+                            from 
+                                ord_demands
+                        ) a 
+                        left join 
+                        (select part_no,contract,work_day from demands) b 
+                        on b.part_no=a.part_no and b.contract=a.contract and b.work_day=a.date_required) 
+                    where work_day is null);"
+                    ,
+                    @"update demands 
+                    set indb=up.chk_in 
+                    from 
+                    (
+                        select 
+                            id,
+                            chk_in 
+                        from 
+                        (
+                            select 
+                                a.id,
+                                a.part_no,
+                                a.contract,
+                                a.work_day,
+                                a.indb,
+                                CASE WHEN b.part_no is null THEN false ELSE true END as chk_in 
+                            from 
+                            (
+                                select 
+                                    id,
+                                    part_no,
+                                    contract,
+                                    work_day,
+                                    indb 
+                                from 
+                                    demands
+                            ) a 
+                            left join 
+                            (
+                                select 
+                                    part_no,
+                                    contract,
+                                    date_required
+                                from 
+                                    ord_demands 
+                                group by part_no,contract,date_required
+                            ) b 
+                            on b.part_no=a.part_no and b.contract=a.contract and b.date_required=a.work_day
+                        ) as b 
+                        where indb is null or indb!=chk_in
+                    ) as up 
+                    where demands.id=up.id;"
+                };
+                using (NpgsqlConnection conO = new NpgsqlConnection(npC))
+                {
+                    conO.OpenAsync(active_token);
+                    foreach (string comm in query_set)
+                    {
+                        using (NpgsqlTransaction npgsqlTransaction = conO.BeginTransaction())
+                        {
+                            using (NpgsqlCommand cmd = new NpgsqlCommand(comm, conO))
+                            {
+                                cmd.ExecuteNonQueryAsync(active_token);
+                            }
 
+                            if (active_token.IsCancellationRequested)
+                            {
+                                npgsqlTransaction.Rollback();
+                            }
+                            else
+                            {
+                                npgsqlTransaction.Commit();
+                            }
+                        }
+                    }
+                }
+            }
             Loger.Srv_stop();
             Steps_executor.cts.Dispose();
         }

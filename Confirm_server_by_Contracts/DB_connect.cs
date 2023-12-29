@@ -651,7 +651,7 @@ namespace DB_Conect
                                 }
                             }
                         }
-                        using (NpgsqlTransaction npgsqlTransaction = conO.BeginTransaction(IsolationLevel.ReadCommitted))
+                        using (NpgsqlTransaction npgsqlTransaction = conO.BeginTransaction())
                         {                                                       
                             if (_list.Delete.Count > 0)
                             {

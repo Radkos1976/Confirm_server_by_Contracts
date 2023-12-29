@@ -171,11 +171,88 @@ namespace Confirm_server_by_Contracts
                         string.Format("{0}:{1}", Task_name, "Buyer_info"), cancellationToken));
                     Changes_List<Buyer_info_row> Zak_changes = rw.Changes(SourceDataSet, Limit_length(DataSet),
                         new[] { "indeks", "umiejsc", "data_dost" },
-                        new[] { "indeks", "umiejsc", "data_dost", "id", "Widoczny_od_dnia" },
-                        new[] { "id", "Widoczny_od_dnia" },
+                        new[] { "indeks", "umiejsc", "data_dost", "status_informacji", "informacja", "id", "Widoczny_od_dnia" },
+                        new[] { "id", "Widoczny_od_dnia", "informacja" },
                         string.Format("{0}:{1}", Task_name, "Buyer_info"), cancellationToken);
                     returned += await rw.PSTRG_Changes_to_dataTable(Zak_changes, "data",
-                        new[] { "id" }, null, null,
+                        new[] { "id" }, null, new[] {"" +
+                        string.Format(@"UPDATE public.data a 
+                            SET widoczny_od_dnia=b.ab 
+                            from 
+                            (
+                                select
+                                a.id,
+                                min(b.dat_shortage) ab 
+                            from 
+                                (
+                                    select 
+                                        id,
+                                        indeks,
+                                        umiejsc,
+                                        data_dost,
+                                        data_braku
+                                        from
+                                        public.data 
+                                    where regexp_like(indeks, '{0}') and widoczny_od_dnia is null) a,
+                                (
+                                    select 
+                                        part_no,
+                                        contract,
+                                        work_day,
+                                        dat_shortage 
+                                        from 
+                                        demands 
+                                    where regexp_like(part_no, '{0}') and dat_shortage is not null) b 
+                                where b.part_no=a.indeks and a.umiejsc=b.contract and b.work_day between a.data_braku and a.data_dost group by a.id) b 
+                           where a.id=b.id", regex)
+                        ,
+                        string.Format(@"UPDATE public.data b 
+                            SET status_informacji=a.potw, informacja=a.info 
+                            from 
+                            (
+                            select 
+                                a.id,
+                                case when a.typ_zdarzenia in ('Dzisiejsza dostawa','Opóźniona dostawa','Nieaktualne Dostawy') then null else coalesce(b.rodzaj_potw,'BRAK') end potw,
+                                a.status_informacji,
+                                b.info 
+                            from 
+                                public.data a 
+                                left join 
+                                potw b 
+                                on regexp_like(a.indeks, '{0}') and b.indeks=a.indeks and b.umiejsc=a.umiejsc and (b.data_dost=a.data_dost or b.rodzaj_potw='NIE ZAMAWIAM') 
+                            where 
+                                coalesce (a.status_informacji,'N')!=coalesce(case when a.typ_zdarzenia in ('Dzisiejsza dostawa','Opóźniona dostawa','Nieaktualne Dostawy') then null 
+                                    else coalesce(b.rodzaj_potw,'BRAK') end,'N') 
+                                or coalesce(a.informacja,'n')!=coalesce(b.info,'n')) a  
+                            where b.id=a.id", regex)
+                        ,
+                        string.Format(@"UPDATE public.data a 
+                        SET widoczny_od_dnia=b.refr 
+                        from 
+                        (
+                            select 
+                                b.id,
+                                b.refr 
+                            from 
+                            (
+                                select
+                                    a.id,
+                                    min(b.dat_shortage) refr
+                                from
+                                (
+                                    select * from public.data where regexp_like(indeks, '{0}')
+                                ) a,
+                                (
+                                    select 
+                                        part_no,
+                                        contract,
+                                        work_day,
+                                        dat_shortage 
+                                    from demands
+                                    WHERE regexp_like(part_no, '{0}')
+                                ) b 
+                                where b.part_no=a.indeks and b.work_day between a.data_braku and a.data_dost group by a.id) b,public.data c where b.id=c.id and b.refr!=c.widoczny_od_dnia) b WHERE a.id=b.id;", regex)
+                        },
                         string.Format("{0}:{1}", Task_name, "Buyer_info"), cancellationToken);
                     Zak_changes = null;
                     Steps_executor.End_step(string.Format("{0}:{1}", Task_name, "Buyer_info"));
