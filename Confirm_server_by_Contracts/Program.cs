@@ -113,7 +113,10 @@ namespace Confirm_server_by_Contracts
                             Steps_executor.Register_step("Main_loop 616 ");
                             Main_loop main_Loop = new Main_loop();
                             int result = main_Loop.Update_Main_Tables("^616.*", "Main_loop 616 ", only_616, oracle, active_token);
-                            Get_thre_workers("Main_loop 616 Executor", active_token);
+                            if (Dataset_executor.Count() > 0)
+                            {
+                                Get_thre_workers("Main_loop 616 Executor", active_token);
+                            }                            
                         }
                     }
                 },
@@ -172,15 +175,17 @@ namespace Confirm_server_by_Contracts
                         Steps_executor.Register_step("Main_loop except 616 ");                        
                         Main_loop main_Loop = new Main_loop();
                         int result = main_Loop.Update_Main_Tables("^(5|6[^616]).+", "Main_loop except 616 ", no_616, oracle, active_token);
-                        Parallel.Invoke(
+                        if (Dataset_executor.Count() > 0)
+                        {
+                            Parallel.Invoke(
                             () =>
                             {
                                 Get_thre_workers("Main_loop except 616 Executor", active_token);
                             },
                             () => {
                                 Get_thre_workers("Main_loop 616 Executor", active_token);
-                            } );
-                                               
+                            });
+                        }                                               
                     }
                 }
             });
