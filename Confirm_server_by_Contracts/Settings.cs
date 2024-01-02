@@ -8,6 +8,7 @@ using System.Data;
 using System.Threading;
 using System.Diagnostics;
 using System.Collections;
+using System.Collections.Concurrent;
 
 namespace DB_Conect
 {
@@ -59,6 +60,31 @@ namespace DB_Conect
             {"xml",NpgsqlTypes.NpgsqlDbType.Xml },
             {"interval",NpgsqlTypes.NpgsqlDbType.Interval }
         };
+    }
+
+    public class ConcurrentDictionary<TKey1, TKey2, TValue> : ConcurrentDictionary<Tuple<TKey1, TKey2>, TValue>, IDictionary<Tuple<TKey1, TKey2>, TValue>
+    {
+
+        public TValue this[TKey1 key1, TKey2 key2]
+        {
+            get { return base[Tuple.Create(key1, key2)]; }
+            set { base[Tuple.Create(key1, key2)] = value; }
+        }
+
+        public void Add(TKey1 key1, TKey2 key2, TValue value)
+        {
+            base.TryAdd(Tuple.Create(key1, key2), value);
+        }
+
+        public void Remove(TKey1 key1, TKey2 key2)
+        {
+            TValue val1;
+            base.TryRemove(Tuple.Create(key1, key2), out val1);
+        }
+        public bool ContainsKey(TKey1 key1, TKey2 key2)
+        {
+            return base.ContainsKey(Tuple.Create(key1, key2));
+        }
     }
     /// <summary>
     /// Dictionary for 2 keys
@@ -376,8 +402,8 @@ namespace DB_Conect
     /// </summary>
     public class Dataset_executor
     {
-        private static readonly Dictionary<string, string, Tuple<DateTime?, DateTime?>> wait_task = new Dictionary<string, string, Tuple<DateTime?, DateTime?>>();
-        private static readonly Dictionary<string, string, Tuple<DateTime?, DateTime?>> on_work_task = new Dictionary<string, string, Tuple<DateTime?, DateTime?>>();
+        private static readonly ConcurrentDictionary<string, string, Tuple<DateTime?, DateTime?>> wait_task = new ConcurrentDictionary<string, string, Tuple<DateTime?, DateTime?>>();
+        private static readonly ConcurrentDictionary<string, string, Tuple<DateTime?, DateTime?>> on_work_task = new ConcurrentDictionary<string, string, Tuple<DateTime?, DateTime?>>();
         public static void Add_task(string part_no, string contract, DateTime Start, DateTime End)
         {
             try
@@ -461,9 +487,9 @@ namespace DB_Conect
     public class Steps_executor
     {
         public static CancellationTokenSource cts;
-        private readonly static Dictionary<string, DateTime> Active_steps = new Dictionary<string, DateTime>();
-        private readonly static Dictionary<string, DateTime> Reccent_steps = new Dictionary<string, DateTime>();
-        private readonly static Dictionary<string, DateTime> Steps_with_error = new Dictionary<string, DateTime>();
+        private readonly static ConcurrentDictionary<string, DateTime> Active_steps = new ConcurrentDictionary<string, DateTime>();
+        private readonly static ConcurrentDictionary<string, DateTime> Reccent_steps = new ConcurrentDictionary<string, DateTime>();
+        private readonly static ConcurrentDictionary<string, DateTime> Steps_with_error = new ConcurrentDictionary<string, DateTime>();
 
         static Steps_executor() 
         {             
