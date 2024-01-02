@@ -271,7 +271,7 @@ namespace Confirm_server_by_Contracts
             List<Inventory_part_row> StMag, 
             CancellationToken cancellationToken)
         {
-            DateTime nullDAT = Loger.Serw_run.AddDays(1000);            
+            DateTime nullDAT = Loger.Serw_run.AddDays(10);            
 
             List<Buyer_info_row> DataSet = new List<Buyer_info_row>();
             List<Buyer_info_row> TmpDataSet = new List<Buyer_info_row>();
