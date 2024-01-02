@@ -94,35 +94,8 @@ namespace Confirm_server_by_Contracts
                 Changes_List<Orders_row> tmp = rw.Changes(list_pstgr, list_ora, new[] { "custid" }, new[] { "id", "zest", "objversion" }, new[] { "id" }, "cust_ord", cancellationToken);
                 list_ora = null;
                 list_pstgr = null;
-                return await PSTRG_Changes_to_dataTable(tmp, "cust_ord", new[] { "id" }, null, new[] {
-
-                    @"update public.cust_ord a
-                    SET zest = case when a.dop_connection_db = 'AUT' then
-                     case when a.line_state= 'Aktywowana' then
-                         case when dop_made = 0 then
-                            case when substring(a.part_no,1,1) not in ('5','6','2') 
-                            then b.zs
-                            else null	end
-                          else null end
-                     else null end else null end
-                     from
-                        (select ZEST_ID, CASE WHEN zest>1 THEN zest_id ELSE null END as zs
-                            from
-                               (select a.order_no, a.line_no, b.zest, a.order_no||'_'||coalesce(a.customer_po_line_no, a.line_no)||'_'||a.prom_week ZEST_ID
-                                  from
-                                     cust_ord a
-                                      left join
-                                      (select id, count(zest) zest
-                                          from
-                                             (select order_no||'_'||coalesce(customer_po_line_no, line_no)||'_'||prom_week id, part_no zest
-                                               from cust_ord
-                                         where line_state!= 'Zarezerwowana' and dop_connection_db = 'AUT' and seria0 = false
-                                         and data0 is null group by order_no||'_'||coalesce(customer_po_line_no, line_no)||'_'||prom_week, part_no ) a
-                                      group by id) b
-                                      on b.id=a.order_no||'_'||coalesce(a.customer_po_line_no, a.line_no)||'_'||a.prom_week
-                                 where substring(part_no,1,1) not in ('5','6','2') ) a) b
-                          where a.order_no||'_'||coalesce(a.customer_po_line_no, a.line_no)||'_'||a.prom_week=b.ZEST_ID"
-                    ,
+                return await PSTRG_Changes_to_dataTable(tmp, "cust_ord", new[] { "id" }, null, new[] {                    
+                    
                     @"Delete from public.late_ord
                       where cust_id in (SELECT a.cust_id
                       FROM 

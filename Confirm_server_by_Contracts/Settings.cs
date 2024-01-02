@@ -78,8 +78,7 @@ namespace DB_Conect
 
         public void Remove(TKey1 key1, TKey2 key2)
         {
-            TValue val1;
-            base.TryRemove(Tuple.Create(key1, key2), out val1);
+            base.TryRemove(Tuple.Create(key1, key2), out _);
         }
         public bool ContainsKey(TKey1 key1, TKey2 key2)
         {
@@ -568,8 +567,7 @@ namespace DB_Conect
                 Steps_with_error.TryAdd(step, DateTime.Now);
                 if (state == 0)
                 {
-                    DateTime val;
-                    Active_steps.TryRemove(step, out val);
+                    Active_steps.TryRemove(step, out _);
                 }
                 cts.Cancel();
                 return true;
@@ -590,13 +588,11 @@ namespace DB_Conect
                 Reccent_steps.TryAdd(step, DateTime.Now);
                 if (state == 0)
                 {
-                    DateTime val;
-                    Active_steps.TryRemove(step, out val);
+                    Active_steps.TryRemove(step, out _);
                 }
                 else if (state == 2)
                 {
-                    DateTime val;
-                    Steps_with_error.TryRemove(step, out val);
+                    Steps_with_error.TryRemove(step, out _);
                 }
                 return true;
             }
@@ -622,8 +618,7 @@ namespace DB_Conect
                         Active_steps.TryAdd(step, DateTime.Now);
                         if (state == 2)
                         {
-                            DateTime val;
-                            Steps_with_error.TryRemove(step, out val);
+                            Steps_with_error.TryRemove(step, out DateTime val);
                         }
                         try_ = true;
                         return true;

@@ -12,25 +12,7 @@ namespace Confirm_server_by_Contracts
 {
     internal class Program
     {
-        public static void Get_thre_workers (String Main_task, CancellationToken cancellationToken)
-        {
-            Parallel.Invoke(
-            async () => {
-                Order_Demands order_Demands_except1 = new Order_Demands();
-                await order_Demands_except1.Update_from_executor(string.Format("{0}1", Main_task), cancellationToken);
-                order_Demands_except1 = null;
-            },
-            async () => {
-                Order_Demands order_Demands_except2 = new Order_Demands();
-                await order_Demands_except2.Update_from_executor(string.Format("{0}2", Main_task), cancellationToken);
-                order_Demands_except2 = null;
-            },
-            async () => {
-                Order_Demands order_Demands_except3 = new Order_Demands();
-                await order_Demands_except3.Update_from_executor(string.Format("{0}3", Main_task), cancellationToken);
-                order_Demands_except3 = null;
-            });
-        }
+        
         static void Main(string[] args)
         {
             Loger.Srv_start();
@@ -113,10 +95,10 @@ namespace Confirm_server_by_Contracts
                             Steps_executor.Register_step("Main_loop 616 ");
                             Main_loop main_Loop = new Main_loop();
                             int result = main_Loop.Update_Main_Tables("^616.*", "Main_loop 616 ", only_616, oracle, active_token);
-                            if (Dataset_executor.Count() > 0)
-                            {
-                                Get_thre_workers("Main_loop 616 Executor", active_token);
-                            }                            
+                            main_Loop.Get_thre_workers("Main_loop 616 Executor", active_token);
+                            only_616 = null;
+                            oracle = null;
+                            main_Loop = null;
                         }
                     }
                 },
@@ -172,20 +154,20 @@ namespace Confirm_server_by_Contracts
                     bool end_with_no_err = Steps_executor.Wait_for(new string[] { "Demands except 616 ", "Inventory part except 616 " }, "Main_loop except 616 ", active_token);
                     if (end_with_no_err)
                     {
-                        Steps_executor.Register_step("Main_loop except 616 ");                        
+                        Steps_executor.Register_step("Main_loop except 616 ");
                         Main_loop main_Loop = new Main_loop();
                         int result = main_Loop.Update_Main_Tables("^(5|6[^616]).+", "Main_loop except 616 ", no_616, oracle, active_token);
-                        if (Dataset_executor.Count() > 0)
-                        {
                             Parallel.Invoke(
                             () =>
                             {
-                                Get_thre_workers("Main_loop except 616 Executor", active_token);
+                                main_Loop.Get_thre_workers("Main_loop except 616 Executor", active_token);
                             },
                             () => {
-                                Get_thre_workers("Main_loop 616 Executor", active_token);
+                                main_Loop.Get_thre_workers("Main_loop 616 Executor", active_token);
                             });
-                        }                                               
+                        no_616 = null;
+                        oracle = null;
+                        main_Loop = null;
                     }
                 }
             });
@@ -204,7 +186,7 @@ namespace Confirm_server_by_Contracts
                 }
                 Dataset_executor.Clear();
 
-                run_query query = new run_query();
+                Run_query query = new Run_query();
                 Parallel.Invoke(
                         async () =>
                         {
@@ -215,6 +197,33 @@ namespace Confirm_server_by_Contracts
                 async () =>
                 {
                     await query.Execute_in_Postgres(new[] {
+                    @"update public.cust_ord a
+                    SET zest = case when a.dop_connection_db = 'AUT' then
+                     case when a.line_state= 'Aktywowana' then
+                         case when dop_made = 0 then
+                            case when substring(a.part_no,1,1) not in ('5','6','2') 
+                            then b.zs
+                            else null	end
+                          else null end
+                     else null end else null end
+                     from
+                        (select ZEST_ID, CASE WHEN zest>1 THEN zest_id ELSE null END as zs
+                            from
+                               (select a.order_no, a.line_no, b.zest, a.order_no||'_'||coalesce(a.customer_po_line_no, a.line_no)||'_'||a.prom_week ZEST_ID
+                                  from
+                                     cust_ord a
+                                      left join
+                                      (select id, count(zest) zest
+                                          from
+                                             (select order_no||'_'||coalesce(customer_po_line_no, line_no)||'_'||prom_week id, part_no zest
+                                               from cust_ord
+                                         where line_state!= 'Zarezerwowana' and dop_connection_db = 'AUT' and seria0 = false
+                                         and data0 is null group by order_no||'_'||coalesce(customer_po_line_no, line_no)||'_'||prom_week, part_no ) a
+                                      group by id) b
+                                      on b.id=a.order_no||'_'||coalesce(a.customer_po_line_no, a.line_no)||'_'||a.prom_week
+                                 where substring(part_no,1,1) not in ('5','6','2') ) a) b
+                          where a.order_no||'_'||coalesce(a.customer_po_line_no, a.line_no)||'_'||a.prom_week=b.ZEST_ID"
+                    ,
                     @"DELETE FROM public.ord_demands 
                     where ord_demands.id in 
                     (

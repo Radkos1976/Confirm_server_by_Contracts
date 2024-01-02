@@ -950,10 +950,10 @@ namespace DB_Conect
 
     }
     
-    public class run_query
+    public class Run_query
     {
         public string npC;
-        public run_query() 
+        public Run_query() 
         {
             npC = Postegresql_conn.Connection_pool["MAIN"].ToString();
         }

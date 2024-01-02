@@ -51,10 +51,7 @@ namespace Confirm_server_by_Contracts
                 foreach (Demands_row demand in changes)
                 {
                     if (cancellationToken.IsCancellationRequested) { break; }
-                    if (demand.Part_no.Contains("55000085040"))
-                    {
-                        bool chk = true;
-                    }
+  
                     if (max_dates.ContainsKey(demand.Part_no, demand.Contract))
                     {
                         if (demand.Work_day <= max_dates[demand.Part_no, demand.Contract])
@@ -259,7 +256,26 @@ namespace Confirm_server_by_Contracts
             Steps_executor.End_step(string.Format("{0}:{1}", Task_name, "Parallel Calc"));
             Steps_executor.End_step(Task_name);
             return returned;
-        } 
+        }
+        public void Get_thre_workers(String Main_task, CancellationToken cancellationToken)
+        {
+            Parallel.Invoke(
+            async () => {
+                Order_Demands order_Demands_except1 = new Order_Demands();
+                await order_Demands_except1.Update_from_executor(string.Format("{0}1", Main_task), cancellationToken);
+                order_Demands_except1 = null;
+            },
+            async () => {
+                Order_Demands order_Demands_except2 = new Order_Demands();
+                await order_Demands_except2.Update_from_executor(string.Format("{0}2", Main_task), cancellationToken);
+                order_Demands_except2 = null;
+            },
+            async () => {
+                Order_Demands order_Demands_except3 = new Order_Demands();
+                await order_Demands_except3.Update_from_executor(string.Format("{0}3", Main_task), cancellationToken);
+                order_Demands_except3 = null;
+            });
+        }
         /// <summary>
         /// Csalculate dataset for Buyers and Demands
         /// </summary>
@@ -324,11 +340,8 @@ namespace Confirm_server_by_Contracts
                 {
                     if (cancellationToken.IsCancellationRequested) { break; }
                     if (counter < max) { counter++; }
-                    // Zmiana obliczanego indeksu
-                    if (rek.Part_no.Equals("55000085040"))  
-                    {
-                        bool chk = true;
-                    }
+                    // Zmiana obliczanego indeksu 
+
                     bool var = !(rek.Part_no.Equals(Part_no) && rek.Contract.Equals(Contract));
                     if (var)
                     {
