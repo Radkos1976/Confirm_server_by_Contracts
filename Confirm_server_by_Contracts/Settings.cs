@@ -633,13 +633,15 @@ namespace DB_Conect
             while (count >= max_connections && !cancellationToken.IsCancellationRequested)
             {
                 System.Threading.Thread.Sleep(250);
-            }
-            count++;            
+            }            
+            count++;
+            System.Threading.Thread.Sleep(50);
         }
 
         public static void Oracle_conn_ended()
         {
             count--;
+            System.Threading.Thread.Sleep(50);
         }
 
     }
