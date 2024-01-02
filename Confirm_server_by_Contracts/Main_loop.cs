@@ -587,7 +587,7 @@ namespace Confirm_server_by_Contracts
                     }
                     if ((Part_no, Contract) != (NEXT_row.Part_no, NEXT_row.Contract))
                     {
-                        max_dates.Add(Part_no, Contract, rpt_short);
+                        max_dates.Add(Part_no, Contract, dta_rap>rpt_short? dta_rap: rpt_short);
                     }
                 }          
             
