@@ -380,7 +380,14 @@ namespace DB_Conect
         private static readonly Dictionary<string, string, Tuple<DateTime?, DateTime?>> on_work_task = new Dictionary<string, string, Tuple<DateTime?, DateTime?>>();
         public static void Add_task(string part_no, string contract, DateTime Start, DateTime End)
         {
-            wait_task.Add(part_no, contract, new Tuple<DateTime?, DateTime?>(Start, End));
+            try
+            {
+                wait_task.Add(part_no, contract, new Tuple<DateTime?, DateTime?>(Start, End));
+            }
+            catch
+            {
+                Loger.Log("Err Key exist");
+            }            
         }
         public static (string, string, Tuple<DateTime?, DateTime?>) Run_next ()
         {           
@@ -437,7 +444,14 @@ namespace DB_Conect
         }
         public static void Report_end (string part_no, string contract)
         {
-            on_work_task.Remove(part_no, contract);
+            try
+            {
+                on_work_task.Remove(part_no, contract);
+            }
+            catch
+            {
+                Loger.Log("Err Key dont exist");
+            }
         }
     }
 
