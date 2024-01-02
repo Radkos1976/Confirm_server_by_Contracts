@@ -12,6 +12,25 @@ namespace Confirm_server_by_Contracts
 {
     internal class Program
     {
+        public static void Get_thre_workers (String Main_task, CancellationToken cancellationToken)
+        {
+            Parallel.Invoke(
+            async () => {
+                Order_Demands order_Demands_except1 = new Order_Demands();
+                await order_Demands_except1.Update_from_executor(string.Format("{0}1", Main_task), cancellationToken);
+                order_Demands_except1 = null;
+            },
+            async () => {
+                Order_Demands order_Demands_except2 = new Order_Demands();
+                await order_Demands_except2.Update_from_executor(string.Format("{0}2", Main_task), cancellationToken);
+                order_Demands_except2 = null;
+            },
+            async () => {
+                Order_Demands order_Demands_except3 = new Order_Demands();
+                await order_Demands_except3.Update_from_executor(string.Format("{0}3", Main_task), cancellationToken);
+                order_Demands_except3 = null;
+            });
+        }
         static void Main(string[] args)
         {
             Loger.Srv_start();
@@ -91,23 +110,7 @@ namespace Confirm_server_by_Contracts
                             Steps_executor.Register_step("Main_loop 616 ");
                             Main_loop main_Loop = new Main_loop();
                             int result = main_Loop.Update_Main_Tables("^616.*", "Main_loop 616 ", only_616, oracle, active_token);
-                            Parallel.Invoke(
-                            async () => {
-                                Order_Demands order_Demands_except1 = new Order_Demands();
-                                await order_Demands_except1.Update_from_executor("Main_loop 616 Executor1", active_token);
-                                order_Demands_except1 = null;                               
-                            },
-                            async () => {
-                                Order_Demands order_Demands_except2 = new Order_Demands();
-                                await order_Demands_except2.Update_from_executor("Main_loop 616 Executor2", active_token);
-                                order_Demands_except2 = null;                               
-                            },
-                            async () => {
-                                Order_Demands order_Demands_except3 = new Order_Demands();
-                                await order_Demands_except3.Update_from_executor("Main_loop 616 Executor3", active_token);
-                                order_Demands_except3 = null;                                
-                            });
-                            
+                            Get_thre_workers("Main_loop 616 Executor", active_token);
                         }
                     }
                 },
@@ -166,22 +169,7 @@ namespace Confirm_server_by_Contracts
                         Steps_executor.Register_step("Main_loop except 616 ");                        
                         Main_loop main_Loop = new Main_loop();
                         int result = main_Loop.Update_Main_Tables("^(5|6[^616]).+", "Main_loop except 616 ", no_616, oracle, active_token);
-                        Parallel.Invoke(
-                        async () => {
-                            Order_Demands order_Demands_except1 = new Order_Demands();
-                            await order_Demands_except1.Update_from_executor("Main_loop except 616 Executor1", active_token);
-                            order_Demands_except1 = null;                            
-                        },
-                        async () => {
-                            Order_Demands order_Demands_except2 = new Order_Demands();
-                            await order_Demands_except2.Update_from_executor("Main_loop except 616 Executor2", active_token);
-                            order_Demands_except2 = null;                            
-                        },
-                        async () => {
-                            Order_Demands order_Demands_except3 = new Order_Demands();
-                            await order_Demands_except3.Update_from_executor("Main_loop except 616 Executor3", active_token);
-                            order_Demands_except3 = null;                            
-                        }); 
+                        Get_thre_workers("Main_loop except 616 Executor", active_token);                        
                     }
                 }
             });
@@ -193,7 +181,13 @@ namespace Confirm_server_by_Contracts
 
             if (with_no_err)
             {
+                if  (Dataset_executor.Count()  > 0)
+                {
+                    Loger.Log("Error on Dataset_executor => some tasks are not calulated");
+                    Thread.Sleep(1000);
+                }
                 Dataset_executor.Clear();
+
                 run_query query = new run_query();
                 Parallel.Invoke(
                         async () =>
