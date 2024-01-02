@@ -68,7 +68,7 @@ namespace Confirm_server_by_Contracts
                                 {
                                     changed = 1;
                                 }
-                                else if (max_d < demand.Work_day && max_dates[demand.Part_no, demand.Contract] <= demand.Work_day)
+                                else if (max_d < demand.Work_day && max_dates[demand.Part_no, demand.Contract] >= demand.Work_day)
                                 {
                                     changed = 2;
                                 }
