@@ -160,10 +160,10 @@ namespace Confirm_server_by_Contracts
                             Parallel.Invoke(
                             () =>
                             {
-                                main_Loop.Get_thre_workers("Main_loop except 616 Executor", active_token);
+                                main_Loop.Get_thre_workers("Main_loop first 616 Executor", active_token);
                             },
                             () => {
-                                main_Loop.Get_thre_workers("Main_loop 616 Executor", active_token);
+                                main_Loop.Get_thre_workers("Main_loop second 616 Executor", active_token);
                             });
                         no_616 = null;
                         oracle = null;
@@ -174,7 +174,8 @@ namespace Confirm_server_by_Contracts
             Steps_executor.Register_step("Prepare data for Reports");
             bool with_no_err = Steps_executor.Wait_for(new string[] { "Main_loop except 616 ", "Main_loop 616 ", 
                 "Main_loop except 616 Executor1", "Main_loop except 616 Executor2" , "Main_loop except 616 Executor3",
-                "Main_loop 616 Executor1", "Main_loop 616 Executor2", "Main_loop 616 Executor3",
+                "Main_loop first 616 Executor1", "Main_loop first 616 Executor2", "Main_loop first 616 Executor3",
+                "Main_loop second 616 Executor1", "Main_loop second 616 Executor2", "Main_loop second 616 Executor3",
                 "Calendar", "cust_ord"}, "Prepare data for Reports", active_token);
 
             if (with_no_err)

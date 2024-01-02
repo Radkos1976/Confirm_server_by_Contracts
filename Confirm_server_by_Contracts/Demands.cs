@@ -332,7 +332,7 @@ namespace Confirm_server_by_Contracts
                     a.REL_NO,
                     Decode(LENGTH(TRIM(TRANSLATE(a.ORDER_NO, ' +-.0123456789',' '))),NULL,a.ORDER_NO,owa_opt_lock.checksum(a.ORDER_NO)*-1) int_ord,
                     a.CONTRACT,
-                    a.ORDER_SUPPLY_DEMAND_TYPE,
+                    a.ORDER_SUPPLY_DEMAND_TYPE order_supp_dmd,
                     a.WRKC,
                     a.NEXT_WRKC,
                     a.PART_NO,
