@@ -244,7 +244,7 @@ namespace Confirm_server_by_Contracts
                     (string part_no, string contract, Tuple<DateTime?, DateTime?> dates) = Dataset_executor.Run_next();
                     if ((part_no, contract) != ("", ""))
                     {
-                        result += await Update_dataset(part_no, contract, dates, string.Format("{0}:{1}:{2}", Task_name, part_no, contract), cancellationToken);
+                        result += await Update_dataset(part_no, contract, dates, string.Format("{0}:{1}:{2}", Task_name, part_no, contract), cancellationToken).ConfigureAwait(false);
                         Dataset_executor.Report_end(part_no, contract);
                     }
                 } 
@@ -289,7 +289,7 @@ namespace Confirm_server_by_Contracts
                 Task_name, cancellationToken);
             int result = await rw.PSTRG_Changes_to_dataTable(Ch_dataset, "ord_demands",
                         new[] { "id" }, null, null,
-                        Task_name, cancellationToken);            
+                        Task_name, cancellationToken).ConfigureAwait(false);            
             return result;
         }
         /// <summary>
