@@ -71,14 +71,14 @@ namespace DB_Conect
             set { base[Tuple.Create(key1, key2)] = value; }
         }
 
-        public void Add(TKey1 key1, TKey2 key2, TValue value)
+        public bool Add(TKey1 key1, TKey2 key2, TValue value)
         {
-            base.TryAdd(Tuple.Create(key1, key2), value);
+            return base.TryAdd(Tuple.Create(key1, key2), value);
         }
 
-        public void Remove(TKey1 key1, TKey2 key2)
+        public bool Remove(TKey1 key1, TKey2 key2)
         {
-            base.TryRemove(Tuple.Create(key1, key2), out _);
+            return base.TryRemove(Tuple.Create(key1, key2), out _);
         }
         public bool ContainsKey(TKey1 key1, TKey2 key2)
         {
@@ -433,8 +433,14 @@ namespace DB_Conect
                             chk = wait_task.ContainsKey(part_no, contract);
                             if (chk)
                             {
-                                wait_task.Remove(part_no, contract);
-                                on_work_task.Add(part_no, contract, range);
+                                if (wait_task.Remove(part_no, contract))
+                                {
+                                    chk = on_work_task.Add(part_no, contract, range);
+                                }
+                                else
+                                {
+                                    chk = false;
+                                }
                             }
                         }
                         catch
