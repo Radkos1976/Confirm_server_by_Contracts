@@ -18,7 +18,7 @@ namespace Confirm_server_by_Contracts
         private readonly Update_pstgr_from_Ora<Buyer_info_row> rw;
         private readonly Update_pstgr_from_Ora<Demands_row> dmr;
         private DateTime Range_Dat { get; set; }
-        private Dictionary<string, string, DateTime> max_dates = new Dictionary<string, string, DateTime>();
+        private readonly Dictionary<string, string, DateTime> max_dates = new Dictionary<string, string, DateTime>();
         public List<Tuple<string, string>> Erase_dont_exist = new List<Tuple<string, string>>();
         public Main_loop()
         {
@@ -321,6 +321,10 @@ namespace Confirm_server_by_Contracts
                     if (cancellationToken.IsCancellationRequested) { break; }
                     if (counter < max) { counter++; }
                     // Zmiana obliczanego indeksu
+                    if (rek.Part_no.Equals("55000085040"))  
+                    {
+                        bool chk = true;
+                    }
                     bool var = !(rek.Part_no.Equals(Part_no) && rek.Contract.Equals(Contract));
                     if (var)
                     {
@@ -535,7 +539,7 @@ namespace Confirm_server_by_Contracts
                     {
                         if (bilans < 0)
                         {
-                            if ((Part_no != NEXT_row.Part_no && Contract != NEXT_row.Contract) || (Date_reQ <= gwar_DT && NEXT_row.Date_required > gwar_DT))
+                            if ((Part_no, Contract) != (NEXT_row.Part_no, NEXT_row.Contract) || (Date_reQ <= gwar_DT && NEXT_row.Date_required > gwar_DT))
                             {
                                 string state = Date_reQ <= gwar_DT ? "Braki w gwarantowanej dacie" : "Brak zamówień zakupu";
                                 if (Date_reQ <= gwar_DT)
@@ -577,7 +581,7 @@ namespace Confirm_server_by_Contracts
                     {
                         Data_Braku = nullDAT;
                     }
-                    if (Part_no != NEXT_row.Part_no && Contract != NEXT_row.Contract)
+                    if ((Part_no, Contract) != (NEXT_row.Part_no, NEXT_row.Contract))
                     {
                         max_dates.Add(Part_no, Contract, rpt_short);
                     }
