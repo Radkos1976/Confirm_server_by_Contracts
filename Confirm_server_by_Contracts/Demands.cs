@@ -245,7 +245,6 @@ namespace Confirm_server_by_Contracts
                     if ((part_no, contract) != ("", ""))
                     {
                         result += await Update_dataset(part_no, contract, dates, string.Format("{0}:{1}:{2}", Task_name, part_no, contract), cancellationToken);
-                        Thread.Sleep(100);
                         Dataset_executor.Report_end(part_no, contract);
                     }
                 } 
