@@ -591,7 +591,11 @@ namespace DB_Conect
                         try_ = false;
                     }
 
-                }                
+                } 
+                else
+                {
+                    try_ = true;
+                }
             }
             return false;
         }
