@@ -63,21 +63,22 @@ namespace Confirm_server_by_Contracts
                         Steps_executor.Register_step("Inventory part 616 ");
                         Steps_executor.Register_step("Inventory part 616 presets ");
                         Inventory_part inventory_616_in_PSTGR = new Inventory_part("^616.*", true, null);
-                        pstgr = await inventory_616_in_PSTGR.Get_PSTGR_List("Inventory part 616 presets ", active_token);
+                        List<Inventory_part.Inventory_part_row> pstgr_presets = await inventory_616_in_PSTGR.Get_PSTGR_List("Inventory part 616 presets ", active_token);
 
-                        (part_no_tup, part_no_zero_tup) = inventory_616_in_PSTGR.Get_tuple_of_part_no(pstgr);
+                        (part_no_tup, part_no_zero_tup) = inventory_616_in_PSTGR.Get_tuple_of_part_no(pstgr_presets);
                         if (part_no_tup.Count > 0)
                         {
                             inventory_616_in_PSTGR.limit_part_no  = part_no_tup;
                             oracle = await inventory_616_in_PSTGR.Get_Ora_list("Inventory part 616 presets ", active_token);
                             await inventory_616_in_PSTGR.Update_dataset(
-                                pstgr,
+                                pstgr_presets,
                                 oracle,
                                 "Inventory part 616 ",
                                 active_token);
                         }
                         Steps_executor.End_step("Inventory part 616 presets ");
                         inventory_616_in_PSTGR = null;
+                        pstgr_presets = null;
                     });
 
                     bool end_with_no_err1 = Steps_executor.Wait_for(new string[] { "Demands 616 ",  "Inventory part 616 presets " }, "Inventory part 616 ", active_token);
