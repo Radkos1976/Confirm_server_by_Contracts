@@ -240,7 +240,7 @@ namespace Confirm_server_by_Contracts
             {
                 if (cancellationToken.IsCancellationRequested) { break; }
                 (string part_no, string contract, Tuple<DateTime?, DateTime?> dates) = Dataset_executor.Run_next();
-                if ((part_no, contract, dates) != ("", "", new Tuple<DateTime?, DateTime?>((DateTime?)null, (DateTime?)null)))
+                if ((part_no, contract) != ("", ""))
                 {
                     result += await Update_dataset(part_no, contract, dates, string.Format("{0}:{1}:{2}", Task_name, part_no, contract), cancellationToken);
                     Dataset_executor.Report_end(part_no, contract);
