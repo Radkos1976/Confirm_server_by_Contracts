@@ -565,10 +565,11 @@ namespace DB_Conect
             if (started == null || state == 0)
             {
                 Loger.Log(String.Format("Step {0} error", step));
-                Steps_with_error.Add(step, DateTime.Now);
+                Steps_with_error.TryAdd(step, DateTime.Now);
                 if (state == 0)
                 {
-                    Active_steps.Remove(step);
+                    DateTime val;
+                    Active_steps.TryRemove(step, out val);
                 }
                 cts.Cancel();
                 return true;
@@ -586,14 +587,16 @@ namespace DB_Conect
             if (started == null || state != 1)
             {
                 Loger.Log(String.Format("Step {0} was end work with success", step));
-                Reccent_steps.Add(step, DateTime.Now);
+                Reccent_steps.TryAdd(step, DateTime.Now);
                 if (state == 0)
                 {
-                    Active_steps.Remove(step);
+                    DateTime val;
+                    Active_steps.TryRemove(step, out val);
                 }
                 else if (state == 2)
                 {
-                    Steps_with_error.Remove(step);
+                    DateTime val;
+                    Steps_with_error.TryRemove(step, out val);
                 }
                 return true;
             }
@@ -616,10 +619,11 @@ namespace DB_Conect
                     try
                     {
                         Loger.Log(String.Format("Step {0} was registered", step));
-                        Active_steps.Add(step, DateTime.Now);
+                        Active_steps.TryAdd(step, DateTime.Now);
                         if (state == 2)
                         {
-                            Steps_with_error.Remove(step);
+                            DateTime val;
+                            Steps_with_error.TryRemove(step, out val);
                         }
                         try_ = true;
                         return true;
