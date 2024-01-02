@@ -51,6 +51,10 @@ namespace Confirm_server_by_Contracts
                 foreach (Demands_row demand in changes)
                 {
                     if (cancellationToken.IsCancellationRequested) { break; }
+                    if (demand.Part_no.Contains("55000085040"))
+                    {
+                        bool chk = true;
+                    }
                     if (max_dates.ContainsKey(demand.Part_no, demand.Contract))
                     {
                         if (demand.Work_day <= max_dates[demand.Part_no, demand.Contract])
