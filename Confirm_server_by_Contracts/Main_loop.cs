@@ -147,21 +147,14 @@ namespace Confirm_server_by_Contracts
                         new[] { "part_no", "contract", "work_day", "id", "dat_shortage", "objversion", "indb" },
                         new[] { "id", "dat_shortage", "indb" },
                         Task_name, cancellationToken);
-                    Parallel.Invoke(
-                    () =>
-                    {
-                        Steps_executor.Register_step(string.Format("{0}:{1}", Task_name, "Fill_executor"));
-                        Fill_executor(Changes, string.Format("{0}:{1}", Task_name, "Fill_executor"), cancellationToken);
-                        Steps_executor.End_step(string.Format("{0}:{1}", Task_name, "Fill_executor"));
-                    },
-                    async () =>
-                    {
-                        returned += await dmr.PSTRG_Changes_to_dataTable(Changes, "demands",
+                    Steps_executor.Register_step(string.Format("{0}:{1}", Task_name, "Fill_executor"));
+                    Fill_executor(Changes, string.Format("{0}:{1}", Task_name, "Fill_executor"), cancellationToken);
+                    Steps_executor.End_step(string.Format("{0}:{1}", Task_name, "Fill_executor"));
+                    returned += await dmr.PSTRG_Changes_to_dataTable(Changes, "demands",
                             new[] { "id" }, null, null,
                             string.Format("{0}:{1}", Task_name, "Update Demands"), cancellationToken);
-                        Steps_executor.End_step(string.Format("{0}:{1}", Task_name, "Update Demands"));
-                    });
-                    Changes = null;
+                    Steps_executor.End_step(string.Format("{0}:{1}", Task_name, "Update Demands"));
+                    Changes = null;                    
                 },
                 async () =>
                 {
