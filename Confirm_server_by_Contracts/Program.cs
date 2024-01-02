@@ -76,6 +76,8 @@ namespace Confirm_server_by_Contracts
                                 "Inventory part 616 ",
                                 active_token);
                         }
+                        // add to part no tuple parts with weistent inventory
+                        (part_no_tup, part_no_zero_tup) = inventory_616_in_PSTGR.Get_tuple_of_part_no(oracle);
                         Steps_executor.End_step("Inventory part 616 presets ");
                         inventory_616_in_PSTGR = null;
                         pstgr_presets = null;
