@@ -142,7 +142,7 @@ namespace Confirm_server_by_Contracts
                 if ( counter < max_rows )
                 {
                     int cmp = item.CompareTo(Returned[counter]);
-                    while (cmp == 1 && counter < max_rows)
+                    while (cmp == 1 && counter + 1 < max_rows)
                     {
                         counter++;
                         cmp = item.CompareTo(Returned[counter]);
