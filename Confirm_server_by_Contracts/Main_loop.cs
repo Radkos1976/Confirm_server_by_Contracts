@@ -114,7 +114,7 @@ namespace Confirm_server_by_Contracts
         /// <param name="Inv_Part"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public int Update_Main_Tables(string regex, string Task_name,
+        public async Task<int> Update_Main_Tables(string regex, string Task_name,
             List<Simple_Demands.Simple_demands_row> Demands, List<Inventory_part.Inventory_part_row> Inv_Part,
             CancellationToken cancellationToken)
         {
@@ -128,7 +128,7 @@ namespace Confirm_server_by_Contracts
             int returned = 0;
 
             Steps_executor.Register_step(string.Format("{0}:{1}", Task_name, "Calculate"));
-            (DataSet, DemandSet) = Calculate(Demands, Inv_Part, cancellationToken);
+            (DataSet, DemandSet) = await Calculate(Demands, Inv_Part, cancellationToken);
             Demands = null; Inv_Part = null;
             Steps_executor.End_step(string.Format("{0}:{1}", Task_name, "Calculate"));
 
@@ -282,7 +282,7 @@ namespace Confirm_server_by_Contracts
         /// <param name="DMND_ORA"></param>
         /// <param name="StMag"></param>
         /// <returns></returns>
-        public (List<Buyer_info_row>, List<Demands_row>) Calculate (
+        public Task<(List<Buyer_info_row>, List<Demands_row>)> Calculate (
             List<Simple_demands_row> DMND_ORA, 
             List<Inventory_part_row> StMag, 
             CancellationToken cancellationToken)
@@ -610,7 +610,7 @@ namespace Confirm_server_by_Contracts
                 Loger.Log("Error in Main_loop " + ex);
 
             }
-            return (DataSet, DemandSet);
+            return Task.FromResult((DataSet, DemandSet));
         }
 
         public class Eras_Shedul_row : IEquatable<Eras_Shedul_row>, IComparable<Eras_Shedul_row>

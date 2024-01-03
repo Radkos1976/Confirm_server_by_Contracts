@@ -127,7 +127,7 @@ namespace Confirm_server_by_Contracts
         /// Get calendars from ERP
         /// </summary>
         /// <returns></returns>
-        public async Task<List<Calendar_row>> Get_Ora_list(string calendar_id, CancellationToken cancellationToken) => await rw.Get_Ora("" +
+        public async Task<List<Calendar_row>> Get_Ora_list(string calendar_id, CancellationToken cancellationToken) => await Check_length(await rw.Get_Ora("" +
             String.Format(@"SELECT
                                 calendar_id,
                                 counter,
@@ -138,7 +138,7 @@ namespace Confirm_server_by_Contracts
                                 objversion 
                             FROM 
                                 ifsapp.work_time_counter 
-                            WHERE CALENDAR_ID='{0}'", calendar_id), "Calendar", cancellationToken);
+                            WHERE CALENDAR_ID='{0}'", calendar_id), "Calendar", cancellationToken));
 
         public class Calendar_row : IEquatable<Calendar_row>, IComparable<Calendar_row>
         {  
@@ -170,7 +170,7 @@ namespace Confirm_server_by_Contracts
                 return this.Work_day.Equals(other.Work_day) && this.Calendar_id.Equals(other.Calendar_id);
             }
         }
-        public List<Calendar_row> Check_length(List<Calendar_row> source)
+        public Task<List<Calendar_row>> Check_length(List<Calendar_row> source)
         {
             Dictionary<string, int> calendar_len = Get_limit_of_fields.calendar_len;
             foreach (Calendar_row row in source)
@@ -179,7 +179,7 @@ namespace Confirm_server_by_Contracts
                 row.Day_type = row.Day_type.LimitDictLen("day_type", calendar_len);                
                 row.Objersion = row.Objersion.LimitDictLen("objersion", calendar_len);               
             }
-            return source;
+            return Task.FromResult(source);
         }
     }
 }

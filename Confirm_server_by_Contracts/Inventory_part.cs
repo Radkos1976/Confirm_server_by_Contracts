@@ -55,7 +55,7 @@ namespace Confirm_server_by_Contracts
         /// Get present list of inventory_part stored in ERP
         /// </summary>
         /// <returns>Present list of inventory_part</returns>
-        public async Task<List<Inventory_part_row>> Get_Ora_list(string Task_name, CancellationToken cancellationToken) => Check_length(await rw.Get_Ora("" +
+        public async Task<List<Inventory_part_row>> Get_Ora_list(string Task_name, CancellationToken cancellationToken) => await Check_length(await rw.Get_Ora("" +
                String.Format(@"SELECT 
                     a.part_no Indeks,
                     contract,
@@ -148,7 +148,7 @@ namespace Confirm_server_by_Contracts
             }
         }
 
-        public List<Inventory_part_row> Limit_in_and_create_Except(List<Tuple<string, string>> In_tuple, List<Tuple<string, string>> Zero_stock, List<Inventory_part_row> Rows_to_convert, bool with_except_dtset)
+        public Task<List<Inventory_part_row>> Limit_in_and_create_Except(List<Tuple<string, string>> In_tuple, List<Tuple<string, string>> Zero_stock, List<Inventory_part_row> Rows_to_convert, bool with_except_dtset)
         {
             List<Inventory_part_row> out_ = new List<Inventory_part_row>(); 
             except_part_no.Clear();
@@ -198,9 +198,9 @@ namespace Confirm_server_by_Contracts
                     }
                 }
             }
-            return out_;
+            return Task.FromResult(out_);
         }
-        public List<Inventory_part_row> Return_rows_not_in (List<Tuple<string, string>> In_tuple, List<Inventory_part_row> Rows_to_convert)
+        public Task<List<Inventory_part_row>> Return_rows_not_in (List<Tuple<string, string>> In_tuple, List<Inventory_part_row> Rows_to_convert)
         {
             List<Inventory_part_row> out_ = new List<Inventory_part_row>();
             if (Rows_to_convert != null)
@@ -213,9 +213,9 @@ namespace Confirm_server_by_Contracts
                     }
                 }
             }
-            return out_;
+            return Task.FromResult(out_);
         }
-        public (List<Tuple<string, string>>, List<Tuple<string, string>>) Get_tuple_of_part_no(List<Inventory_part_row> dataset)
+        public Task<(List<Tuple<string, string>>, List<Tuple<string, string>>)> Get_tuple_of_part_no(List<Inventory_part_row> dataset)
         {
             List<Tuple<string, string>> returned = new List<Tuple<string, string>>();
             List<Tuple<string, string>> zero_on_stock = new List<Tuple<string, string>>();
@@ -227,10 +227,10 @@ namespace Confirm_server_by_Contracts
                 }
                 returned.Add(new Tuple<string, string>(row.Indeks, row.Contract));
             }
-            return (returned, zero_on_stock);
+            return Task.FromResult((returned, zero_on_stock));
         }
 
-        public List<Inventory_part_row> Check_length(List<Inventory_part_row> source, CancellationToken cancellationToken)
+        public Task<List<Inventory_part_row>> Check_length(List<Inventory_part_row> source, CancellationToken cancellationToken)
         {
             Dictionary<string, int> inventory_part_len = Get_limit_of_fields.inventory_part_len;
             foreach (Inventory_part_row row in source)
@@ -246,7 +246,7 @@ namespace Confirm_server_by_Contracts
                 row.Planner_buyer = row.Planner_buyer.LimitDictLen("planner_buyer", inventory_part_len);
                 row.Rodzaj = row.Rodzaj.LimitDictLen("state_conf", inventory_part_len);                
             }
-            return source;
+            return Task.FromResult(source);
         }
     }
 }

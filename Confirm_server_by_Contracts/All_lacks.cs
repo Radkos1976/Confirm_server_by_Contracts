@@ -34,7 +34,7 @@ namespace Confirm_server_by_Contracts
         public async Task<int> Update_All_lacks(CancellationToken cancellationToken)
         {
             return await rw.PSTRG_Changes_to_dataTable(
-                rw.Changes(
+                await rw.Changes(
                     await Get_source(cancellationToken),
                     await New_data(cancellationToken), 
                     new[] { "dop", "dop_lin", "int_ord", "line_no", "rel_no" },

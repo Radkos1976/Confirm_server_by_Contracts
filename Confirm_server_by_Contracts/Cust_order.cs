@@ -132,7 +132,7 @@ namespace Confirm_server_by_Contracts
         /// Get present list of customer orders stored in ERP
         /// </summary>
         /// <returns>Present list of orders</returns>
-        private async Task<List<Orders_row>> Get_Ora_list(CancellationToken cancellationToken) => Check_length(await rw.Get_Ora("" +
+        private async Task<List<Orders_row>> Get_Ora_list(CancellationToken cancellationToken) => await Check_length(await rw.Get_Ora("" +
                @"SELECT 
                     ifsapp.customer_order_api.Get_Authorize_Code(a.ORDER_NO) KOOR,
                     a.ORDER_NO,
@@ -212,7 +212,7 @@ namespace Confirm_server_by_Contracts
                             WHERE a.HISTORY_NO = b.HI) c
                     ON c.id = a.id", "cust_ord", cancellationToken));
 
-        public List<Orders_row> Check_length(List<Orders_row> source)
+        public Task<List<Orders_row>> Check_length(List<Orders_row> source)
         {
             Dictionary<string, int> cust_ord_len = Get_limit_of_fields.cust_ord_len;
             foreach (Orders_row row in source)
@@ -237,7 +237,7 @@ namespace Confirm_server_by_Contracts
                 row.Dop_state = row.Dop_state.LimitDictLen("dop_state", cust_ord_len);
                 row.Zest = row.Zest.LimitDictLen("zest", cust_ord_len);
             }
-            return source;
+            return Task.FromResult(source);
         }
 
         public class Orders_row : IEquatable<Orders_row>, IComparable<Orders_row>

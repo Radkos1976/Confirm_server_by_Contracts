@@ -21,8 +21,7 @@ namespace Confirm_server_by_Contracts
             Parallel.Invoke(
             new ParallelOptions { MaxDegreeOfParallelism = 50 },
             new Action[]
-            {
-                () =>
+            { async () =>
                 {
                     // migrate demands and inventory_part and run main_loop for each non 616%  part_no
                     Steps_executor.Register_step("Demands 616 ");
@@ -47,7 +46,7 @@ namespace Confirm_server_by_Contracts
                         Inventory_part inventory_616_in_PSTGR = new Inventory_part("^616.*", true, null);
                         List<Inventory_part.Inventory_part_row> pstgr_presets = await inventory_616_in_PSTGR.Get_PSTGR_List("Inventory part 616 presets ", active_token);
 
-                        (part_no_tup, part_no_zero_tup) = inventory_616_in_PSTGR.Get_tuple_of_part_no(pstgr_presets);
+                        (part_no_tup, part_no_zero_tup) = await inventory_616_in_PSTGR.Get_tuple_of_part_no(pstgr_presets);
                         if (part_no_tup.Count > 0)
                         {
                             inventory_616_in_PSTGR.limit_part_no  = part_no_tup;
@@ -59,7 +58,7 @@ namespace Confirm_server_by_Contracts
                                 active_token);
                         }
                         // add to part no tuple parts with weistent inventory
-                        (part_no_tup, part_no_zero_tup) = inventory_616_in_PSTGR.Get_tuple_of_part_no(oracle);
+                        (part_no_tup, part_no_zero_tup) = await inventory_616_in_PSTGR.Get_tuple_of_part_no(oracle);
                         Steps_executor.End_step("Inventory part 616 presets ");
                         inventory_616_in_PSTGR = null;
                         pstgr_presets = null;
@@ -70,7 +69,7 @@ namespace Confirm_server_by_Contracts
                     {
                         Inventory_part inventory_616 = new Inventory_part("^616.*", false, part_616.limit_part_no);
                         part_616 = null;
-                        oracle = inventory_616.Limit_in_and_create_Except(part_no_tup, part_no_zero_tup, oracle, false);
+                        oracle = await inventory_616.Limit_in_and_create_Except(part_no_tup, part_no_zero_tup, oracle, false);
                         Parallel.Invoke(
                         async () =>
                         {
@@ -94,7 +93,7 @@ namespace Confirm_server_by_Contracts
                         {
                             Steps_executor.Register_step("Main_loop 616 ");
                             Main_loop main_Loop = new Main_loop();
-                            int result = main_Loop.Update_Main_Tables("^616.*", "Main_loop 616 ", only_616, oracle, active_token);
+                            int result = await main_Loop.Update_Main_Tables("^616.*", "Main_loop 616 ", only_616, oracle, active_token);
                             main_Loop.Get_thre_workers("Main_loop 616 Executor", active_token);
                             only_616 = null;
                             oracle = null;
@@ -114,7 +113,7 @@ namespace Confirm_server_by_Contracts
                     Calendar calendar = new Calendar(true, active_token);
                     calendar = null;
                 },
-                () =>
+                async () =>
                 {
                     // migrate demands and inventory_part and run main_loop for each non 616%  part_no
                     Simple_Demands part_except_616 = new Simple_Demands();
@@ -156,7 +155,7 @@ namespace Confirm_server_by_Contracts
                     {
                         Steps_executor.Register_step("Main_loop except 616 ");
                         Main_loop main_Loop = new Main_loop();
-                        int result = main_Loop.Update_Main_Tables("^(5|6[^616]).+", "Main_loop except 616 ", no_616, oracle, active_token);
+                        int result = await main_Loop.Update_Main_Tables("^(5|6[^616]).+", "Main_loop except 616 ", no_616, oracle, active_token);
                             Parallel.Invoke(
                             () =>
                             {

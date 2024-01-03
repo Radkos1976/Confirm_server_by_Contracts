@@ -21,7 +21,7 @@ namespace Confirm_server_by_Contracts
             rw = new Update_pstgr_from_Ora<Simple_demands_row>("MAIN");
         }
 
-        public async Task<List<Simple_demands_row>> Get_source_list(string regex, bool create_tuple_off, string transaction_name, CancellationToken cancellationToken) => Add_field_Next_day(await rw.Get_Ora("" +
+        public async Task<List<Simple_demands_row>> Get_source_list(string regex, bool create_tuple_off, string transaction_name, CancellationToken cancellationToken) => await Add_field_Next_day(await rw.Get_Ora("" +
             string.Format(@"SELECT 
                 PART_NO,
                 contract,
@@ -112,7 +112,7 @@ namespace Confirm_server_by_Contracts
                 )
             GROUP BY PART_NO,contract,To_Date(DATE_REQUIRED)", regex), transaction_name, cancellationToken), create_tuple_off, cancellationToken);
 
-        public List<Simple_demands_row> Add_field_Next_day(List<Simple_demands_row> source, bool create_tuple_off, CancellationToken cancellationToken)
+        public Task<List<Simple_demands_row>> Add_field_Next_day(List<Simple_demands_row> source, bool create_tuple_off, CancellationToken cancellationToken)
         {
             if (create_tuple_off)
             {
@@ -134,7 +134,7 @@ namespace Confirm_server_by_Contracts
                     }
                 }
             }
-            return source;
+            return Task.FromResult(source);
         }       
                             
         public class Simple_demands_row : IEquatable<Simple_demands_row>, IComparable<Simple_demands_row>
