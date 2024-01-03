@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Confirm_server_by_Contracts
@@ -14,7 +15,7 @@ namespace Confirm_server_by_Contracts
     {
         readonly string npC = Postegresql_conn.Connection_pool["MAIN"].ToString();
         DateTime start = Loger.Started();
-        async Task<int> lack_bil()
+        async Task<int> lack_bil(CancellationToken cancellationToken)
         {
             Loger.Log("Start BALANCE LACK");
             try
@@ -25,40 +26,102 @@ namespace Confirm_server_by_Contracts
                     {                        
                         using (NpgsqlTransaction TR_updtlack = conA.BeginTransaction(IsolationLevel.ReadCommitted))
                         {
-                            using (NpgsqlCommand cmd1 = new NpgsqlCommand("UPDATE public.datatbles SET start_update=current_timestamp, in_progress=true,updt_errors=false WHERE table_name='ord_lack_bil'", conA))
-                            {
-                                cmd1.ExecuteNonQuery();
-                            }
+                            Steps_executor.Register_step("ord_lack_bil");                           
                             using (NpgsqlCommand cmd = new NpgsqlCommand("DELETE FROM public.ord_lack_bil", conA))
                             {
                                 cmd.ExecuteNonQuery();
                             }
-                            using (NpgsqlCommand cmd = new NpgsqlCommand("INSERT INTO public.ord_lack_bil(dop, dop_lin, data_dop, day_shift, order_no, line_no, rel_no, int_ord, contract, order_supp_dmd, wrkc, next_wrkc, part_no, descr, part_code, date_required, ord_state, ord_date, prod_qty, qty_supply, qty_demand, dat_creat, chksum, id) select b.* from (select a.part_no,a.work_day,b.min_lack,a.balance *-1 lack,case when a.work_day=b.min_lack then case when a.balance*-1=a.qty_demand then 'All' else 'Part' end else 'All' end stat_lack from (select part_no,work_day,qty_demand,balance from demands where balance<0 and qty_demand!=0 and koor!='LUCPRZ') a left join (select part_no,min(work_day) min_lack from demands where balance<0 and qty_demand!=0 group by part_no) b on b.part_no=a.part_no where case when a.work_day=b.min_lack then case when a.balance*-1=a.qty_demand then 'All' else 'Part' end else 'All' end='All') a,ord_demands b where b.part_no=a.part_no and b.date_required=a.work_day", conA))
+                            using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                                @"INSERT INTO public.ord_lack_bil
+                                    (dop, dop_lin, data_dop, day_shift, order_no, line_no, rel_no, int_ord, contract, 
+                                    order_supp_dmd, wrkc, next_wrkc, part_no, descr, part_code, date_required,
+                                    ord_state, ord_date, prod_qty, qty_supply, qty_demand, dat_creat, chksum, id) 
+                                select b.* 
+                                from 
+                                    (
+                                        select
+                                            a.part_no,
+                                            a.work_day,
+                                            b.min_lack,
+                                            a.balance *-1 lack,
+                                            case when a.work_day=b.min_lack then case when a.balance*-1=a.qty_demand then 'All' else 'Part' end else 'All' end stat_lack 
+                                        from 
+                                        (
+                                            select 
+                                                part_no,
+                                                contract,
+                                                work_day,
+                                                qty_demand,
+                                                balance 
+                                            from 
+                                                demands 
+                                            where balance<0 and qty_demand!=0 and koor!='LUCPRZ'
+                                        ) a 
+                                        left join 
+                                        (
+                                            select 
+                                                part_no,
+                                                contract,
+                                                min(work_day) min_lack
+                                            from 
+                                                demands 
+                                            where balance<0 and qty_demand!=0 group by part_no, contract
+                                        ) b 
+                                        on b.part_no=a.part_no and b.contract=a.contract
+                                        where case when a.work_day=b.min_lack then case when a.balance*-1=a.qty_demand then 'All' else 'Part' end else 'All' end='All'
+                                    ) a,
+                                    ord_demands b 
+                                    where b.part_no=a.part_no and b.contract=a.contract and b.date_required=a.work_day", conA))
                             {
                                 cmd.ExecuteNonQuery();
-                            }                           
+                            }                            
                             TR_updtlack.Commit();
+                            Steps_executor.End_step("ord_lack_bil");
                         }
                         conA.Close();
                     }
-                    using (NpgsqlConnection conA = new NpgsqlConnection(npC))
-                    {
-                        conA.Open();
-                        using (NpgsqlCommand cmd = new NpgsqlCommand("select cast(count(table_name) as integer) busy from public.datatbles where table_name='ord_l' and in_progress=true", conA))
-                        {
-                            int busy_il = 1;
-                            while (busy_il > 0)
-                            {
-                                busy_il = Convert.ToInt16(cmd.ExecuteScalar());
-                                if (busy_il > 0) { System.Threading.Thread.Sleep(1000); }
-                            }
-                        }
-                        conA.Close();
-                    }
+                    Steps_executor.Register_step("Old_code: lack_bil");
+                    bool with_no_err = Steps_executor.Wait_for(new[] { "ord_lack_bil" }, "lack_bil", cancellationToken);
                     using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                     {
                         await conA.OpenAsync();
-                        using (NpgsqlCommand cmd = new NpgsqlCommand("select b.*,a.lack bal_stock from (select a.part_no,a.work_day,b.min_lack,a.balance *-1 lack,case when a.work_day=b.min_lack then case when a.balance*-1=a.qty_demand then 'All' else 'Part' end else 'All' end stat_lack from (select part_no,work_day,qty_demand,balance from demands where balance<0 and qty_demand!=0 and koor!='LUCPRZ') a left join (select part_no,min(work_day) min_lack from demands where balance<0 and qty_demand!=0 group by part_no) b on b.part_no=a.part_no where case when a.work_day=b.min_lack then case when a.balance*-1=a.qty_demand then 'All' else 'Part' end else 'All' end='Part') a,ord_demands b where b.part_no=a.part_no and b.date_required=a.work_day order by part_no,date_required,int_ord desc", conA))
+                        using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                            @"select
+b.*,
+a.lack bal_stock 
+from 
+(
+select 
+a.part_no,
+a.work_day,
+b.min_lack,
+a.balance *-1 lack,
+case when a.work_day=b.min_lack then case when a.balance*-1=a.qty_demand then 'All' else 'Part' end else 'All' end stat_lack 
+from 
+(
+select 
+part_no,
+work_day,
+qty_demand,
+balance 
+from 
+demands 
+where balance<0 and qty_demand!=0 and koor!='LUCPRZ'
+) a 
+left join 
+(
+select 
+part_no,
+min(work_day) min_lack
+from 
+demands 
+where balance<0 and qty_demand!=0 group by part_no
+) b 
+on b.part_no=a.part_no 
+where case when a.work_day=b.min_lack then case when a.balance*-1=a.qty_demand then 'All' else 'Part' end else 'All' end='Part'
+) a,
+ord_demands b 
+where b.part_no=a.part_no and b.date_required=a.work_day order by part_no,date_required,int_ord desc", conA))
                         {
                             using (NpgsqlDataReader po = cmd.ExecuteReader())
                             {

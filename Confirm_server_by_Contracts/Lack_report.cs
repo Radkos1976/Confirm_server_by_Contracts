@@ -60,8 +60,8 @@ namespace Confirm_server_by_Contracts
                         Decode(Sign(REVISED_DUE_DATE-SYSDATE),'-1',To_Date(SYSDATE),REVISED_DUE_DATE) WORK_DAY,
                         Decode(source,'','MRP','DOP') TYP,
                         contract,
-                        ifsapp.shop_order_operation_list_api.Get_Next_Op_Work_Center(ORDER_NO, SEQUENCE_NO, RELEASE_NO, ifsapp.shop_order_operation_list_api.Get_Prev_Non_Parallel_Op(ORDER_NO, SEQUENCE_NO, RELEASE_NO, 1, 0)) WRKC,
-                        ifsapp.shop_order_operation_list_api.Get_Next_Op_Work_Center(ORDER_NO, SEQUENCE_NO, RELEASE_NO, ifsapp.shop_order_operation_list_api.Get_Prev_Non_Parallel_Op(ORDER_NO, SEQUENCE_NO, RELEASE_NO, 2, 0)) NEXT_WRKC,
+                        NVL(ifsapp.shop_order_operation_list_api.Get_Next_Op_Work_Center(ORDER_NO, SEQUENCE_NO, RELEASE_NO, ifsapp.shop_order_operation_list_api.Get_Prev_Non_Parallel_Op(ORDER_NO, SEQUENCE_NO, RELEASE_NO, 1, 0)), '-') WRKC,
+                        NVL(ifsapp.shop_order_operation_list_api.Get_Next_Op_Work_Center(ORDER_NO, SEQUENCE_NO, RELEASE_NO, ifsapp.shop_order_operation_list_api.Get_Prev_Non_Parallel_Op(ORDER_NO, SEQUENCE_NO, RELEASE_NO, 2, 0)), '-') NEXT_WRKC,
                         Sum(REVISED_QTY_DUE-QTY_COMPLETE) QTY_ALL
                     FROM 
                         ifsapp.shop_ord 
