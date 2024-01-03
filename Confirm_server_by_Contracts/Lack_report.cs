@@ -37,7 +37,7 @@ namespace Confirm_server_by_Contracts
                     await Old_data(cancellationToken),
                     await New_data(cancellationToken),
                     new[] { "work_day", "contract", "typ", "wrkc", "next_wrkc" },
-                    new[] { "work_day", "contract", "typ", "brak", "wrkc", "next_wrkc" },
+                    new[] { "brak"},
                     null,
                     "Lack_report",
                     cancellationToken
