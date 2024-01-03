@@ -42,7 +42,7 @@ namespace Confirm_server_by_Contracts
                     "Lack_report",
                     cancellationToken
                     ),
-                "Lack_report",
+                "day_qty",
                 new[] { "work_day", "contract", "typ", "wrkc", "next_wrkc" },
                 null,
                 null,
@@ -52,7 +52,7 @@ namespace Confirm_server_by_Contracts
         }
         private async Task<List<Lack_report_row>> Old_data(CancellationToken cancellationToken) => await rw.Get_PSTGR("SELECT * FROM day_qty", "Lack_report", cancellationToken);
         private async Task<List<Lack_report_row>> New_data(CancellationToken cancellationToken) => await rw.Get_PSTGR("" +
-                string.Format(@"SELECT                     
+                @"SELECT                     
                     a.* 
                 FROM 
                 (
@@ -65,17 +65,16 @@ namespace Confirm_server_by_Contracts
                         Sum(REVISED_QTY_DUE-QTY_COMPLETE) QTY_ALL
                     FROM 
                         ifsapp.shop_ord 
-                    WHERE 
-                        ifsapp.work_time_calendar_api.Get_Work_Day_Counter ({0} ,work_day) is not null AND
+                    WHERE                         
                         OBJSTATE<>(select ifsapp.SHOP_ORD_API.FINITE_STATE_ENCODE__('Zamknięte') from dual) AND OBJSTATE<>(select ifsapp.SHOP_ORD_API.FINITE_STATE_ENCODE__('Wstrzymany') from dual) 
-                        AND REVISED_DUE_DATE < (select ifsapp.work_time_calendar_api.Get_End_Date(ifsapp.site_api.Get_Manuf_Calendar_Id('ST'), To_Date(SYSDATE), 10) from dual) 
+                        AND REVISED_DUE_DATE < (select ifsapp.work_time_calendar_api.Get_End_Date(ifsapp.site_api.Get_Manuf_Calendar_Id(contract), To_Date(SYSDATE), 10) from dual) 
                     GROUP BY 
                         Decode(Sign(REVISED_DUE_DATE - SYSDATE), '-1', To_Date(SYSDATE), REVISED_DUE_DATE),
                         Decode(source, '', 'MRP', 'DOP'),
                         contract,
                         ifsapp.shop_order_operation_list_api.Get_Next_Op_Work_Center(ORDER_NO, SEQUENCE_NO, RELEASE_NO, ifsapp.shop_order_operation_list_api.Get_Prev_Non_Parallel_Op(ORDER_NO, SEQUENCE_NO, RELEASE_NO, 1, 0)),
                         ifsapp.shop_order_operation_list_api.Get_Next_Op_Work_Center(ORDER_NO, SEQUENCE_NO, RELEASE_NO, ifsapp.shop_order_operation_list_api.Get_Prev_Non_Parallel_Op(ORDER_NO, SEQUENCE_NO, RELEASE_NO, 2, 0)) 
-                        ORDER BY work_day,typ,WRKC,NEXT_WRKC) a", Postegresql_conn.Contract_decode("contract")),
+                        ORDER BY work_day,typ,WRKC,NEXT_WRKC) a",
                         "Lack_report",
                         cancellationToken
                 );

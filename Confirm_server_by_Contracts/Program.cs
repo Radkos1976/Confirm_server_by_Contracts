@@ -292,6 +292,16 @@ namespace Confirm_server_by_Contracts
 
                 Steps_executor.Register_step("Validate demands");
                 Steps_executor.Wait_for(new string[] { "Refresh bilans_val", "Refresh Demand and Order_demands" }, "Validate demands", active_token);
+                Parallel.Invoke(
+                    () =>
+                    {
+                        Lack_report lack_Report = new Lack_report(active_token);
+                        lack_Report = null;
+                    },
+                    () =>
+                    {
+                        All_lacks all_Lacks = new All_lacks(active_token);
+                    });
                 Loger.Log("Wait END");
             }
             Loger.Srv_stop();
