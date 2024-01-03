@@ -25,7 +25,7 @@ namespace Confirm_server_by_Contracts
                 await query.Execute_in_Postgres(new[] { 
                     "REFRESH MATERIALIZED VIEW braki_gniazd; ",
                     "REFRESH MATERIALIZED VIEW braki_poreal; "
-                }, "All_lacks", cancellationToken);
+                }, "Lack_report", cancellationToken);
                 Steps_executor.End_step("Lack_report");
                 query = null;
             });

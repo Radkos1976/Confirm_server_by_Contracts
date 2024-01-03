@@ -51,7 +51,7 @@ namespace Confirm_server_by_Contracts
                 cancellationToken 
                 );
         }
-        private async Task<List<Order_Demands_row>> Get_source(CancellationToken cancellationToken) => await rw.Get_PSTGR("Select * from ord_lacks", "All_lacks", cancellationToken);
+        private async Task<List<Order_Demands_row>> Get_source(CancellationToken cancellationToken) => await rw.Get_PSTGR("Select * from ord_lack", "All_lacks", cancellationToken);
         private async Task<List<Order_Demands_row>> New_data(CancellationToken cancellationToken)
         {
             List<Order_Demands_row> Returned = new List<Order_Demands_row>();
