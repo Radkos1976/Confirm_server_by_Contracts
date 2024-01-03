@@ -294,7 +294,8 @@ namespace DB_Conect
         private static string Password { get; set; }
         private static string Database { get; set; }
         private static string Contracts { get; set; }
-        private static string Kalendar_name { get; set; }
+        private static string Kalendar_name { get; set; }        
+
 
         /// <summary>
         /// Initialize data from XML
@@ -319,6 +320,11 @@ namespace DB_Conect
                 Loger.Log(String.Format("Error width XML file for POSTEGRESQL: {0} ", e));
             }
         }
+        public static string Contract_decode(string field)
+        {
+            return string.Format("DECODE({0},{1})", field, string.Join(",", Kalendar_eunm.Select(x => string.Format("'{0}','{1}'", x.Key, x.Value).ToArray())));
+        } 
+
         /// <summary>
         /// Get values from XML file
         /// </summary>

@@ -1,9 +1,6 @@
 ﻿using DB_Conect;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using static Confirm_server_by_Contracts.Order_Demands;
@@ -29,6 +26,7 @@ namespace Confirm_server_by_Contracts
                 Run_query query = new Run_query();
                 await query.Execute_in_Postgres(new[] { "REFRESH MATERIALIZED VIEW formatka; " }, "All_lacks", cancellationToken);
                 Steps_executor.End_step("All_lacks");
+                query = null;
             });
         }
             
@@ -62,12 +60,42 @@ namespace Confirm_server_by_Contracts
                 b.*,
                 a.lack bal_stock 
                 from 
-                (select a.part_no,a.contract,a.work_day,b.min_lack,a.bal_stock *-1 lack, case when a.work_day=b.min_lack then case when a.bal_stock*-1=a.qty_demand then 'All' else 'Part' end else 'All' end stat_lack from 
-                    (select part_no,contract,work_day,qty_demand,bal_stock from demands where bal_stock<0 and qty_demand!=0 and work_day<date_fromnow(10,contract) and koor!='LUCPRZ') a 
+                (
+                    select 
+                        a.part_no,
+                        a.contract,
+                        a.work_day,
+                        b.min_lack,
+                        a.bal_stock *-1 lack,
+                        case when a.work_day=b.min_lack then case when a.bal_stock*-1=a.qty_demand then 'All' else 'Part' end else 'All' end stat_lack 
+                    from 
+                    (
+                        select 
+                            part_no,
+                            contract,
+                            work_day,
+                            qty_demand,
+                            bal_stock 
+                        from 
+                            demands 
+                        where bal_stock<0 and qty_demand!=0 and work_day<date_fromnow(10,contract) and koor!='LUCPRZ'
+                    ) a 
                 	left join 
-                	(select part_no,contract,min(work_day) min_lack from demands where bal_stock<0 and qty_demand!=0 and work_day<date_fromnow(10,contract) group by part_no,contract) b 
-                on b.part_no=a.part_no and b.contract=a.contract where case when a.work_day=b.min_lack then case when a.bal_stock*-1=a.qty_demand then 'All' else 'Part' end else 'All' end='Part') a,
-                ord_demands b where b.part_no=a.part_no and b.contract=a.contract and b.date_required=a.work_day order by part_no,date_required,int_ord desc", "All_lacks", cancellationToken)
+                	(
+                        select 
+                            part_no,
+                            contract,
+                            min(work_day) min_lack 
+                        from 
+                            demands 
+                        where bal_stock<0 and qty_demand!=0 and work_day<date_fromnow(10,contract) group by part_no,contract
+                    ) b 
+                    on b.part_no=a.part_no and b.contract=a.contract 
+                    where case when a.work_day=b.min_lack then case when a.bal_stock*-1=a.qty_demand then 'All' else 'Part' end else 'All' end='Part'
+                ) a,
+                ord_demands b 
+                where b.part_no=a.part_no and b.contract=a.contract and b.date_required=a.work_day order by part_no,date_required,int_ord desc"
+                , "All_lacks", cancellationToken)
                 .ConfigureAwait(false);
             string Part_no = "";
             string Contract = "";
