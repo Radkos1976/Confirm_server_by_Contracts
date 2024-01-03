@@ -19,14 +19,14 @@ namespace Confirm_server_by_Contracts
             rw = new Update_pstgr_from_Ora<Lack_report_row>("MAIN");
             Parallel.Invoke(
             async () => {
-                Steps_executor.Register_step("All_lacks");
+                Steps_executor.Register_step("Lack_report");
                 await Update_Lack_reports(cancellationToken);
                 Run_query query = new Run_query();
                 await query.Execute_in_Postgres(new[] { 
                     "REFRESH MATERIALIZED VIEW braki_gniazd; ",
                     "REFRESH MATERIALIZED VIEW braki_poreal; "
                 }, "All_lacks", cancellationToken);
-                Steps_executor.End_step("All_lacks");
+                Steps_executor.End_step("Lack_report");
                 query = null;
             });
         }
