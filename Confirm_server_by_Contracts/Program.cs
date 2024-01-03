@@ -301,6 +301,7 @@ namespace Confirm_server_by_Contracts
                     () =>
                     {
                         All_lacks all_Lacks = new All_lacks(active_token);
+                        all_Lacks = null;
                     });
                 Loger.Log("Wait END");
             }
