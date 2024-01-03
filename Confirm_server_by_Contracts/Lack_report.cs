@@ -51,7 +51,7 @@ namespace Confirm_server_by_Contracts
                 );
         }
         private async Task<List<Lack_report_row>> Old_data(CancellationToken cancellationToken) => await rw.Get_PSTGR("SELECT * FROM day_qty", "Lack_report", cancellationToken);
-        private async Task<List<Lack_report_row>> New_data(CancellationToken cancellationToken) => await rw.Get_PSTGR("" +
+        private async Task<List<Lack_report_row>> New_data(CancellationToken cancellationToken) => await rw.Get_Ora("" +
                 @"SELECT                     
                     a.* 
                 FROM 
