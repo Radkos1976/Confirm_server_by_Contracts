@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -53,80 +54,105 @@ namespace Confirm_server_by_Contracts
         private async Task<List<Lack_report_row>> Old_data(CancellationToken cancellationToken) => await rw.Get_PSTGR("SELECT * FROM day_qty", "Lack_report", cancellationToken);
         private async Task<List<Lack_report_row>> New_data(CancellationToken cancellationToken)
         {
-
-            List<Lack_report_row> Returned = await rw.Get_PSTGR("" +
-                @"select
-a.id,
-a.work_day,
-a.typ,
-a.wrkc,
-a.next_wrkc,
-a.qty_all,
-b.qty brak
-from day_qty_ifs a 
-left join 
-(
-select work_day,typ,wrkc,next_wrkc,sum(prod_qty) qty, 0 qty_all from 
-(select 
-min(a.work_day) work_day,
-b.order_no,
-b.typ,
-b.wrkc,
-b.next_wrkc,
-b.prod_qty 
-from 
-(
-select 
-part_no,
-case when work_day<current_date then current_date else work_day end work_day
-from 
-demands 
-where bal_stock<0
-) a,
-(
-select 
-part_no,
-order_no,
-case when ord_date<current_date then current_date else ord_date end date_required,
-case when dop=0 then 'MRP' else 'DOP' end typ,
-prod_qty,
-case when wrkc=' ' then ' - ' else wrkc end wrkc,
-case when next_wrkc=' ' then ' - ' else next_wrkc end next_wrkc
-from 
-ord_lack
-) b 
-where b.part_no=a.part_no and a.work_day<date_fromnow(10) and b.date_required=a.work_day group by b.order_no,b.typ,b.wrkc,b.next_wrkc,b.prod_qty
-) a 
-group by work_day,typ,wrkc,next_wrkc order by work_day,typ,wrkc,next_wrkc) b on b.id=a.id", "SSSSS", cancellationToken);
-
-
-            List <Lack_report_row> list_from_Ora = await rw.Get_Ora("" +
-                @"SELECT                     
-                    a.* 
-                FROM 
-                (
-                    SELECT 
-                        Decode(Sign(REVISED_DUE_DATE-SYSDATE),'-1',To_Date(SYSDATE),REVISED_DUE_DATE) WORK_DAY,
-                        Decode(source,'','MRP','DOP') TYP,
+            List<Lack_report_row> Returned = new List<Lack_report_row>() ;
+            List<Lack_report_row> list_from_Ora = new List<Lack_report_row>() ;
+            Parallel.Invoke(
+                async () =>
+                {
+                    Returned = await rw.Get_PSTGR("" +
+                    @"select 
+                        work_day,
                         contract,
-                        NVL(ifsapp.shop_order_operation_list_api.Get_Next_Op_Work_Center(ORDER_NO, SEQUENCE_NO, RELEASE_NO, ifsapp.shop_order_operation_list_api.Get_Prev_Non_Parallel_Op(ORDER_NO, SEQUENCE_NO, RELEASE_NO, 1, 0)), '-') WRKC,
-                        NVL(ifsapp.shop_order_operation_list_api.Get_Next_Op_Work_Center(ORDER_NO, SEQUENCE_NO, RELEASE_NO, ifsapp.shop_order_operation_list_api.Get_Prev_Non_Parallel_Op(ORDER_NO, SEQUENCE_NO, RELEASE_NO, 2, 0)), '-') NEXT_WRKC,
-                        Sum(REVISED_QTY_DUE-QTY_COMPLETE) QTY_ALL
+                        typ,
+                        wrkc,
+                        next_wrkc,
+                        sum(prod_qty) qty_all,
+                        0 qty 
+                    from 
+                    (
+                        select 
+                            min(a.work_day) work_day,
+                            b.order_no,
+                            b.typ,
+                            b.contract,
+                            b.wrkc,
+                            b.next_wrkc,
+                            b.prod_qty 
+                        from 
+                        (
+                            select 
+                                part_no,
+                                contract,
+                                case when work_day<current_date then current_date else work_day end work_day
+                            from 
+                                demands 
+                            where bal_stock<0
+                        ) a,
+                        (
+                            select 
+                                part_no,
+                                contract,
+                                order_no,
+                                case when ord_date<current_date then current_date else ord_date end date_required,
+                                case when dop=0 then 'MRP' else 'DOP' end typ,
+                                prod_qty,
+                                case when wrkc=' ' then ' - ' else wrkc end wrkc,
+                                case when next_wrkc=' ' then ' - ' else next_wrkc end next_wrkc
+                            from 
+                                ord_lack
+                        ) b 
+                        where b.part_no=a.part_no and b.contract=a.contract and a.work_day<date_fromnow(10, a.contract) and b.date_required=a.work_day 
+                        group by b.order_no,b.contract,b.typ,b.wrkc,b.next_wrkc,b.prod_qty
+                    ) a 
+                    group by work_day,contract,typ,wrkc,next_wrkc", "Lack_report", cancellationToken);
+                },
+                async () =>
+                {
+                    list_from_Ora = await rw.Get_Ora("" +
+                    @"SELECT                     
+                        a.* 
                     FROM 
-                        ifsapp.shop_ord 
-                    WHERE                         
-                        OBJSTATE<>(select ifsapp.SHOP_ORD_API.FINITE_STATE_ENCODE__('Zamknięte') from dual) AND OBJSTATE<>(select ifsapp.SHOP_ORD_API.FINITE_STATE_ENCODE__('Wstrzymany') from dual) 
-                        AND REVISED_DUE_DATE < (select ifsapp.work_time_calendar_api.Get_End_Date(ifsapp.site_api.Get_Manuf_Calendar_Id(contract), To_Date(SYSDATE), 10) from dual) 
-                    GROUP BY 
-                        Decode(Sign(REVISED_DUE_DATE - SYSDATE), '-1', To_Date(SYSDATE), REVISED_DUE_DATE),
-                        Decode(source, '', 'MRP', 'DOP'),
-                        contract,
-                        ifsapp.shop_order_operation_list_api.Get_Next_Op_Work_Center(ORDER_NO, SEQUENCE_NO, RELEASE_NO, ifsapp.shop_order_operation_list_api.Get_Prev_Non_Parallel_Op(ORDER_NO, SEQUENCE_NO, RELEASE_NO, 1, 0)),
-                        ifsapp.shop_order_operation_list_api.Get_Next_Op_Work_Center(ORDER_NO, SEQUENCE_NO, RELEASE_NO, ifsapp.shop_order_operation_list_api.Get_Prev_Non_Parallel_Op(ORDER_NO, SEQUENCE_NO, RELEASE_NO, 2, 0)) 
-                        ORDER BY work_day,typ,WRKC,NEXT_WRKC) a",
+                    (
+                        SELECT 
+                            Decode(Sign(REVISED_DUE_DATE-SYSDATE),'-1',To_Date(SYSDATE),REVISED_DUE_DATE) WORK_DAY,
+                            Decode(source,'','MRP','DOP') TYP,
+                            contract,
+                            NVL(ifsapp.shop_order_operation_list_api.Get_Next_Op_Work_Center(ORDER_NO, SEQUENCE_NO, RELEASE_NO, ifsapp.shop_order_operation_list_api.Get_Prev_Non_Parallel_Op(ORDER_NO, SEQUENCE_NO, RELEASE_NO, 1, 0)), '-') WRKC,
+                            NVL(ifsapp.shop_order_operation_list_api.Get_Next_Op_Work_Center(ORDER_NO, SEQUENCE_NO, RELEASE_NO, ifsapp.shop_order_operation_list_api.Get_Prev_Non_Parallel_Op(ORDER_NO, SEQUENCE_NO, RELEASE_NO, 2, 0)), '-') NEXT_WRKC,
+                            Sum(REVISED_QTY_DUE-QTY_COMPLETE) QTY_ALL
+                        FROM 
+                            ifsapp.shop_ord 
+                        WHERE                         
+                            OBJSTATE<>(select ifsapp.SHOP_ORD_API.FINITE_STATE_ENCODE__('Zamknięte') from dual) AND OBJSTATE<>(select ifsapp.SHOP_ORD_API.FINITE_STATE_ENCODE__('Wstrzymany') from dual) 
+                            AND REVISED_DUE_DATE < (select ifsapp.work_time_calendar_api.Get_End_Date(ifsapp.site_api.Get_Manuf_Calendar_Id(contract), To_Date(SYSDATE), 10) from dual) 
+                        GROUP BY 
+                            Decode(Sign(REVISED_DUE_DATE - SYSDATE), '-1', To_Date(SYSDATE), REVISED_DUE_DATE),
+                            Decode(source, '', 'MRP', 'DOP'),
+                            contract,
+                            ifsapp.shop_order_operation_list_api.Get_Next_Op_Work_Center(ORDER_NO, SEQUENCE_NO, RELEASE_NO, ifsapp.shop_order_operation_list_api.Get_Prev_Non_Parallel_Op(ORDER_NO, SEQUENCE_NO, RELEASE_NO, 1, 0)),
+                            ifsapp.shop_order_operation_list_api.Get_Next_Op_Work_Center(ORDER_NO, SEQUENCE_NO, RELEASE_NO, ifsapp.shop_order_operation_list_api.Get_Prev_Non_Parallel_Op(ORDER_NO, SEQUENCE_NO, RELEASE_NO, 2, 0)) 
+                            ORDER BY work_day,typ,WRKC,NEXT_WRKC) a",
                         "Lack_report",
-                        cancellationToken
-                );
+                        cancellationToken);
+                });          
+            int max_rows = Returned.Count;
+            int counter = 0;
+            foreach (Lack_report_row item in  list_from_Ora)
+            {
+                if ( counter < max_rows )
+                {
+                    int cmp = item.CompareTo(Returned[counter]);
+                    while (cmp == 1 && counter < max_rows)
+                    {
+                        counter++;
+                        cmp = item.CompareTo(Returned[counter]);
+                    }
+                    if (cmp == 0)
+                    {
+                        item.Qty_all = Returned[counter].Qty_all;
+                    }                    
+                }
+            }            
             return list_from_Ora;
         }
         public class Lack_report_row : IEquatable<Lack_report_row>, IComparable<Lack_report_row>
