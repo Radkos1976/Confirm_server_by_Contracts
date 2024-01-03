@@ -297,11 +297,13 @@ namespace Confirm_server_by_Contracts
                     {
                         Lack_report lack_Report = new Lack_report(active_token);
                         lack_Report = null;
+                        Steps_executor.Wait_for(new string[] { "Lack_report" }, "Validate demands", active_token);
+                        All_lacks all_Lacks = new All_lacks(active_token);
+                        all_Lacks = null;
                     },
                     () =>
                     {
-                        All_lacks all_Lacks = new All_lacks(active_token);
-                        all_Lacks = null;
+                        
                     });
                 Loger.Log("Wait END");
                 Steps_executor.Wait_for(new string[] { "All_lacks", "Lack_report" }, "Wait END", active_token);

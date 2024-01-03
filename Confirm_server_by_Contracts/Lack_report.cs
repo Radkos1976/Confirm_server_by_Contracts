@@ -149,7 +149,7 @@ namespace Confirm_server_by_Contracts
                     }
                     if (cmp == 0)
                     {
-                        item.Qty_all = Returned[counter].Qty_all;
+                        item.Brak = Returned[counter].Qty_all;
                     }                    
                 }
             }            
