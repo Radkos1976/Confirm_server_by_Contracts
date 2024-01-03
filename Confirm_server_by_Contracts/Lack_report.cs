@@ -86,6 +86,7 @@ namespace Confirm_server_by_Contracts
            public string Wrkc { get; set; }
            public string Next_wrkc { get; set; }
            public double Qty_all { get; set; }
+           public double Brak { get; set; }
 
             public int CompareTo(Lack_report_row other)
             {
