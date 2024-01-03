@@ -97,7 +97,7 @@ ord_lack
 ) b 
 where b.part_no=a.part_no and a.work_day<date_fromnow(10) and b.date_required=a.work_day group by b.order_no,b.typ,b.wrkc,b.next_wrkc,b.prod_qty
 ) a 
-group by work_day,typ,wrkc,next_wrkc order by work_day,typ,wrkc,next_wrkc) b on b.id=a.id")
+group by work_day,typ,wrkc,next_wrkc order by work_day,typ,wrkc,next_wrkc) b on b.id=a.id", "SSSSS", cancellationToken);
 
 
             List <Lack_report_row> list_from_Ora = await rw.Get_Ora("" +
@@ -127,6 +127,7 @@ group by work_day,typ,wrkc,next_wrkc order by work_day,typ,wrkc,next_wrkc) b on 
                         "Lack_report",
                         cancellationToken
                 );
+            return list_from_Ora;
         }
         public class Lack_report_row : IEquatable<Lack_report_row>, IComparable<Lack_report_row>
         {           
