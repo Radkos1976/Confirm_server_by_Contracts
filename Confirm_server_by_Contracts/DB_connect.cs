@@ -348,7 +348,7 @@ namespace DB_Conect
             foreach (int item in ID)
             {
                 Type pt = P_types[item];
-                if (pt == typeof(string) || pt == typeof(DateTime))
+                if (pt == typeof(string))
                 {
                     result = String.Compare(
                         (string)Convert.ChangeType(
@@ -374,6 +374,16 @@ namespace DB_Conect
                     {
                         result = -1;
                     }
+                }
+                else if (pt == typeof(DateTime))
+                {
+                    result = DateTime.Compare(                        
+                        (DateTime)Convert.ChangeType(
+                            Accessors[item].GetValue(new_row),
+                            Nullable.GetUnderlyingType(pt) ?? pt, null),
+                        (DateTime)Convert.ChangeType(
+                            Accessors[item].GetValue(old_row),
+                            Nullable.GetUnderlyingType(pt) ?? pt, null));
                 }
                 else
                 {
