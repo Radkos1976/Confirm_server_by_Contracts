@@ -51,7 +51,56 @@ namespace Confirm_server_by_Contracts
                 );
         }
         private async Task<List<Lack_report_row>> Old_data(CancellationToken cancellationToken) => await rw.Get_PSTGR("SELECT * FROM day_qty", "Lack_report", cancellationToken);
-        private async Task<List<Lack_report_row>> New_data(CancellationToken cancellationToken) => await rw.Get_Ora("" +
+        private async Task<List<Lack_report_row>> New_data(CancellationToken cancellationToken)
+        {
+
+            List<Lack_report_row> Returned = await rw.Get_PSTGR("" +
+                @"select
+a.id,
+a.work_day,
+a.typ,
+a.wrkc,
+a.next_wrkc,
+a.qty_all,
+b.qty brak
+from day_qty_ifs a 
+left join 
+(
+select work_day,typ,wrkc,next_wrkc,sum(prod_qty) qty, 0 qty_all from 
+(select 
+min(a.work_day) work_day,
+b.order_no,
+b.typ,
+b.wrkc,
+b.next_wrkc,
+b.prod_qty 
+from 
+(
+select 
+part_no,
+case when work_day<current_date then current_date else work_day end work_day
+from 
+demands 
+where bal_stock<0
+) a,
+(
+select 
+part_no,
+order_no,
+case when ord_date<current_date then current_date else ord_date end date_required,
+case when dop=0 then 'MRP' else 'DOP' end typ,
+prod_qty,
+case when wrkc=' ' then ' - ' else wrkc end wrkc,
+case when next_wrkc=' ' then ' - ' else next_wrkc end next_wrkc
+from 
+ord_lack
+) b 
+where b.part_no=a.part_no and a.work_day<date_fromnow(10) and b.date_required=a.work_day group by b.order_no,b.typ,b.wrkc,b.next_wrkc,b.prod_qty
+) a 
+group by work_day,typ,wrkc,next_wrkc order by work_day,typ,wrkc,next_wrkc) b on b.id=a.id")
+
+
+            List <Lack_report_row> list_from_Ora = await rw.Get_Ora("" +
                 @"SELECT                     
                     a.* 
                 FROM 
@@ -78,6 +127,7 @@ namespace Confirm_server_by_Contracts
                         "Lack_report",
                         cancellationToken
                 );
+        }
         public class Lack_report_row : IEquatable<Lack_report_row>, IComparable<Lack_report_row>
         {           
            public DateTime Work_day { get; set; }
