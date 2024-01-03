@@ -541,7 +541,7 @@ namespace Confirm_server_by_Contracts
             public Guid Id { get; set; }
 
             //dop desc,dop_lin,int_ord,LINE_NO,REL_NO
-            public int CompareTo(Order_Demands_row other)
+            public virtual int CompareTo(Order_Demands_row other)
             {
                 int res = this.Dop.CompareTo(other.Dop);
                 if (res != 0) 
@@ -567,7 +567,7 @@ namespace Confirm_server_by_Contracts
                     this.Rel_no.CompareTo(other.Rel_no);
             }
 
-            public bool Equals(Order_Demands_row other)
+            public virtual bool Equals(Order_Demands_row other)
             {
                 return 
                     this.Dop.Equals(other.Dop) && 

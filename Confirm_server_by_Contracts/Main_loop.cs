@@ -160,10 +160,10 @@ namespace Confirm_server_by_Contracts
                 async () =>
                 {
                     Steps_executor.Register_step(string.Format("{0}:{1}", Task_name, "Buyer_info"));
-                    SourceDataSet = Limit_length(await rw.Get_PSTGR("" +
+                    SourceDataSet = await Limit_length(await rw.Get_PSTGR("" +
                         string.Format(@"SELECT * FROM public.data WHERE regexp_like(indeks, '{0}')", regex),
                         string.Format("{0}:{1}", Task_name, "Buyer_info"), cancellationToken));
-                    Changes_List<Buyer_info_row> Zak_changes = await rw.Changes(SourceDataSet, Limit_length(DataSet),
+                    Changes_List<Buyer_info_row> Zak_changes = await rw.Changes(SourceDataSet,await Limit_length(DataSet),
                         new[] { "indeks", "umiejsc", "data_dost" },
                         new[] { "indeks", "umiejsc", "data_dost", "status_informacji", "informacja", "id", "widoczny_od_dnia" , "refr_date" },
                         new[] { "id", "widoczny_od_dnia", "informacja" },
@@ -691,7 +691,7 @@ namespace Confirm_server_by_Contracts
                 return this.Part_no.Equals(other.Part_no) && this.Dat.Equals(other.Dat);
             }
         }
-        public List<Buyer_info_row> Limit_length (List<Buyer_info_row> dataset)
+        public Task<List<Buyer_info_row>> Limit_length (List<Buyer_info_row> dataset)
         {
             Dictionary<string, int> calendar_len = Get_limit_of_fields.buyer_info_len;
             foreach (Buyer_info_row row in dataset)
@@ -706,7 +706,7 @@ namespace Confirm_server_by_Contracts
                 row.Status_informacji = row.Status_informacji.LimitDictLen("status_informacji", calendar_len);
                 row.Informacja = row.Informacja.LimitDictLen("informacja", calendar_len);
             }
-            return dataset;
+            return Task.FromResult(dataset);
         }
 
         public class Buyer_info_row : IEquatable<Buyer_info_row>, IComparable<Buyer_info_row>
