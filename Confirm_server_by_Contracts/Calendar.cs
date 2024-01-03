@@ -98,7 +98,7 @@ namespace Confirm_server_by_Contracts
                                 list_pstgr = await Get_PSTGR_List(Postegresql_conn.Contracts_kalendar[contract], cancellationToken);
                             }
                         );
-                        Changes_List<Calendar_row> tmp = rw.Changes(list_pstgr, list_ora, new[] { "work_day", "calendar_id" }, new[] { "work_day", "calendar_id" }, null, "Calendar", cancellationToken);
+                        Changes_List<Calendar_row> tmp = await rw.Changes(list_pstgr, list_ora, new[] { "work_day", "calendar_id" }, new[] { "work_day", "calendar_id" }, null, "Calendar", cancellationToken);
                         list_ora = null;
                         list_pstgr = null;
                         returned += await PSTRG_Changes_to_dataTable(tmp, "work_cal", new[] { "work_day", "calendar_id" }, null, new[] {

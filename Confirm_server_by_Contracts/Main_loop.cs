@@ -143,7 +143,7 @@ namespace Confirm_server_by_Contracts
                     SourceDemandSet = await dmr.Get_PSTGR("" +
                         string.Format(@"SELECT * FROM public.demands WHERE regexp_like(part_no, '{0}')", regex),
                         string.Format("{0}:{1}", Task_name, "Update Demands"), cancellationToken);
-                    Changes = dmr.Changes(SourceDemandSet, DemandSet,
+                    Changes = await dmr.Changes(SourceDemandSet, DemandSet,
                         new[] { "part_no", "contract", "work_day" },
                         new[] { "part_no", "contract", "work_day", "id", "dat_shortage", "objversion", "indb" },
                         new[] { "id", "dat_shortage", "indb" },
@@ -163,7 +163,7 @@ namespace Confirm_server_by_Contracts
                     SourceDataSet = Limit_length(await rw.Get_PSTGR("" +
                         string.Format(@"SELECT * FROM public.data WHERE regexp_like(indeks, '{0}')", regex),
                         string.Format("{0}:{1}", Task_name, "Buyer_info"), cancellationToken));
-                    Changes_List<Buyer_info_row> Zak_changes = rw.Changes(SourceDataSet, Limit_length(DataSet),
+                    Changes_List<Buyer_info_row> Zak_changes = await rw.Changes(SourceDataSet, Limit_length(DataSet),
                         new[] { "indeks", "umiejsc", "data_dost" },
                         new[] { "indeks", "umiejsc", "data_dost", "status_informacji", "informacja", "id", "widoczny_od_dnia" , "refr_date" },
                         new[] { "id", "widoczny_od_dnia", "informacja" },

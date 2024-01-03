@@ -37,7 +37,7 @@ namespace Confirm_server_by_Contracts
         }
         public async Task<int> Update_dataset(List<Inventory_part_row> pstgrdtset, List<Inventory_part_row> oradtset,string Task_name, CancellationToken cancellationToken)
         {
-            Changes_List<Inventory_part_row> tmp = rw.Changes(pstgrdtset, oradtset, new[] { "indeks", "contract" }, new[] { "indeks", "contract", "data_gwarancji" }, null, Task_name, cancellationToken);
+            Changes_List<Inventory_part_row> tmp = await rw.Changes(pstgrdtset, oradtset, new[] { "indeks", "contract" }, new[] { "indeks", "contract", "data_gwarancji" }, null, Task_name, cancellationToken);
             int result = await PSTRG_Changes_to_dataTable(tmp, "mag", new[] { "indeks", "contract" }, null, null, Task_name, cancellationToken);
             return result;
         }

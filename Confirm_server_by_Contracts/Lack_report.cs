@@ -34,7 +34,7 @@ namespace Confirm_server_by_Contracts
         public async Task<int> Update_Lack_reports(CancellationToken cancellationToken)
         {
             return await rw.PSTRG_Changes_to_dataTable(
-                rw.Changes(
+                await rw.Changes(
                     await Old_data(cancellationToken),
                     await New_data(cancellationToken),
                     new[] { "work_day", "contract", "typ", "wrkc", "next_wrkc" },
@@ -52,7 +52,7 @@ namespace Confirm_server_by_Contracts
                 );
         }
         private async Task<List<Lack_report_row>> Old_data(CancellationToken cancellationToken) => await rw.Get_PSTGR("SELECT * FROM day_qty", "Lack_report", cancellationToken);
-        private async Task<List<Lack_report_row>> New_data(CancellationToken cancellationToken)
+        private Task<List<Lack_report_row>> New_data(CancellationToken cancellationToken)
         {
             List<Lack_report_row> Returned = new List<Lack_report_row>() ;
             List<Lack_report_row> list_from_Ora = new List<Lack_report_row>() ;
@@ -153,7 +153,7 @@ namespace Confirm_server_by_Contracts
                     }                    
                 }
             }            
-            return list_from_Ora;
+            return Task.FromResult(list_from_Ora);
         }
         public class Lack_report_row : IEquatable<Lack_report_row>, IComparable<Lack_report_row>
         {           

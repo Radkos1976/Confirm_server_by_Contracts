@@ -342,7 +342,7 @@ namespace DB_Conect
         /// <param name="Accessors"></param>
         /// <param name="P_types"></param>
         /// <returns></returns>
-        public int Compare_rows(T new_row, T old_row, int[] ID, IPropertyAccessor[] Accessors, Dictionary<int, Type> P_types)
+        public Task<int> Compare_rows(T new_row, T old_row, int[] ID, IPropertyAccessor[] Accessors, Dictionary<int, Type> P_types)
         {
             int result = 0;
             foreach (int item in ID)
@@ -396,7 +396,7 @@ namespace DB_Conect
                 }
                 
             }
-            return result;
+            return Task.FromResult(result);
         }
 
         /// <summary>
@@ -408,7 +408,7 @@ namespace DB_Conect
         /// <param name="not_compare"></param>
         /// <param name="guid_col"></param>
         /// <returns>  </returns>
-        public Changes_List<T> Changes(List<T> Old_list, List<T> New_list, string[] ID_column, string[] not_compare, string[] guid_col, string Task_name, CancellationToken cancellationToken)
+        public async Task<Changes_List<T>> Changes(List<T> Old_list, List<T> New_list, string[] ID_column, string[] not_compare, string[] guid_col, string Task_name, CancellationToken cancellationToken)
         {
             Changes_List<T> modyfications = new Changes_List<T>();
             try
@@ -461,13 +461,13 @@ namespace DB_Conect
                         }
                         if (max_old_rows > counter)
                         {
-                            int compare = Compare_rows(rows, Old_list[counter], ID, Accessors, P_types);
+                            int compare = await Compare_rows(rows, Old_list[counter], ID, Accessors, P_types);
                             while (compare == 1)
                             {
                                 _operDEl.Add(Old_list[counter]);
                                 counter++;
                                 if (max_old_rows <= counter) { break; }
-                                compare = Compare_rows(rows, Old_list[counter], ID, Accessors, P_types);                               
+                                compare = await Compare_rows(rows, Old_list[counter], ID, Accessors, P_types);                               
                             }
                             if (max_old_rows > counter)
                             {                               

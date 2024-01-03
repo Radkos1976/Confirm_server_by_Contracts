@@ -282,7 +282,7 @@ namespace Confirm_server_by_Contracts
                     {
                         New = await Get_oracle(part_no, contract, dates, Task_name, cancellationToken);
                     });
-            Changes_List<Order_Demands_row> Ch_dataset = Changes(Old, New, 
+            Changes_List<Order_Demands_row> Ch_dataset = await Changes(Old, New, 
                 new[] {"dop", "dop_lin", "int_ord", "line_no", "rel_no"}, 
                 new[] { "dop", "dop_lin", "int_ord", "line_no", "rel_no", "id" }, 
                 new[] {"id"},
