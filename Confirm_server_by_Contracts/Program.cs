@@ -305,7 +305,7 @@ namespace Confirm_server_by_Contracts
                         
                     });
                 Loger.Log("Wait END");
-                Steps_executor.Wait_for(new string[] { "All_lacks", "Lack_report" }, "Wait END", active_token);
+                Steps_executor.Wait_for(new string[] { "All_lacks", "Lack_report", "Lack_bil" }, "Wait END", active_token);
             }
             Loger.Srv_stop();
             Steps_executor.cts.Dispose();
