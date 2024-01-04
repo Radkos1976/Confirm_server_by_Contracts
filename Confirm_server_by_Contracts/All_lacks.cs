@@ -23,17 +23,19 @@ namespace Confirm_server_by_Contracts
             async () => {
                 Steps_executor.Register_step("All_lacks");
                 await Update_All_lacks(cancellationToken);
-                Run_query query = new Run_query();
-                await query.Execute_in_Postgres(new[] { "REFRESH MATERIALIZED VIEW formatka; " }, "All_lacks", cancellationToken);
                 Steps_executor.End_step("All_lacks");
+                Steps_executor.Wait_for(new string[] { "All_lacks" }, "Validate demands", cancellationToken);
+                Run_query query = new Run_query();
+                await query.Execute_in_Postgres(new[] { "REFRESH MATERIALIZED VIEW formatka; " }, "All_lacks", cancellationToken);                
                 query = null;
             },
             async () => {
                 Steps_executor.Register_step("Lack_bil");
                 await Update_All_lacks(cancellationToken);
-                Run_query query = new Run_query();
-                await query.Execute_in_Postgres(new[] { "REFRESH MATERIALIZED VIEW formatka_bil; " }, "Lack_bil", cancellationToken);
                 Steps_executor.End_step("Lack_bil");
+                Steps_executor.Wait_for(new string[] { "Lack_bil" }, "Validate demands", cancellationToken);
+                Run_query query = new Run_query();
+                await query.Execute_in_Postgres(new[] { "REFRESH MATERIALIZED VIEW formatka_bil; " }, "Lack_bil", cancellationToken);                
                 query = null;
             });
         }
