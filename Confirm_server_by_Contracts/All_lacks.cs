@@ -22,8 +22,7 @@ namespace Confirm_server_by_Contracts
             Parallel.Invoke(
             async () => {
                 Steps_executor.Register_step("All_lacks");
-                await Update_All_lacks(cancellationToken);
-                Steps_executor.End_step("All_lacks");
+                await Update_All_lacks(cancellationToken);                
                 Steps_executor.Wait_for(new string[] { "All_lacks" }, "Validate demands", cancellationToken);
                 Run_query query = new Run_query();
                 await query.Execute_in_Postgres(new[] { "REFRESH MATERIALIZED VIEW formatka; " }, "All_lacks", cancellationToken);                
@@ -31,8 +30,7 @@ namespace Confirm_server_by_Contracts
             },
             async () => {
                 Steps_executor.Register_step("Lack_bil");
-                await Update_Lack_bil(cancellationToken);
-                Steps_executor.End_step("Lack_bil");
+                await Update_Lack_bil(cancellationToken);                
                 Steps_executor.Wait_for(new string[] { "Lack_bil" }, "Validate demands", cancellationToken);
                 Run_query query = new Run_query();
                 await query.Execute_in_Postgres(new[] { "REFRESH MATERIALIZED VIEW formatka_bil; " }, "Lack_bil", cancellationToken);                
@@ -43,7 +41,7 @@ namespace Confirm_server_by_Contracts
 
         public async Task<int> Update_All_lacks(CancellationToken cancellationToken)
         {
-            return await rw.PSTRG_Changes_to_dataTable(
+            int result = await rw.PSTRG_Changes_to_dataTable(
                 await rw.Changes(
                     await Get_source_for_calc(cancellationToken),
                     await New_data_for_calc(cancellationToken), 
@@ -60,10 +58,12 @@ namespace Confirm_server_by_Contracts
                 "All_lacks", 
                 cancellationToken 
                 );
+            Steps_executor.End_step("All_lacks");
+            return result;
         }
         public async Task<int> Update_Lack_bil(CancellationToken cancellationToken)
         {
-            return await rw.PSTRG_Changes_to_dataTable(
+            int result = await rw.PSTRG_Changes_to_dataTable(
                 await rw.Changes(
                     await Get_source_for_bil(cancellationToken),
                     await New_data_for_bil(cancellationToken),
@@ -80,6 +80,8 @@ namespace Confirm_server_by_Contracts
                 "Lack_bil",
                 cancellationToken
                 );
+            Steps_executor.End_step("Lack_bil");
+            return result;
         }
         private Task<List<Order_Demands_row>> Rows_on_lack(List<Orders_lacks> _lacks, CancellationToken cancellationToken)
         {

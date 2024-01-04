@@ -97,6 +97,7 @@
   <ItemGroup>
     <Compile Include=".recipes\Naos.TupleInitializers\Initializers.cs" />
     <Compile Include="All_lacks.cs" />
+    <Compile Include="Calculate_cust_ord.cs" />
     <Compile Include="Calendar.cs" />
     <Compile Include="Common.cs" />
     <Compile Include="Cust_order.cs" />

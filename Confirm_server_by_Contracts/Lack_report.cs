@@ -22,18 +22,19 @@ namespace Confirm_server_by_Contracts
             async () => {
                 Steps_executor.Register_step("Lack_report");
                 await Update_Lack_reports(cancellationToken);
+                Steps_executor.Wait_for(new string[] { "Lack_report" }, "Validate demands", cancellationToken);
                 Run_query query = new Run_query();
                 await query.Execute_in_Postgres(new[] { 
                     "REFRESH MATERIALIZED VIEW braki_gniazd; ",
                     "REFRESH MATERIALIZED VIEW braki_poreal; "
                 }, "Lack_report", cancellationToken);
-                Steps_executor.End_step("Lack_report");
+                
                 query = null;
             });
         }
         public async Task<int> Update_Lack_reports(CancellationToken cancellationToken)
         {
-            return await rw.PSTRG_Changes_to_dataTable(
+            int result =  await rw.PSTRG_Changes_to_dataTable(
                 await rw.Changes(
                     await Old_data(cancellationToken),
                     await New_data(cancellationToken),
@@ -50,6 +51,8 @@ namespace Confirm_server_by_Contracts
                 "Lack_report",
                 cancellationToken
                 );
+            Steps_executor.End_step("Lack_report");
+            return result;
         }
         private async Task<List<Lack_report_row>> Old_data(CancellationToken cancellationToken) => await rw.Get_PSTGR("SELECT * FROM day_qty", "Lack_report", cancellationToken);
         private Task<List<Lack_report_row>> New_data(CancellationToken cancellationToken)
