@@ -134,14 +134,9 @@ namespace Confirm_server_by_Contracts
             return Task.FromResult(Returned);
         }
         private async Task<List<Order_Demands_row>> Get_source_for_bil(CancellationToken cancellationToken) => await rw.Get_PSTGR("Select * from ord_lack_bil", "Lack_bil", cancellationToken);
-        private Task<List<Order_Demands_row>> New_data_for_bil(CancellationToken cancellationToken)
+        private async Task<List<Order_Demands_row>> New_data_for_bil(CancellationToken cancellationToken)
         {
-            List<Order_Demands_row> part_lack = new List<Order_Demands_row>();
-            List<Order_Demands_row> all_lack = new List<Order_Demands_row>();
-            Parallel.Invoke(
-                async () =>
-                {
-                    part_lack = await Rows_on_lack(
+            List<Order_Demands_row> part_lack = await Rows_on_lack(
                     await lacks.Get_PSTGR("" +
                         @"select 
                         b.*,
@@ -186,10 +181,7 @@ namespace Confirm_server_by_Contracts
                         .ConfigureAwait(false),
                     cancellationToken
                     );
-                },
-                async () =>
-                {
-                    all_lack = await rw.Get_PSTGR("" +
+            List<Order_Demands_row> all_lack = await rw.Get_PSTGR("" +
                         @"select 
                         b.*                       
                         from 
@@ -229,20 +221,15 @@ namespace Confirm_server_by_Contracts
                         ord_demands b 
                         where b.part_no=a.part_no and b.contract=a.contract and b.date_required=a.work_day order by part_no,date_required,int_ord desc"
                         , "Lack_bil", cancellationToken);
-                });
+
             all_lack.AddRange(part_lack);
             all_lack.Sort();
-            return Task.FromResult(all_lack);
+            return all_lack;
         }
         private async Task<List<Order_Demands_row>> Get_source_for_calc(CancellationToken cancellationToken) => await rw.Get_PSTGR("Select * from ord_lack", "All_lacks", cancellationToken);
-        private Task<List<Order_Demands_row>> New_data_for_calc(CancellationToken cancellationToken)
-        {
-            List<Order_Demands_row> part_lack = new List<Order_Demands_row>();
-            List<Order_Demands_row> all_lack = new List<Order_Demands_row>();
-            Parallel.Invoke(
-                async () =>
-                {
-                    part_lack = await Rows_on_lack(
+        private async Task<List<Order_Demands_row>> New_data_for_calc(CancellationToken cancellationToken)
+        {          
+            List<Order_Demands_row> part_lack = await Rows_on_lack(
                     await lacks.Get_PSTGR("" +
                         @"select 
                         b.*,
@@ -287,10 +274,7 @@ namespace Confirm_server_by_Contracts
                         .ConfigureAwait(false),
                     cancellationToken
                     );
-                },
-                async () =>
-                {
-                    all_lack = await rw.Get_PSTGR("" +
+            List<Order_Demands_row> all_lack = await rw.Get_PSTGR("" +
                         @"select 
                         b.*                       
                         from 
@@ -329,11 +313,10 @@ namespace Confirm_server_by_Contracts
                         ) a,
                         ord_demands b 
                         where b.part_no=a.part_no and b.contract=a.contract and b.date_required=a.work_day order by part_no,date_required,int_ord desc"
-                        , "All_lacks", cancellationToken);
-                });
+                        , "All_lacks", cancellationToken);                
             all_lack.AddRange(part_lack);
             all_lack.Sort();
-            return Task.FromResult(all_lack);
+            return all_lack;
         }
         
         public class Orders_lacks : Order_Demands_row
