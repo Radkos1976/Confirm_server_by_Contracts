@@ -31,7 +31,7 @@ namespace Confirm_server_by_Contracts
             },
             async () => {
                 Steps_executor.Register_step("Lack_bil");
-                await Update_All_lacks(cancellationToken);
+                await Update_Lack_bil(cancellationToken);
                 Steps_executor.End_step("Lack_bil");
                 Steps_executor.Wait_for(new string[] { "Lack_bil" }, "Validate demands", cancellationToken);
                 Run_query query = new Run_query();
