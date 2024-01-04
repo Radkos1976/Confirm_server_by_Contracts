@@ -284,6 +284,7 @@ namespace Confirm_server_by_Contracts
             public DateTime? Data0 { get; set; }
             public Guid Id { get; set; }
             public DateTime Objversion { get; set; }
+            public string Contract { get; set; }
 
             /// <summary>
             /// default Comparer by Custid field
