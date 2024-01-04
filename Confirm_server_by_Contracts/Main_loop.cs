@@ -466,7 +466,7 @@ namespace Confirm_server_by_Contracts
                     }
                     if (TmpDataSet.Count > 0)
                     {
-                        if (Date_reQ > DATNOW || (Part_no != NEXT_row.Part_no && Contract != NEXT_row.Contract))
+                        if (Date_reQ > DATNOW || (Part_no, Contract) != (NEXT_row.Part_no, NEXT_row.Contract))
                         {
                             if (dta_rap == nullDAT)
                             {
