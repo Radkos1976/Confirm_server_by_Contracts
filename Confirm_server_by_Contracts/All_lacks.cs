@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using static Confirm_server_by_Contracts.Lack_report;
 using static Confirm_server_by_Contracts.Order_Demands;
 
 namespace Confirm_server_by_Contracts
@@ -28,6 +27,14 @@ namespace Confirm_server_by_Contracts
                 await query.Execute_in_Postgres(new[] { "REFRESH MATERIALIZED VIEW formatka; " }, "All_lacks", cancellationToken);
                 Steps_executor.End_step("All_lacks");
                 query = null;
+            },
+            async () => {
+                Steps_executor.Register_step("Lack_bil");
+                await Update_All_lacks(cancellationToken);
+                Run_query query = new Run_query();
+                await query.Execute_in_Postgres(new[] { "REFRESH MATERIALIZED VIEW formatka_bil; " }, "Lack_bil", cancellationToken);
+                Steps_executor.End_step("Lack_bil");
+                query = null;
             });
         }
             
@@ -36,8 +43,8 @@ namespace Confirm_server_by_Contracts
         {
             return await rw.PSTRG_Changes_to_dataTable(
                 await rw.Changes(
-                    await Get_source(cancellationToken),
-                    await New_data(cancellationToken), 
+                    await Get_source_for_calc(cancellationToken),
+                    await New_data_for_calc(cancellationToken), 
                     new[] { "dop", "dop_lin", "int_ord", "line_no", "rel_no" },
                     new[] { "dop", "dop_lin", "int_ord", "line_no", "rel_no", "id" },
                     new[] { "id" },
@@ -50,6 +57,26 @@ namespace Confirm_server_by_Contracts
                 null, 
                 "All_lacks", 
                 cancellationToken 
+                );
+        }
+        public async Task<int> Update_Lack_bil(CancellationToken cancellationToken)
+        {
+            return await rw.PSTRG_Changes_to_dataTable(
+                await rw.Changes(
+                    await Get_source_for_bil(cancellationToken),
+                    await New_data_for_bil(cancellationToken),
+                    new[] { "dop", "dop_lin", "int_ord", "line_no", "rel_no" },
+                    new[] { "dop", "dop_lin", "int_ord", "line_no", "rel_no", "id" },
+                    new[] { "id" },
+                    "Lack_bil",
+                    cancellationToken
+                    ),
+                "ord_lack_bil",
+                new[] { "id" },
+                null,
+                null,
+                "Lack_bil",
+                cancellationToken
                 );
         }
         private Task<List<Order_Demands_row>> Rows_on_lack(List<Orders_lacks> _lacks, CancellationToken cancellationToken)
@@ -104,52 +131,208 @@ namespace Confirm_server_by_Contracts
             }
             return Task.FromResult(Returned);
         }
-        private async Task<List<Order_Demands_row>> Get_source(CancellationToken cancellationToken) => await rw.Get_PSTGR("Select * from ord_lack", "All_lacks", cancellationToken);
-        private async Task<List<Order_Demands_row>> New_data(CancellationToken cancellationToken) => await Rows_on_lack(
-            await lacks.Get_PSTGR("" +
-                @"select 
-                b.*,
-                a.lack bal_stock 
-                from 
-                (
-                    select 
-                        a.part_no,
-                        a.contract,
-                        a.work_day,
-                        b.min_lack,
-                        a.bal_stock *-1 lack,
-                        case when a.work_day=b.min_lack then case when a.bal_stock*-1=a.qty_demand then 'All' else 'Part' end else 'All' end stat_lack 
-                    from 
-                    (
-                        select 
-                            part_no,
-                            contract,
-                            work_day,
-                            qty_demand,
-                            bal_stock 
+        private async Task<List<Order_Demands_row>> Get_source_for_bil(CancellationToken cancellationToken) => await rw.Get_PSTGR("Select * from ord_lack_bil", "Lack_bil", cancellationToken);
+        private Task<List<Order_Demands_row>> New_data_for_bil(CancellationToken cancellationToken)
+        {
+            List<Order_Demands_row> part_lack = new List<Order_Demands_row>();
+            List<Order_Demands_row> all_lack = new List<Order_Demands_row>();
+            Parallel.Invoke(
+                async () =>
+                {
+                    part_lack = await Rows_on_lack(
+                    await lacks.Get_PSTGR("" +
+                        @"select 
+                        b.*,
+                        a.lack bal_stock 
                         from 
-                            demands 
-                        where bal_stock<0 and qty_demand!=0 and work_day<date_fromnow(10,contract) and koor!='LUCPRZ'
-                    ) a 
-                	left join 
-                	(
-                        select 
-                            part_no,
-                            contract,
-                            min(work_day) min_lack 
+                        (
+                            select 
+                                a.part_no,
+                                a.contract,
+                                a.work_day,
+                                b.min_lack,
+                                a.bal_stock *-1 lack,
+                                case when a.work_day=b.min_lack then case when a.bal_stock*-1=a.qty_demand then 'All' else 'Part' end else 'All' end stat_lack 
+                            from 
+                            (
+                                select 
+                                    part_no,
+                                    contract,
+                                    work_day,
+                                    qty_demand,
+                                    bal_stock 
+                                from 
+                                    demands 
+                                where bal_stock<0 and qty_demand!=0 and koor!='LUCPRZ'
+                            ) a 
+                	        left join 
+                	        (
+                                select 
+                                    part_no,
+                                    contract,
+                                    min(work_day) min_lack 
+                                from 
+                                    demands 
+                                where bal_stock<0 and qty_demand!=0 group by part_no,contract
+                            ) b 
+                            on b.part_no=a.part_no and b.contract=a.contract 
+                            where case when a.work_day=b.min_lack then case when a.bal_stock*-1=a.qty_demand then 'All' else 'Part' end else 'All' end='Part'
+                        ) a,
+                        ord_demands b 
+                        where b.part_no=a.part_no and b.contract=a.contract and b.date_required=a.work_day order by part_no,date_required,int_ord desc"
+                        , "Lack_bil", cancellationToken)
+                        .ConfigureAwait(false),
+                    cancellationToken
+                    );
+                },
+                async () =>
+                {
+                    all_lack = await rw.Get_PSTGR("" +
+                        @"select 
+                        b.*                       
                         from 
-                            demands 
-                        where bal_stock<0 and qty_demand!=0 and work_day<date_fromnow(10,contract) group by part_no,contract
-                    ) b 
-                    on b.part_no=a.part_no and b.contract=a.contract 
-                    where case when a.work_day=b.min_lack then case when a.bal_stock*-1=a.qty_demand then 'All' else 'Part' end else 'All' end='Part'
-                ) a,
-                ord_demands b 
-                where b.part_no=a.part_no and b.contract=a.contract and b.date_required=a.work_day order by part_no,date_required,int_ord desc"
-                , "All_lacks", cancellationToken)
-                .ConfigureAwait(false),
-            cancellationToken
-            );
+                        (
+                            select 
+                                a.part_no,
+                                a.contract,
+                                a.work_day,
+                                b.min_lack,
+                                a.bal_stock *-1 lack,
+                                case when a.work_day=b.min_lack then case when a.bal_stock*-1=a.qty_demand then 'All' else 'Part' end else 'All' end stat_lack 
+                            from 
+                            (
+                                select 
+                                    part_no,
+                                    contract,
+                                    work_day,
+                                    qty_demand,
+                                    bal_stock 
+                                from 
+                                    demands 
+                                where bal_stock<0 and qty_demand!=0 and koor!='LUCPRZ'
+                            ) a 
+                	        left join 
+                	        (
+                                select 
+                                    part_no,
+                                    contract,
+                                    min(work_day) min_lack 
+                                from 
+                                    demands 
+                                where bal_stock<0 and qty_demand!=0 group by part_no,contract
+                            ) b 
+                            on b.part_no=a.part_no and b.contract=a.contract 
+                            where case when a.work_day=b.min_lack then case when a.bal_stock*-1=a.qty_demand then 'All' else 'Part' end else 'All' end='All'
+                        ) a,
+                        ord_demands b 
+                        where b.part_no=a.part_no and b.contract=a.contract and b.date_required=a.work_day order by part_no,date_required,int_ord desc"
+                        , "Lack_bil", cancellationToken);
+                });
+            all_lack.AddRange(part_lack);
+            all_lack.Sort();
+            return Task.FromResult(all_lack);
+        }
+        private async Task<List<Order_Demands_row>> Get_source_for_calc(CancellationToken cancellationToken) => await rw.Get_PSTGR("Select * from ord_lack", "All_lacks", cancellationToken);
+        private Task<List<Order_Demands_row>> New_data_for_calc(CancellationToken cancellationToken)
+        {
+            List<Order_Demands_row> part_lack = new List<Order_Demands_row>();
+            List<Order_Demands_row> all_lack = new List<Order_Demands_row>();
+            Parallel.Invoke(
+                async () =>
+                {
+                    part_lack = await Rows_on_lack(
+                    await lacks.Get_PSTGR("" +
+                        @"select 
+                        b.*,
+                        a.lack bal_stock 
+                        from 
+                        (
+                            select 
+                                a.part_no,
+                                a.contract,
+                                a.work_day,
+                                b.min_lack,
+                                a.bal_stock *-1 lack,
+                                case when a.work_day=b.min_lack then case when a.bal_stock*-1=a.qty_demand then 'All' else 'Part' end else 'All' end stat_lack 
+                            from 
+                            (
+                                select 
+                                    part_no,
+                                    contract,
+                                    work_day,
+                                    qty_demand,
+                                    bal_stock 
+                                from 
+                                    demands 
+                                where bal_stock<0 and qty_demand!=0 and work_day<=date_fromnow(10,contract) and koor!='LUCPRZ'
+                            ) a 
+                	        left join 
+                	        (
+                                select 
+                                    part_no,
+                                    contract,
+                                    min(work_day) min_lack 
+                                from 
+                                    demands 
+                                where bal_stock<0 and qty_demand!=0 and work_day<=date_fromnow(10,contract) group by part_no,contract
+                            ) b 
+                            on b.part_no=a.part_no and b.contract=a.contract 
+                            where case when a.work_day=b.min_lack then case when a.bal_stock*-1=a.qty_demand then 'All' else 'Part' end else 'All' end='Part'
+                        ) a,
+                        ord_demands b 
+                        where b.part_no=a.part_no and b.contract=a.contract and b.date_required=a.work_day order by part_no,date_required,int_ord desc"
+                        , "All_lacks", cancellationToken)
+                        .ConfigureAwait(false),
+                    cancellationToken
+                    );
+                },
+                async () =>
+                {
+                    all_lack = await rw.Get_PSTGR("" +
+                        @"select 
+                        b.*                       
+                        from 
+                        (
+                            select 
+                                a.part_no,
+                                a.contract,
+                                a.work_day,
+                                b.min_lack,
+                                a.bal_stock *-1 lack,
+                                case when a.work_day=b.min_lack then case when a.bal_stock*-1=a.qty_demand then 'All' else 'Part' end else 'All' end stat_lack 
+                            from 
+                            (
+                                select 
+                                    part_no,
+                                    contract,
+                                    work_day,
+                                    qty_demand,
+                                    bal_stock 
+                                from 
+                                    demands 
+                                where bal_stock<0 and qty_demand!=0 and work_day<=date_fromnow(10,contract) and koor!='LUCPRZ'
+                            ) a 
+                	        left join 
+                	        (
+                                select 
+                                    part_no,
+                                    contract,
+                                    min(work_day) min_lack 
+                                from 
+                                    demands 
+                                where bal_stock<0 and qty_demand!=0 and work_day<=date_fromnow(10,contract) group by part_no,contract
+                            ) b 
+                            on b.part_no=a.part_no and b.contract=a.contract 
+                            where case when a.work_day=b.min_lack then case when a.bal_stock*-1=a.qty_demand then 'All' else 'Part' end else 'All' end='All'
+                        ) a,
+                        ord_demands b 
+                        where b.part_no=a.part_no and b.contract=a.contract and b.date_required=a.work_day order by part_no,date_required,int_ord desc"
+                        , "All_lacks", cancellationToken);
+                });
+            all_lack.AddRange(part_lack);
+            all_lack.Sort();
+            return Task.FromResult(all_lack);
+        }
         
         public class Orders_lacks : Order_Demands_row
         {
