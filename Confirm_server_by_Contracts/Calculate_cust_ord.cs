@@ -324,7 +324,7 @@ namespace Confirm_server_by_Contracts
                     {                        
                         if (rw.Zest != "" && zest.ContainsKey(rw.Zest))
                         {
-                            bil = get_bil(zest[rw.Ordid], bil, true);
+                            bil = get_bil(zest[rw.Zest], bil, true);
                         }
                         else if (ordid.ContainsKey(rw.Ordid))
                         {                           
