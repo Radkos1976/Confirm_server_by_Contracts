@@ -344,7 +344,7 @@ namespace Confirm_server_by_Contracts
                     }
                 }
             }
-            return (List<Order_lack_row>)mat_ord.Where(x => x.Ord_assinged > 0);
+            return (List<Order_lack_row>)mat_ord.Where(x => x.Ord_assinged > 0).ToList();
         }
         
         public class Order_lack_row : IEquatable<Order_lack_row> , IComparable<Order_lack_row>
