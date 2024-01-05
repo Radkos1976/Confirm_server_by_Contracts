@@ -50,7 +50,7 @@ namespace Confirm_server_by_Contracts
                     Old,
                     New,
                     new[] { "ordid", "indeks", "data_dost" },
-                    null,
+                    new[] { "id" },
                     new[] {"id"},
                     "Calculate_cust_order",
                     cancellationToken
@@ -294,15 +294,12 @@ namespace Confirm_server_by_Contracts
                             {
                                 prev_bil -= mat_ord[item].Qty_demand;
                                 mat_ord[item].Ord_assinged = mat_ord[item].Qty_demand;
-                            }  
+                            }
                             else
                             {
-                                if (mat_dmd[poz_dmd[ind, dat]].Qty > mat_dmd[poz_dmd[ind, dat]].Bil_chk || check_state)
-                                {
-                                    mat_dmd[poz_dmd[ind, dat]].Qty -= mat_ord[item].Qty_demand;
-                                    mat_ord[item].Ord_assinged = mat_ord[item].Qty_demand;
-                                }
-                            }                                                    
+                                mat_dmd[poz_dmd[ind, dat]].Qty -= mat_ord[item].Qty_demand;
+                                mat_ord[item].Ord_assinged = mat_ord[item].Qty_demand;
+                            }                                                   
                         }
                     }
                 }
