@@ -271,7 +271,7 @@ namespace Confirm_server_by_Contracts
                     foreach (int item in range)
                     {
                         if (cancellationToken.IsCancellationRequested) { break; }
-                        is_started = cnt == poz_dmd[mat_ord[item].Indeks, mat_ord[item].Data_dost] && mat_ord[item].Ord_state == "Rozpoczęte";
+                        is_started = cnt == poz_dmd[mat_ord[item].Indeks, mat_ord[item].Max_prod_date] && mat_ord[item].Ord_state == "Rozpoczęte";
                         if (is_started) { break; }
                     }
                 }
@@ -282,16 +282,16 @@ namespace Confirm_server_by_Contracts
                         if (cancellationToken.IsCancellationRequested) { break; }
                         if (counter < item && mat_ord[item].Ord_assinged == 0)
                         {
-                            if (cnt == poz_dmd[mat_ord[item].Indeks, mat_ord[item].Data_dost])
+                            if (cnt == poz_dmd[mat_ord[item].Indeks, mat_ord[item].Max_prod_date])
                             {
                                 prev_bil -= mat_ord[item].Qty_demand;
                                 mat_ord[item].Ord_assinged = mat_ord[item].Qty_demand;
                             }  
                             else
                             {
-                                if (mat_dmd[poz_dmd[mat_ord[item].Indeks, mat_ord[item].Data_dost]].Qty > mat_dmd[poz_dmd[mat_ord[item].Indeks, mat_ord[item].Data_dost]].Bil_chk || check_state)
+                                if (mat_dmd[poz_dmd[mat_ord[item].Indeks, mat_ord[item].Max_prod_date]].Qty > mat_dmd[poz_dmd[mat_ord[item].Indeks, mat_ord[item].Max_prod_date]].Bil_chk || check_state)
                                 {
-                                    mat_dmd[poz_dmd[mat_ord[item].Indeks, mat_ord[item].Data_dost]].Qty -= mat_ord[item].Qty_demand;
+                                    mat_dmd[poz_dmd[mat_ord[item].Indeks, mat_ord[item].Max_prod_date]].Qty -= mat_ord[item].Qty_demand;
                                     mat_ord[item].Ord_assinged = mat_ord[item].Qty_demand;
                                 }
                             }                                                    

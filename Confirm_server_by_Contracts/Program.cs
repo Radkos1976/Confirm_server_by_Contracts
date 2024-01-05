@@ -102,7 +102,10 @@ namespace Confirm_server_by_Contracts
                             Steps_executor.Register_step("Main_loop 616 ");
                             Main_loop main_Loop = new Main_loop();
                             int result = await main_Loop.Update_Main_Tables("^616.*", "Main_loop 616 ", only_616, oracle, active_token);
-                            main_Loop.Get_thre_workers("Main_loop 616 Executor", active_token);
+                            if (Steps_executor.Wait_for(new string[] { string.Format("{0}:{1}", "Main_loop 616 ", "Fill_executor") }, "Main_loop 616 ", active_token))
+                            {
+                                main_Loop.Get_thre_workers("Main_loop 616 Executor", active_token);
+                            }                            
                             only_616 = null;
                             oracle = null;
                             main_Loop = null;
@@ -167,6 +170,8 @@ namespace Confirm_server_by_Contracts
                         Steps_executor.Register_step("Main_loop except 616 ");
                         Main_loop main_Loop = new Main_loop();
                         int result = await main_Loop.Update_Main_Tables("^(5|6[^616]).+", "Main_loop except 616 ", no_616, oracle, active_token);
+                        if (Steps_executor.Wait_for(new string[] { string.Format("{0}:{1}", "Main_loop except 616 ", "Fill_executor") }, "Main_loop except 616 ", active_token))
+                        {
                             Parallel.Invoke(
                             () =>
                             {
@@ -175,6 +180,7 @@ namespace Confirm_server_by_Contracts
                             () => {
                                 main_Loop.Get_thre_workers("Main_loop second 616 Executor", active_token);
                             });
+                        }
                         no_616 = null;
                         oracle = null;
                         main_Loop = null;
