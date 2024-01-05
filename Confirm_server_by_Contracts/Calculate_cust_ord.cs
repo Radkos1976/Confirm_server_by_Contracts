@@ -265,7 +265,7 @@ namespace Confirm_server_by_Contracts
 
             (string, DateTime) get_key_pair(int item)
             {
-                return mat_ord[item].Typ_zdarzenia == "Braki w gwarantowanej dacie" ? (mat_ord[item].Indeks, mat_ord[item].Max_prod_date) : (mat_ord[item].Indeks, mat_ord[item].Data_dost);
+                return mat_ord[item].Typ_zdarzenia == "Braki w gwarantowanej dacie" ? (mat_ord[item].Indeks, mat_ord[item].Data_gwarancji) : (mat_ord[item].Indeks, mat_ord[item].Data_dost);
             }
 
             double get_bil(List<int> range, double prev_bil, bool check_state = false)
@@ -355,6 +355,7 @@ namespace Confirm_server_by_Contracts
             public string Opis { get; set; }
             public string Planner_buyer { get; set; }
             public double Mag { get; set; }
+            public DateTime Data_gwarancji { get; set; }
             public DateTime Data_dost { get; set; }
             public DateTime Date_reuired { get; set; }
             public double Wlk_dost { get; set; }
