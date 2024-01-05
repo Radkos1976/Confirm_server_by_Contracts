@@ -383,11 +383,11 @@ namespace Confirm_server_by_Contracts
             public string Part_no { get; set; }
             public string Descr { get; set; }
             public string Configuration { get; set; }
-            public DateTime Last_mail_conf { get; set; }
-            public DateTime Prom_date { get; set; }
+            public DateTime? Last_mail_conf { get; set; }
+            public DateTime? Prom_date { get; set; }
             public string Prom_week { get; set; }
-            public long Load_id { get; set; }
-            public DateTime Ship_date { get; set; }
+            public long? Load_id { get; set; }
+            public DateTime? Ship_date { get; set; }
             public string State_conf { get; set; }
             public string Line_state { get; set; }
             public string Cust_ord_state { get; set; }
@@ -398,7 +398,7 @@ namespace Confirm_server_by_Contracts
             public string Zest { get; set; }
             public double Ord_assinged { get; set; }
             public Guid Id { get; set; }
-            public Guid Cust_id { get; set; }
+            public Guid? Cust_id { get; set; }
 
             public int CompareTo(Order_lack_row other)
             {
