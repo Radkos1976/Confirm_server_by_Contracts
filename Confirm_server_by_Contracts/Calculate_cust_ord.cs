@@ -79,7 +79,7 @@ namespace Confirm_server_by_Contracts
                 c.planner_buyer,
                 c.mag, 
                 c.data_dost ,
-                a.date_reuired,
+                a.date_required date_reuired,
                 c.wlk_dost,
                 c.bilans,
                 c.typ_zdarzenia,
