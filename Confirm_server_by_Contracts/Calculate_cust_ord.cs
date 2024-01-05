@@ -15,9 +15,59 @@ namespace Confirm_server_by_Contracts
         private readonly Update_pstgr_from_Ora<Balance_materials_row> bal_r;
         public Calculate_cust_ord(CancellationToken cancellationToken)
         {
+            Steps_executor.Register_step("Calculate_cust_order");
             rw = new Update_pstgr_from_Ora<Order_lack_row>("MAIN");
             bal_r = new Update_pstgr_from_Ora<Balance_materials_row>("MAIN");
+            Parallel.Invoke(
+            async () => 
+            {
+                await Update(cancellationToken).ConfigureAwait(false);
+            });
         }
+
+        private async Task<int> Update(CancellationToken cancellationToken)
+        {
+            List<Order_lack_row> Old = await Old_data(cancellationToken);
+            List<Order_lack_row> New = await Calculate(cancellationToken);
+            Old.Sort(delegate (Order_lack_row c1, Order_lack_row c2)
+            {
+                int val1 = c1.Ordid.CompareTo(c2.Ordid);
+                if (val1 != 0) { return val1; }
+                int val2 = c1.Indeks.CompareTo(c2.Indeks);
+                if (val2 != 0) { return val2; }
+                return c1.Data_dost.CompareTo(c2.Data_dost);
+            });
+            New.Sort(delegate (Order_lack_row c1, Order_lack_row c2)
+            {
+                int val1 = c1.Ordid.CompareTo(c2.Ordid);
+                if (val1 != 0) { return val1; }
+                int val2 = c1.Indeks.CompareTo(c2.Indeks);
+                if (val2 != 0) { return val2; }
+                return c1.Data_dost.CompareTo(c2.Data_dost);
+            });
+            int result = await rw.PSTRG_Changes_to_dataTable(
+                await rw.Changes(
+                    Old,
+                    New,
+                    new[] { "ordid", "indeks", "data_dost" },
+                    null,
+                    new[] {"id"},
+                    "Calculate_cust_order",
+                    cancellationToken
+                    ),
+                "braki",
+                new[] { "id" },
+                null,
+                null,
+                "Calculate_cust_order",
+                cancellationToken
+                );
+            Steps_executor.End_step("Calculate_cust_order");
+            return result;
+        }
+
+        private async Task<List<Order_lack_row>> Old_data(CancellationToken cancellationToken) => await rw.Get_PSTGR("" +
+            "Select * FROM braki;", "Calculate_cust_order", cancellationToken );
 
         private async Task<List<Order_lack_row>> New_Data(CancellationToken cancellationToken) => await rw.Get_PSTGR("" +
             @"select 
@@ -179,6 +229,7 @@ namespace Confirm_server_by_Contracts
                 {
                     foreach (Order_lack_row mat in mat_ord)
                     {
+                        if (cancellationToken.IsCancellationRequested) { break; }
                         if (mat.Zest != null)
                         {
                             if (!zest.ContainsKey(mat.Zest))
@@ -206,10 +257,12 @@ namespace Confirm_server_by_Contracts
                 {
                     foreach (Balance_materials_row dmd in mat_dmd)
                     {
+                        if (cancellationToken.IsCancellationRequested) { break; }
                         poz_dmd.Add(dmd.Indeks, dmd.Data_dost, cnt);
                         cnt++;
                     }
                 });
+
             double get_bil(List<int> range, double prev_bil, bool check_state = false)
             {
                 bool is_started = false;
@@ -217,6 +270,7 @@ namespace Confirm_server_by_Contracts
                 {
                     foreach (int item in range)
                     {
+                        if (cancellationToken.IsCancellationRequested) { break; }
                         is_started = cnt == poz_dmd[mat_ord[item].Indeks, mat_ord[item].Data_dost] && mat_ord[item].Ord_state == "Rozpoczęte";
                         if (is_started) { break; }
                     }
@@ -225,19 +279,28 @@ namespace Confirm_server_by_Contracts
                 {
                     foreach (int item in range)
                     {
+                        if (cancellationToken.IsCancellationRequested) { break; }
                         if (counter < item && mat_ord[item].Ord_assinged == 0)
                         {
                             if (cnt == poz_dmd[mat_ord[item].Indeks, mat_ord[item].Data_dost])
                             {
                                 prev_bil -= mat_ord[item].Qty_demand;
-                            }
-                            mat_ord[item].Ord_assinged = mat_ord[item].Qty_demand;
-                            mat_dmd[poz_dmd[mat_ord[item].Indeks, mat_ord[item].Data_dost]].Qty += mat_ord[item].Qty_demand;
+                                mat_ord[item].Ord_assinged = mat_ord[item].Qty_demand;
+                            }  
+                            else
+                            {
+                                if (mat_dmd[poz_dmd[mat_ord[item].Indeks, mat_ord[item].Data_dost]].Qty > mat_dmd[poz_dmd[mat_ord[item].Indeks, mat_ord[item].Data_dost]].Bil_chk || check_state)
+                                {
+                                    mat_dmd[poz_dmd[mat_ord[item].Indeks, mat_ord[item].Data_dost]].Qty -= mat_ord[item].Qty_demand;
+                                    mat_ord[item].Ord_assinged = mat_ord[item].Qty_demand;
+                                }
+                            }                                                    
                         }
                     }
                 }
                 return prev_bil;
             }
+
             cnt = -1;
             counter = -1;
             string part_no = "";
@@ -246,6 +309,7 @@ namespace Confirm_server_by_Contracts
             double bil = 0;
             foreach (Order_lack_row rw in mat_ord)
             {
+                if (cancellationToken.IsCancellationRequested) { break; }
                 counter++;
                 if ((part_no, contract) != (rw.Indeks, rw.Umiejsc))
                 {
@@ -268,13 +332,13 @@ namespace Confirm_server_by_Contracts
                         }
                         bil -= rw.Qty_demand;
                         rw.Ord_assinged = rw.Qty_demand;
-                        mat_dmd[cnt].Qty += rw.Qty_demand;
+                        mat_dmd[cnt].Qty -= rw.Qty_demand;
                     }
                 }
             }
             return (List<Order_lack_row>)mat_ord.Where(x => x.Ord_assinged > 0);
         }
-         
+        
         public class Order_lack_row : IEquatable<Order_lack_row> , IComparable<Order_lack_row>
         {
             public string Ordid { get; set; }

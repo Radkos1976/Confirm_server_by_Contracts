@@ -100,6 +100,7 @@ namespace Confirm_server_by_Contracts
             
             foreach(Tuple<string, string> set in range_dates.Keys)
             {
+                if (cancellationToken.IsCancellationRequested) { break; }
                 (DateTime min_d, DateTime max_d) =
                             range_dates[set.Item1, set.Item2];
                 Dataset_executor.Add_task(set.Item1, set.Item2, min_d, max_d);

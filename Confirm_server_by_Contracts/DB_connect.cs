@@ -661,6 +661,7 @@ namespace DB_Conect
                             {
                                 foreach (string comm in query_before)
                                 {
+                                    if (cancellationToken.IsCancellationRequested) { break; }
                                     using (NpgsqlCommand cmd = new NpgsqlCommand(comm, conO))
                                     {
                                         await cmd.ExecuteNonQueryAsync(cancellationToken);
@@ -681,6 +682,7 @@ namespace DB_Conect
                                     cmd.Connection = conO;
                                     foreach (Npgsql_Schema_fields _Fields in Schema)
                                     {
+                                        if (cancellationToken.IsCancellationRequested) { break; }
                                         string nam = _Fields.Field_name.ToLower();
                                         if (guid_col.Contains(nam) && _Fields.Dtst_col != 10000)
                                         {
@@ -737,8 +739,7 @@ namespace DB_Conect
                                     cmd.CommandText = comand + tbl_values.Substring(0, tbl_values.Length - 1) + " " + param_values;
                                     await cmd.PrepareAsync(cancellationToken);
                                     foreach (T row in _list.Update)
-                                    {
-                                        
+                                    {                                        
                                         if (cancellationToken.IsCancellationRequested)
                                         {
                                             break;

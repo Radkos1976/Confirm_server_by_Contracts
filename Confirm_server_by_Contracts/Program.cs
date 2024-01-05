@@ -49,16 +49,24 @@ namespace Confirm_server_by_Contracts
                         (part_no_tup, part_no_zero_tup) = await inventory_616_in_PSTGR.Get_tuple_of_part_no(pstgr_presets);
                         if (part_no_tup.Count > 0)
                         {
-                            inventory_616_in_PSTGR.limit_part_no  = part_no_tup;
-                            oracle = await inventory_616_in_PSTGR.Get_Ora_list("Inventory part 616 presets ", active_token);
-                            await inventory_616_in_PSTGR.Update_dataset(
-                                pstgr_presets,
-                                oracle,
-                                "Inventory part 616 ",
-                                active_token);
+                            if (!active_token.IsCancellationRequested)
+                            {
+                                inventory_616_in_PSTGR.limit_part_no  = part_no_tup;
+                                oracle = await inventory_616_in_PSTGR.Get_Ora_list("Inventory part 616 presets ", active_token);
+                                await inventory_616_in_PSTGR.Update_dataset(
+                                    pstgr_presets,
+                                    oracle,
+                                    "Inventory part 616 ",
+                                    active_token);
+                            }
+                            
+                        }
+                        if (!active_token.IsCancellationRequested)
+                        {
+                            (part_no_tup, part_no_zero_tup) = await inventory_616_in_PSTGR.Get_tuple_of_part_no(oracle);
                         }
                         // add to part no tuple parts with weistent inventory
-                        (part_no_tup, part_no_zero_tup) = await inventory_616_in_PSTGR.Get_tuple_of_part_no(oracle);
+                        
                         Steps_executor.End_step("Inventory part 616 presets ");
                         inventory_616_in_PSTGR = null;
                         pstgr_presets = null;
@@ -141,11 +149,14 @@ namespace Confirm_server_by_Contracts
                             {
                                 pstgr = await inventory_except_616.Get_PSTGR_List("Inventory part except 616 ", active_token);
                             });
-                        int result = await inventory_except_616.Update_dataset(
-                            pstgr,
-                            oracle,
-                            "Inventory part except 616 ",
-                            active_token);
+                        if (!active_token.IsCancellationRequested) 
+                        {
+                            int result = await inventory_except_616.Update_dataset(
+                                pstgr,
+                                oracle,
+                                "Inventory part except 616 ",
+                                active_token);
+                        }                        
                         Steps_executor.End_step("Inventory part except 616 ");
                         inventory_except_616 = null;
                         pstgr = null;
@@ -290,8 +301,10 @@ namespace Confirm_server_by_Contracts
                 });
 
                 Steps_executor.Register_step("Validate demands");
-                Steps_executor.Wait_for(new string[] { "Refresh bilans_val", "Refresh Demand and Order_demands" }, "Validate demands", active_token);
-                Parallel.Invoke(
+                with_no_err = Steps_executor.Wait_for(new string[] { "Refresh bilans_val", "Refresh Demand and Order_demands" }, "Validate demands", active_token);
+                if (with_no_err)
+                {
+                    Parallel.Invoke(
                     () =>
                     {
                         Lack_report lack_Report = new Lack_report(active_token);
@@ -302,8 +315,9 @@ namespace Confirm_server_by_Contracts
                     },
                     () =>
                     {
-                        
+
                     });
+                }                
                 Loger.Log("Wait END");
                 Steps_executor.Wait_for(new string[] { "All_lacks", "Lack_report", "Lack_bil" }, "Wait END", active_token);
             }
