@@ -32,8 +32,7 @@ namespace Confirm_server_by_Contracts
                     {
                         Range_Dat = (DateTime)cmd.ExecuteScalar();
                     }
-                }
-                conB.Close();
+                }                
             }
         }
         /// <summary>
