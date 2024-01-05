@@ -263,6 +263,11 @@ namespace Confirm_server_by_Contracts
                     }
                 });
 
+            (string, DateTime) get_key_pair(int item)
+            {
+                return mat_ord[item].Typ_zdarzenia == "Braki w gwarantowanej dacie" ? (mat_ord[item].Indeks, mat_ord[item].Max_prod_date) : (mat_ord[item].Indeks, mat_ord[item].Data_dost);
+            }
+
             double get_bil(List<int> range, double prev_bil, bool check_state = false)
             {
                 bool is_started = false;
@@ -271,7 +276,8 @@ namespace Confirm_server_by_Contracts
                     foreach (int item in range)
                     {
                         if (cancellationToken.IsCancellationRequested) { break; }
-                        is_started = cnt == poz_dmd[mat_ord[item].Indeks, mat_ord[item].Max_prod_date] && mat_ord[item].Ord_state == "Rozpoczęte";
+                        (string ind, DateTime dat) = get_key_pair(item);
+                        is_started = cnt == poz_dmd[ind, dat] && mat_ord[item].Ord_state == "Rozpoczęte";
                         if (is_started) { break; }
                     }
                 }
@@ -282,16 +288,17 @@ namespace Confirm_server_by_Contracts
                         if (cancellationToken.IsCancellationRequested) { break; }
                         if (counter < item && mat_ord[item].Ord_assinged == 0)
                         {
-                            if (cnt == poz_dmd[mat_ord[item].Indeks, mat_ord[item].Max_prod_date])
+                            (string ind, DateTime dat) = get_key_pair(item);
+                            if (cnt == poz_dmd[ind, dat])
                             {
                                 prev_bil -= mat_ord[item].Qty_demand;
                                 mat_ord[item].Ord_assinged = mat_ord[item].Qty_demand;
                             }  
                             else
                             {
-                                if (mat_dmd[poz_dmd[mat_ord[item].Indeks, mat_ord[item].Max_prod_date]].Qty > mat_dmd[poz_dmd[mat_ord[item].Indeks, mat_ord[item].Max_prod_date]].Bil_chk || check_state)
+                                if (mat_dmd[poz_dmd[ind, dat]].Qty > mat_dmd[poz_dmd[ind, dat]].Bil_chk || check_state)
                                 {
-                                    mat_dmd[poz_dmd[mat_ord[item].Indeks, mat_ord[item].Max_prod_date]].Qty -= mat_ord[item].Qty_demand;
+                                    mat_dmd[poz_dmd[ind, dat]].Qty -= mat_ord[item].Qty_demand;
                                     mat_ord[item].Ord_assinged = mat_ord[item].Qty_demand;
                                 }
                             }                                                    
