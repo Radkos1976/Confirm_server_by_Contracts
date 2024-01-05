@@ -84,6 +84,7 @@ namespace Confirm_server_by_Contracts
                 c.bilans,
                 c.typ_zdarzenia,
                 c.status_informacji,
+                c.data_gwarancji,
                 a.dop,
                 a.dop_lin,
                 a.data_dop,
