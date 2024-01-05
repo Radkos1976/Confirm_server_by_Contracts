@@ -1,5 +1,6 @@
 ﻿using DB_Conect;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -23,6 +24,19 @@ namespace Confirm_server_by_Contracts
             {
                 await Update(cancellationToken).ConfigureAwait(false);
             });
+            if (Steps_executor.Wait_for(new string[] { "Calculate_cust_order" }, "Validate demands", cancellationToken))
+            {
+                Steps_executor.Register_step("Update To_Mail");
+                Run_query query = new Run_query();
+                Parallel.Invoke(async () =>
+                {
+                    await query.Execute_in_Postgres(new[] { "" +
+                        "REFRESH MATERIALIZED VIEW to_mail" }, "Update To_Mail", cancellationToken).ConfigureAwait(false);
+                    Steps_executor.End_step("Update To_Mail");
+                });   
+            }
+
+
         }
 
         private async Task<int> Update(CancellationToken cancellationToken)

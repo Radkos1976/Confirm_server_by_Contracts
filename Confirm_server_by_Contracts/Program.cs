@@ -324,9 +324,130 @@ namespace Confirm_server_by_Contracts
                         Calculate_cust_ord  calculate_Cust_Ord = new Calculate_cust_ord(active_token);
                         calculate_Cust_Ord = null;
                     });
-                }                
-                Loger.Log("Wait END");
-                Steps_executor.Wait_for(new string[] { "All_lacks", "Lack_report", "Lack_bil" , "Calculate_cust_order" }, "Wait END", active_token);
+                }
+                Steps_executor.Register_step("Mail");
+                if (Steps_executor.Wait_for(new string[] { "All_lacks", "Lack_report", "Update To_Mail", "Lack_bil", "Calculate_cust_order" }, "Mail", active_token))
+                {
+                    Steps_executor.End_step("Validate demands");
+                    Parallel.Invoke(
+                    async () =>
+                    {
+                        await query.Execute_in_Postgres(new string[] {"" +
+                        @"INSERT INTO public.mail
+                        (ordid,dop, koor, order_no, line_no, rel_no, part_no, descr, country, prom_date, prom_week, load_id, ship_date, date_entered, cust_id, 
+                        prod, prod_week, planner_buyer, indeks, opis, typ_zdarzenia, status_informacji, zest, info_handlo, logistyka, seria0, data0, cust_line_stat,
+                        ord_objver)
+                        select * from (
+                           select a.* from to_mail a 
+                           left join 
+                           (
+                               select cust_id from mail
+                           ) b 
+                           on b.cust_id=a.cust_id where a.cust_id is not null and b.cust_id is null  
+                           order by order_no,line_no,rel_no
+                        ) a  
+                        group by a.ordid,a.dop,a.koor,a.order_no,a.line_no,a.rel_no,a.part_no,a.descr,a.country,a.prom_date,a.prom_week,a.load_id,a.ship_date,a.date_entered,a.cust_id,
+                        a.prod,a.prod_week,a.planner_buyer,a.indeks,a.opis,a.typ_zdarzenia,a.status_informacji,a.zest,a.info_handlo,a.logistyka,a.seria0,a.data0,a.cust_line_stat,a.ord_objver"
+                        ,
+                        @"UPDATE public.mail a 
+                        SET ordid=b.ordid,dop=b.dop,koor=b.koor,order_no=b.order_no,line_no=b.line_no,rel_no=b.rel_no,part_no=b.part_no,descr=b.descr,country=b.country,prom_date=b.prom_date,
+                        prom_week=b.prom_week,load_id=b.load_id,ship_date=b.ship_date,date_entered=b.date_entered,prod=b.prod,prod_week=b.prod_week,planner_buyer=b.planner_buyer,indeks=b.indeks,
+                        opis=b.opis,typ_zdarzenia=b.typ_zdarzenia,status_informacji=b.status_informacji,zest=b.zest,info_handlo=b.info_handlo,logistyka=b.logistyka,seria0=b.seria0,data0=b.data0,
+                        cust_line_stat=b.cust_line_stat 
+                        from 
+                        (
+                            select * 
+                            from 
+                            (
+                                select a.ordID,a.dop,a.koor,a.order_no,a.line_no,a.rel_no,a.part_no,a.descr,a.country,a.prom_date,a.prom_week,a.load_id,a.ship_date,a.date_entered,a.cust_id,a.prod,
+                                    a.prod_week,a.planner_buyer,a.indeks,a.opis,a.typ_zdarzenia,a.status_informacji,a.zest,a.info_handlo,a.logistyka,a.seria0,a.data0,a.cust_line_stat 
+                                from 
+                                    to_mail a, 
+                                    mail b 
+                                where b.cust_id=a.cust_id except select ordID,dop,koor,order_no,line_no,rel_no,part_no,descr,country,prom_date,prom_week,load_id,ship_date,date_entered,
+                                cust_id,prod,prod_week,planner_buyer,indeks,opis,typ_zdarzenia,status_informacji,zest,info_handlo,logistyka,seria0,data0,cust_line_stat from mail 
+                            ) a
+                        ) b  
+                        where b.cust_id=a.cust_id;"
+                        ,
+                        @"update public.mail a 
+                        SET ordid=b.ordid,dop=b.dop,koor=b.koor,order_no=b.order_no,line_no=b.line_no,rel_no=b.rel_no,part_no=b.part_no,descr=b.descr,country=b.country,prom_date=b.prom_date,
+                        prom_week=b.prom_week,load_id=b.load_id,ship_date=b.ship_date,date_entered=b.date_entered,prod=b.prod,prod_week=b.prod_week,info_handlo=b.info_handlo,logistyka=b.logistyka,
+                        seria0=b.seria0,data0=b.data0,cust_line_stat=b.cust_line_stat 
+                        from 
+                        (
+                            select a.* from 
+                            (
+                                Select 
+                                case when c.dop_connection_db!='AUT' then 'O '||c.order_no else 'D'||to_char(c.dop_id,'9999999999') end ordID,
+                                c.dop_id as dop,
+                                c.koor,c.order_no,c.line_no,c.rel_no,c.part_no,c.descr,c.country,
+                                c.prom_date,cast(c.prom_week as integer) as prom_week,
+                                c.load_id,c.ship_date, c.date_entered,c.id as cust_id,c.data_dop as prod,
+                                case when to_date(to_char(c.data_dop,'iyyyiw'),'iyyyiw') + shipment_day(c.country,c.cust_no,c.zip_code,c.addr1)-1>c.data_dop then cast(to_char(c.data_dop,'iyyyiw') as integer) else 
+                                    cast(to_char(c.data_dop + interval '6 day','iyyyiw') as integer) end as prod_week,
+                                c.planner_buyer,c.indeks,c.opis,c.status_informacji,
+                                c.zest,
+                                case when case when to_date(to_char(c.data_dop,'iyyyiw'),'iyyyiw') + shipment_day(c.country,c.cust_no,c.zip_code,c.addr1)-1>c.data_dop then cast(to_char(c.data_dop,'iyyyiw') as integer) else 
+                                    cast(to_char(c.data_dop + interval '6 day','iyyyiw') as integer) end>cast(c.prom_week as integer) then true else false end as info_handlo,
+                                case when c.ship_date is null then false else case when c.data_dop<c.ship_date then false else true  end end as logistyka,
+                                c.seria0,c.data0,c.line_state as cust_line_stat 
+                                from 
+                                (
+                                    select c.*,
+                                        a.planner_buyer,
+                                        a.indeks,a.opis,
+                                        a.status_informacji 
+                                    from 
+                                        mail a 
+                                    left join 
+                                        to_mail b 
+                                    on b.cust_id=a.cust_id left join cust_ord c on c.id=a.cust_id where b.cust_id is null 
+                                )c 
+                                except 
+                                select 
+                                    ordID,dop,koor,order_no,line_no,rel_no,part_no,descr,country,
+                                    prom_date,prom_week,load_id,ship_date,date_entered,cust_id,prod,
+                                    prod_week,planner_buyer,indeks,opis,status_informacji,zest,
+                                    info_handlo,logistyka,seria0,data0,cust_line_stat  
+                                from 
+                                    mail 
+                            ) a
+                        ) b 
+                        where a.cust_id=b.cust_id"
+                        ,
+                        @"DELETE FROM public.mail 
+                        WHERE cust_id in 
+                        (
+                            select 
+                                a.cust_id 
+                            from 
+                                mail a 
+                            left join 
+                                to_mail b 
+                            on b.cust_id=a.cust_id 
+                            left join 
+                                cust_ord c 
+                            on c.id=a.cust_id 
+                            where b.cust_id is null and is_for_mail(a.status_informacji)=true and c.data_dop>=a.prod and cast(c.prom_week as integer)>=a.prod_week and (c.ship_date is null or c.ship_date>a.prod)
+                        )",
+                        "delete from braki_hist where objversion<current_timestamp - interval '7 day'"
+                        ,
+                        "delete from mail_hist where date_addd<current_timestamp - interval '7 day'"
+                        ,
+                        "delete from mail where status_informacji='NOT IMPLEMENT' or cust_line_stat!='Aktywowana'"
+                        ,
+                        "DELETE FROM public.mail WHERE cust_id not in (select id from public.cust_ord)"
+                        ,
+                        "DELETE FROM public.mail WHERE cust_id in (select a.cust_id from mail a left join to_mail b on b.cust_id=a.cust_id where b.cust_id is null and (is_for_mail(a.status_informacji)=false or a.status_informacji='POPRAWIĆ'))",
+                        }, "Mail", active_token);
+                    });
+                    Steps_executor.Register_step("Send_mail");
+                    if (Steps_executor.Wait_for(new string[] { "Mail" }, "Send_mail", active_token))
+                    {
+
+                    }
+                }
             }
             Loger.Srv_stop();
             Steps_executor.cts.Dispose();
