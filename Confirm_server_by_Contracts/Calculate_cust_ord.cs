@@ -92,7 +92,7 @@ namespace Confirm_server_by_Contracts
                 date_shift_days(case when  c.typ_zdarzenia='Braki w gwarantowanej dacie' then c.data_gwarancji else c.data_dost end,a.day_shift,c.umiejsc) as prod_date,
                 to_date(b.prom_week, 'iyyyiw')+shipment_day(b.country,b.cust_no,b.zip_code,b.addr1)-1 as max_posible_prod,
                 e.max_prod_date,
-                a.order_supp_dmd,
+                a.order_supp_dmd ord_supp_dmd,
                 a.part_code,
                 a.ord_state,
                 a.prod_qty,
