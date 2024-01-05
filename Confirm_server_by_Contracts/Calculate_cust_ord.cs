@@ -79,7 +79,7 @@ namespace Confirm_server_by_Contracts
                 c.planner_buyer,
                 c.mag, 
                 c.data_dost ,
-                a.date_required,
+                a.date_reuired,
                 c.wlk_dost,
                 c.bilans,
                 c.typ_zdarzenia,
@@ -119,7 +119,7 @@ namespace Confirm_server_by_Contracts
 	                COALESCE (b.date_entered,a.dat_creat) else  COALESCE (b.date_entered,a.dat_creat,'2014-01-01')+ interval '200 day' end  as sort_ord,
                 b.zest,
                 qty_demand-qty_demand ord_assinged,
-                b.id custid 
+                b.id cust_id 
                 from 
                 (
 	                select 
@@ -138,32 +138,32 @@ namespace Confirm_server_by_Contracts
 	                and (a.date_required<=c.data_dost or a.date_required<=current_date) 
 	                group by indeks,umiejsc,data_dost
                 ) e,
-	                (
-		                select 
-		                case when a.dop=0 then 'O '||a.order_no else 'D'||to_char(a.dop,'9999999999') end ordid,
-		                count(case when a.dop=0 then 'O '||a.order_no else 'D'||to_char(a.dop,'9999999999') end) l_ordid 
-		                from 
-		                (
-			                select * from public.data 
-			                where typ_zdarzenia not in ('Brak zamówień zakupu','Dostawa na dzisiejsze ilości') and planner_buyer!='LUCPRZ'
-		                )c,
-		                ord_demands a 
-		                where c.bilans<0 and a.part_no=c.indeks and 
-		                (a.date_required<=c.data_dost or a.date_required<=current_date) 
-		                group by case when a.dop=0 then 'O '||a.order_no else 'D'||to_char(a.dop,'9999999999') end
-	                ) f,
-	                (
-		                select * from public.data 
-		                where typ_zdarzenia not in ('Brak zamówień zakupu','Dostawa na dzisiejsze ilości') and planner_buyer!='LUCPRZ'
-	                )c,
-	                ord_demands a 
-	                left join 
-	                cust_ord b 
-	                on b.dop_id=a.dop 
-	                where a.order_supp_dmd!='Zam. zakupu' and f.ordid=case when a.dop=0 then 'O '||a.order_no else 'D'||to_char(a.dop,'9999999999') end 
-	                and c.bilans<0 and a.part_no=c.indeks and e.indeks=c.indeks and a.contract=c.umiejsc and e.umiejsc=c.umiejsc
-	                and (case when typ_zdarzenia='Brakujące ilości' then a.date_required<c.data_dost else a.date_required<=c.data_dost end or a.date_required<=current_date) 
-	                and e.data_dost=c.data_dost",
+	            (
+		            select 
+		            case when a.dop=0 then 'O '||a.order_no else 'D'||to_char(a.dop,'9999999999') end ordid,
+		            count(case when a.dop=0 then 'O '||a.order_no else 'D'||to_char(a.dop,'9999999999') end) l_ordid 
+		            from 
+		            (
+			            select * from public.data 
+			            where typ_zdarzenia not in ('Brak zamówień zakupu','Dostawa na dzisiejsze ilości') and planner_buyer!='LUCPRZ'
+		            )c,
+		            ord_demands a 
+		            where c.bilans<0 and a.part_no=c.indeks and 
+		            (a.date_required<=c.data_dost or a.date_required<=current_date) 
+		            group by case when a.dop=0 then 'O '||a.order_no else 'D'||to_char(a.dop,'9999999999') end
+	            ) f,
+	            (
+		            select * from public.data 
+		            where typ_zdarzenia not in ('Brak zamówień zakupu','Dostawa na dzisiejsze ilości') and planner_buyer!='LUCPRZ'
+	            )c,
+	            ord_demands a 
+	            left join 
+	            cust_ord b 
+	            on b.dop_id=a.dop 
+	            where a.order_supp_dmd!='Zam. zakupu' and f.ordid=case when a.dop=0 then 'O '||a.order_no else 'D'||to_char(a.dop,'9999999999') end 
+	            and c.bilans<0 and a.part_no=c.indeks and e.indeks=c.indeks and a.contract=c.umiejsc and e.umiejsc=c.umiejsc
+	            and (case when typ_zdarzenia='Brakujące ilości' then a.date_required<c.data_dost else a.date_required<=c.data_dost end or a.date_required<=current_date) 
+	            and e.data_dost=c.data_dost",
                     "Calculate_cust_ord",
                     cancellationToken);
 
