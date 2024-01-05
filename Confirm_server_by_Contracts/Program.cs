@@ -315,11 +315,12 @@ namespace Confirm_server_by_Contracts
                     },
                     () =>
                     {
-
+                        Calculate_cust_ord  calculate_Cust_Ord = new Calculate_cust_ord(active_token);
+                        calculate_Cust_Ord = null;
                     });
                 }                
                 Loger.Log("Wait END");
-                Steps_executor.Wait_for(new string[] { "All_lacks", "Lack_report", "Lack_bil" }, "Wait END", active_token);
+                Steps_executor.Wait_for(new string[] { "All_lacks", "Lack_report", "Lack_bil" , "Calculate_cust_order" }, "Wait END", active_token);
             }
             Loger.Srv_stop();
             Steps_executor.cts.Dispose();
