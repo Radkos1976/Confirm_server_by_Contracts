@@ -112,7 +112,7 @@ namespace Confirm_server_by_Contracts
                 b.ship_date,
                 b.state_conf,
                 b.line_state,
-                b.cust_order_state,
+                b.cust_ord_state,
                 b.country,
                 shipment_day(b.country,b.cust_no,b.zip_code,b.addr1),COALESCE (b.date_entered,a.dat_creat) as date_entered,
                 case when to_date(b.prom_week, 'iyyyiw')+shipment_day(b.country,b.cust_no,b.zip_code,b.addr1)-1<date_shift_days(c.data_dost,a.day_shift,c.umiejsc) then 
