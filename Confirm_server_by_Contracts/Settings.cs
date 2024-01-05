@@ -35,6 +35,7 @@ namespace DB_Conect
             {"smallint",NpgsqlTypes.NpgsqlDbType.Smallint },
             {"int4",NpgsqlTypes.NpgsqlDbType.Integer },
             {"integer",NpgsqlTypes.NpgsqlDbType.Integer},
+            {"bigint",NpgsqlTypes.NpgsqlDbType.Integer},
             {"int8",NpgsqlTypes.NpgsqlDbType.Bigint },
             {"float4",NpgsqlTypes.NpgsqlDbType.Real },
             {"float8",NpgsqlTypes.NpgsqlDbType.Double },
