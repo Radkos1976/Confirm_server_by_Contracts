@@ -322,7 +322,7 @@ namespace Confirm_server_by_Contracts
                 {
                     if (rw.Ord_state != "Rozpoczęte" && rw.Ord_assinged == 0)
                     {                        
-                        if (rw.Zest != "" && zest.ContainsKey(rw.Zest))
+                        if (rw.Zest != null && zest.ContainsKey(rw.Zest))
                         {
                             bil = get_bil(zest[rw.Zest], bil, true);
                         }
