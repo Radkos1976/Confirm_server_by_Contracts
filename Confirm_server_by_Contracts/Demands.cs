@@ -21,7 +21,10 @@ namespace Confirm_server_by_Contracts
             rw = new Update_pstgr_from_Ora<Simple_demands_row>("MAIN");
         }
 
-        public async Task<List<Simple_demands_row>> Get_source_list(string regex, bool create_tuple_off, string transaction_name, CancellationToken cancellationToken) => await Add_field_Next_day(await rw.Get_Ora("" +
+        public async Task<List<Simple_demands_row>> Get_source_list(string regex, 
+            bool create_tuple_off, string transaction_name, 
+            CancellationToken cancellationToken) 
+            => await Add_field_Next_day(await rw.Get_Ora("" +
             string.Format(@"SELECT 
                 PART_NO,
                 contract,
@@ -112,28 +115,35 @@ namespace Confirm_server_by_Contracts
                 )
             GROUP BY PART_NO,contract,To_Date(DATE_REQUIRED)", regex), transaction_name, cancellationToken), create_tuple_off, cancellationToken);
 
-        public Task<List<Simple_demands_row>> Add_field_Next_day(List<Simple_demands_row> source, bool create_tuple_off, CancellationToken cancellationToken)
+        public Task<List<Simple_demands_row>> Add_field_Next_day(List<Simple_demands_row> source, bool create_tuple_off, CancellationToken cancellationToken, bool Fill_Next_Day=false)
         {
             if (create_tuple_off)
             {
                 limit_part_no.Clear();
             }
-            foreach (Simple_demands_row row in source)
+            if (create_tuple_off || Fill_Next_Day)
             {
-                if (cancellationToken.IsCancellationRequested)
+                foreach (Simple_demands_row row in source)
                 {
-                    break;
-                }
-                row.Next_day = Next_DAY.Get_next_day(row.Contract, row.Date_required);
-                if (create_tuple_off)
-                {
-                    bool tuple_exist = limit_part_no.Any(m => m.Item1 == row.Part_no & m.Item2 == row.Contract);
-                    if (!tuple_exist)
+                    if (cancellationToken.IsCancellationRequested)
                     {
-                        limit_part_no.Add(new Tuple<string, string>(row.Part_no, row.Contract));
+                        break;
+                    }
+                    if (Fill_Next_Day)
+                    {
+                        row.Next_day = Next_DAY.Get_next_day(row.Contract, row.Date_required);
+                    }
+                    if (create_tuple_off)
+                    {
+                        bool tuple_exist = limit_part_no.Any(m => m.Item1 == row.Part_no & m.Item2 == row.Contract);
+                        if (!tuple_exist)
+                        {
+                            limit_part_no.Add(new Tuple<string, string>(row.Part_no, row.Contract));
+                        }
                     }
                 }
             }
+            
             return Task.FromResult(source);
         }       
                             
@@ -280,7 +290,7 @@ namespace Confirm_server_by_Contracts
                     },
                     async () =>
                     {
-                        New = await Get_oracle(part_no, contract, dates, Task_name, cancellationToken);
+                        New = await Check_length(await Get_oracle(part_no, contract, dates, Task_name, cancellationToken));
                     });
             Changes_List<Order_Demands_row> Ch_dataset = await Changes(Old, New, 
                 new[] {"dop", "dop_lin", "int_ord", "line_no", "rel_no"}, 
@@ -308,6 +318,7 @@ namespace Confirm_server_by_Contracts
                     "where part_no = '{0}' AND CONTRACT = '{1}' AND DATE_REQUIRED between '{2}' and '{3}';", 
                     part_no, contract, dates.Item1.ToString(), dates.Item2.ToString()),
                 Task_name, cancellationToken);
+        
         /// <summary>
         /// Get Data from Oracle by part_no,contract and date range's
         /// </summary>
@@ -512,6 +523,26 @@ namespace Confirm_server_by_Contracts
                     dates.Item2.Value.ToString("yyyy-MM-dd")
                     ),
                 Task_name, cancellationToken);
+        private Task<List<Order_Demands_row>> Check_length(List<Order_Demands_row> source)
+        {
+            Dictionary<string, int> order_demands_len = Get_limit_of_fields.order_demands_len;
+            foreach (Order_Demands_row row in source)
+            {
+                row.Descr = row.Descr.LimitDictLen("descr", order_demands_len);
+                row.Contract = row.Contract.LimitDictLen("contract", order_demands_len);
+                row.Order_no = row.Order_no.LimitDictLen("order_no", order_demands_len);
+                row.Line_no = row.Line_no.LimitDictLen("line_no", order_demands_len);
+                row.Rel_no = row.Rel_no.LimitDictLen("rel_no", order_demands_len);
+                row.Contract = row.Contract.LimitDictLen("contract", order_demands_len);
+                row.Order_supp_dmd = row.Order_supp_dmd.LimitDictLen("order_supp_dmd", order_demands_len);
+                row.Wrkc = row.Wrkc.LimitDictLen("wrkc", order_demands_len);
+                row.Next_wrkc = row.Next_wrkc.LimitDictLen("next_wrkc", order_demands_len);
+                row.Part_no = row.Part_no.LimitDictLen("part_no", order_demands_len);
+                row.Part_code = row.Part_code.LimitDictLen("part_code", order_demands_len);
+                row.Ord_state = row.Ord_state.LimitDictLen("ord_state", order_demands_len);
+            }
+            return Task.FromResult(source);
+        }
 
         public class Order_Demands_row : IEquatable<Order_Demands_row>, IComparable<Order_Demands_row>
         {

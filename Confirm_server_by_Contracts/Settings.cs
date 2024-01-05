@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
+using Confirm_server_by_Contracts;
 
 namespace DB_Conect
 {
@@ -212,8 +213,13 @@ namespace DB_Conect
         /// Schema for planners / buyers
         /// </summary>
         public static Dictionary<string, int> buyer_info_len = new Dictionary<string, int>();
+        /// <summary>
+        /// Schema for order_demands 
+        /// </summary>
+        public static Dictionary <string, int> order_demands_len = new Dictionary<string, int>();
         static Get_limit_of_fields()
         {
+            order_demands_len = new Dictionary<string, int>().Set_postgres_limit("MAIN", "ord_demands");
             buyer_info_len = new Dictionary<string, int>().Set_postgres_limit("MAIN", "data");
             calendar_len = new Dictionary<string, int>().Set_postgres_limit("MAIN", "work_cal");
             inventory_part_len = new Dictionary<string, int>().Set_postgres_limit("MAIN", "mag");
@@ -251,6 +257,8 @@ namespace DB_Conect
         /// </summary>
         public static string Connection_string { get; set; }
         public static int Limit_oracle_conn { get; set; }
+        public static bool Email_Order_Report { get; set; }
+        public static bool Set_Planned_Manuf_Date { get; set; }
         /// <summary>
         /// Initialize data from XML
         /// </summary>
@@ -263,12 +271,16 @@ namespace DB_Conect
                     .Select(x => new
                     {
                         XConnection_string = (string)x.Element("ConnectionString"),
-                        XLimit_oracle_conn =  (int)x.Element("Limit_oracle_conn")
+                        XLimit_oracle_conn =  (int)x.Element("Limit_oracle_conn"),
+                        XEmail_Order_Report = (bool)x.Element("Customer_order_conf"),
+                        XSet_Planned_Manuf_Date = (bool)x.Element("Set_Planned_Manuf_Date")
                     });
                 foreach (var res in oraconn)
                 {
                     Connection_string = res.XConnection_string;
                     Limit_oracle_conn = res.XLimit_oracle_conn;
+                    Email_Order_Report = res.XEmail_Order_Report;
+                    Set_Planned_Manuf_Date = res.XSet_Planned_Manuf_Date;
                 }
             }
             catch (Exception e)
@@ -277,6 +289,8 @@ namespace DB_Conect
             }
         }
     }
+
+
     /// <summary>
     /// Settings for postegresql Database conections
     /// </summary>
