@@ -9,6 +9,7 @@ using System.Threading;
 using System.Diagnostics;
 using System.Collections;
 using System.Collections.Concurrent;
+using System.Threading.Tasks;
 
 namespace DB_Conect
 {
@@ -188,7 +189,7 @@ namespace DB_Conect
             return source;
         }
     }
-
+   
     /// <summary>
     /// Class for limited fields in DB
     /// All tables for update must be saved in dictionaries(by method Set_postgres_limit)

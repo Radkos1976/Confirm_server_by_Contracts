@@ -28,7 +28,7 @@ namespace Confirm_server_by_Contracts
             {
                 conB.Open();
                 {
-                    using (NpgsqlCommand cmd = new NpgsqlCommand("select date_fromnow(10);", conB))
+                    using (NpgsqlCommand cmd = new NpgsqlCommand("select date_fromnow(16);", conB))
                     {
                         Range_Dat = (DateTime)cmd.ExecuteScalar();
                     }

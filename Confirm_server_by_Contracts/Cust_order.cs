@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Confirm_server_by_Contracts
 {
     /// <summary>
-    /// Gets informations about active customer orders
+    /// Gets informations about active customer orders,
     /// Class update its self
     /// </summary>       
     public class Cust_orders : Update_pstgr_from_Ora<Cust_orders.Orders_row>
@@ -161,16 +161,16 @@ namespace Confirm_server_by_Contracts
                     a.DESIRED_QTY,
                     a.QTY_INVOICED, 
                     a.QTY_SHIPPED, 
-                    a.QTY_ASSIGNED, 
+                    round(a.QTY_ASSIGNED,5) QTY_ASSIGNED, 
                     a.DOP_CONNECTION_DB, 
                     nvl(b.dop_id, a.Pre_Accounting_Id) dop_id,
                     ifsapp.dop_head_api.Get_Objstate__(b.dop_id) DOP_STATE, 
                     Nvl(ifsapp.dop_order_api.Get_Revised_Due_Date(b.DOP_ID, 1), decode(a.DOP_CONNECTION_DB, NULL, a.PLANNED_DUE_DATE)) Data_dop,
                     b.PEGGED_QTY DOP_QTY,
-                    Decode(b.QTY_DELIVERED, 0, 
+                    ROUND(Decode(b.QTY_DELIVERED, 0, 
                         Decode(instr(nvl(ifsapp.dop_head_api.get_C_Trolley_Id(b.dop_id), ' '), '-'), 0, 0, 
                             Decode(Nvl(LENGTH(TRIM(TRANSLATE(SubStr(ifsapp.dop_head_api.get_C_Trolley_Id(b.dop_id),
-                        instr(ifsapp.dop_head_api.get_C_Trolley_Id(b.dop_id), '-') + 1), ' +-.0123456789', ' '))), 1000), 1000, b.PEGGED_QTY, 0)), b.QTY_DELIVERED) DOP_MADE,
+                        instr(ifsapp.dop_head_api.get_C_Trolley_Id(b.dop_id), '-') + 1), ' +-.0123456789', ' '))), 1000), 1000, b.PEGGED_QTY, 0)), b.QTY_DELIVERED),5) DOP_MADE,
                     Nvl(b.CREATE_DATE, decode(a.DOP_CONNECTION_DB, NULL, a.DATE_ENTERED)) DATE_ENTERED,
                     owa_opt_lock.checksum(a.OBJVERSION || b.OBJVERSION || nvl(b.dop_id, a.Pre_Accounting_Id) || ifsapp.customer_order_api.Get_Authorize_Code(a.ORDER_NO) || c.dat ||
                         ifsapp.customer_order_api.Get_Order_Conf(a.ORDER_NO) || ifsapp.customer_order_api.Get_State(a.ORDER_NO) || ifsapp.customer_order_address_api.Get_Zip_Code(a.ORDER_NO) ||
@@ -182,6 +182,7 @@ namespace Confirm_server_by_Contracts
                     null zest, 
                     ifsapp.C_Customer_Order_Line_Api.Get_C_Lot0_Flag_Db(a.ORDER_NO, a.LINE_NO, a.REL_NO, a.LINE_ITEM_NO) Seria0,
                     ifsapp.C_Customer_Order_Line_Api.Get_C_Lot0_Date(a.ORDER_NO, a.LINE_NO, a.REL_NO, a.LINE_ITEM_NO) Data0, 
+                    COALESCE(c.how_many,0) how_many,
                     current_timestamp objversion
                 FROM
                     (SELECT 
@@ -194,13 +195,14 @@ namespace Confirm_server_by_Contracts
                     ON b.ORDER_NO || '_' || b.LINE_NO || '_' || b.REL_NO || '_' || b.LINE_ITEM_NO = a.id
                     left JOIN
                         (SELECT 
-                            a.ORDER_NO || '_' || a.LINE_NO || '_' || a.REL_NO || '_' || a.LINE_ITEM_NO id,
+                            a.ORDER_NO || '_' || a.LINE_NO || '_' || a.REL_NO || '_' || a.LINE_ITEM_NO id, b.how_many,
                             SubStr(Decode(SubStr(a.MESSAGE_TEXT, -1, 1), ']', a.MESSAGE_TEXT, a.MESSAGE_TEXT || ']'), Decode(InStr(a.message_text, '/', -10, 2), 0, -11, -9),
                                 Decode(InStr(a.message_text, '/', -10, 2), 0, 10, 8)) DAT
                         FROM
                             ifsapp.customer_order_line_hist a,
                             (SELECT 
                                 Max(HISTORY_NO) hi,
+                                COALESCE(count(HISTORY_NO),0) how_many,
                                 a.ORDER_NO,
                                 LINE_NO,
                                 REL_NO, 

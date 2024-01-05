@@ -13,17 +13,17 @@ namespace Confirm_server_by_Contracts
     internal class Program
     {
         
-        static void Main(string[] args)
+        static async void Main(string[] args)
         {
             Loger.Srv_start();
             CancellationToken active_token = Steps_executor.cts.Token;
             
             Parallel.Invoke(
             new ParallelOptions { MaxDegreeOfParallelism = 50 },
-            new Action[]
-            { async () =>
+            new Action[] {
+                async () =>
                 {
-                    // migrate demands and inventory_part and run main_loop for each non 616%  part_no
+                        // migrate demands and inventory_part and run main_loop for each non 616%  part_no
                     Steps_executor.Register_step("Demands 616 ");
                     Simple_Demands part_616 = new Simple_Demands();
 
@@ -196,7 +196,7 @@ namespace Confirm_server_by_Contracts
 
             if (with_no_err)
             {
-                if  (Dataset_executor.Count()  > 0)
+                if (Dataset_executor.Count() > 0)
                 {
                     Loger.Log("Error on Dataset_executor => some tasks are not calulated");
                     Thread.Sleep(1000);
@@ -204,16 +204,12 @@ namespace Confirm_server_by_Contracts
                 Dataset_executor.Clear();
 
                 Run_query query = new Run_query();
-                Parallel.Invoke(
-                        async () =>
-                        {
-                            await query.Execute_in_Postgres(new[] {
+
+                await query.Execute_in_Postgres(new[] {
                     "REFRESH MATERIALIZED VIEW bilans_val" }, "Refresh bilans_val", active_token);
-                        });
-                Parallel.Invoke(
-                async () =>
-                {
-                    await query.Execute_in_Postgres(new[] {
+
+
+                await query.Execute_in_Postgres(new[] {
                     @"update public.cust_ord a
                     SET zest = case when a.dop_connection_db = 'AUT' then
                      case when a.line_state= 'Aktywowana' then
@@ -304,7 +300,7 @@ namespace Confirm_server_by_Contracts
                         where indb is null or indb!=chk_in
                     ) as up 
                     where demands.id=up.id;" }, "Refresh Demand and Order_demands", active_token);
-                });
+
 
                 Steps_executor.Register_step("Validate demands");
                 with_no_err = Steps_executor.Wait_for(new string[] { "Refresh bilans_val", "Refresh Demand and Order_demands" }, "Validate demands", active_token);
@@ -321,7 +317,7 @@ namespace Confirm_server_by_Contracts
                     },
                     () =>
                     {
-                        Calculate_cust_ord  calculate_Cust_Ord = new Calculate_cust_ord(active_token);
+                        Calculate_cust_ord calculate_Cust_Ord = new Calculate_cust_ord(active_token);
                         calculate_Cust_Ord = null;
                     });
                 }
@@ -329,10 +325,7 @@ namespace Confirm_server_by_Contracts
                 if (Steps_executor.Wait_for(new string[] { "All_lacks", "Lack_report", "Update To_Mail", "Lack_bil", "Calculate_cust_order" }, "Mail", active_token))
                 {
                     Steps_executor.End_step("Validate demands");
-                    Parallel.Invoke(
-                    async () =>
-                    {
-                        await query.Execute_in_Postgres(new string[] {"" +
+                    await query.Execute_in_Postgres(new string[] {"" +
                         @"INSERT INTO public.mail
                         (ordid,dop, koor, order_no, line_no, rel_no, part_no, descr, country, prom_date, prom_week, load_id, ship_date, date_entered, cust_id, 
                         prod, prod_week, planner_buyer, indeks, opis, typ_zdarzenia, status_informacji, zest, info_handlo, logistyka, seria0, data0, cust_line_stat,
@@ -441,11 +434,12 @@ namespace Confirm_server_by_Contracts
                         ,
                         "DELETE FROM public.mail WHERE cust_id in (select a.cust_id from mail a left join to_mail b on b.cust_id=a.cust_id where b.cust_id is null and (is_for_mail(a.status_informacji)=false or a.status_informacji='POPRAWIĆ'))",
                         }, "Mail", active_token);
-                    });
+
                     Steps_executor.Register_step("Send_mail");
                     if (Steps_executor.Wait_for(new string[] { "Mail" }, "Send_mail", active_token))
                     {
-
+                        Old_code old_Code = new Old_code();
+                        await old_Code.modify_prod_date();
                     }
                 }
             }
