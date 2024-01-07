@@ -301,12 +301,7 @@ namespace Confirm_server_by_Contracts
                         where indb is null or indb!=chk_in
                     ) as up 
                     where demands.id=up.id;" }, "Refresh Demand and Order_demands", active_token);
-                });
-                
-
-
-                
-
+                });                
 
                 Steps_executor.Register_step("Validate demands");
                 with_no_err = Steps_executor.Wait_for(new string[] { "Refresh bilans_val", "Refresh Demand and Order_demands" }, "Validate demands", active_token);
@@ -331,7 +326,7 @@ namespace Confirm_server_by_Contracts
                 if (Steps_executor.Wait_for(new string[] { "All_lacks", "Lack_report", "Update To_Mail", "Lack_bil", "Calculate_cust_order" }, "Mail", active_token))
                 {
                     Steps_executor.End_step("Validate demands");
-                    await query.Execute_in_Postgres(new string[] {"" +
+                    int result = await query.Execute_in_Postgres(new string[] {"" +
                         @"INSERT INTO public.mail
                         (ordid,dop, koor, order_no, line_no, rel_no, part_no, descr, country, prom_date, prom_week, load_id, ship_date, date_entered, cust_id, 
                         prod, prod_week, planner_buyer, indeks, opis, typ_zdarzenia, status_informacji, zest, info_handlo, logistyka, seria0, data0, cust_line_stat,
@@ -440,6 +435,7 @@ namespace Confirm_server_by_Contracts
                         ,
                         "DELETE FROM public.mail WHERE cust_id in (select a.cust_id from mail a left join to_mail b on b.cust_id=a.cust_id where b.cust_id is null and (is_for_mail(a.status_informacji)=false or a.status_informacji='POPRAWIĆ'))",
                         }, "Mail", active_token);
+                    
 
                     Steps_executor.Register_step("Send_mail");
                     if (Steps_executor.Wait_for(new string[] { "Mail" }, "Send_mail", active_token))
