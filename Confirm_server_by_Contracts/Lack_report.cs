@@ -24,7 +24,7 @@ namespace Confirm_server_by_Contracts
                 await Update_Lack_reports(cancellationToken);
                 Steps_executor.Wait_for(new string[] { "Lack_report" }, "Validate demands", cancellationToken);
                 Run_query query = new Run_query();
-                int result = sawait query.Execute_in_Postgres(new[] { 
+                int result = await query.Execute_in_Postgres(new[] { 
                     "REFRESH MATERIALIZED VIEW braki_gniazd; ",
                     "REFRESH MATERIALIZED VIEW braki_poreal; "
                 }, "Lack_report", cancellationToken);
