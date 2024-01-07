@@ -15,7 +15,8 @@ namespace Confirm_server_by_Contracts
 
         static  void Main(string[] args)
         {
-
+            serv_instance serv_Instance = new serv_instance();
+            serv_Instance.Start_calc();
         }
     }
 }
