@@ -24,7 +24,7 @@
 	<ORACLE>
 		<ConnectionString>Password=Password;User ID = User; Data Source = DbName</ConnectionString>
 		<Limit_oracle_conn>6</Limit_oracle_conn>
-		<Email_Order_Report>false</Email_Order_Report>
+		<Customer_order_conf>false</Customer_order_conf>
 		<Set_Planned_Manuf_Date>false</Set_Planned_Manuf_Date>
 	</ORACLE>
 </data>
