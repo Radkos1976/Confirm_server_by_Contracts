@@ -1131,7 +1131,7 @@ namespace Confirm_server_by_Contracts
                                     mal.Load(re);
                                     if (mal.Rows.Count > 0)
                                     {
-                                        int send = await Create_HTMLmail(mal, "Brak możliwości automatycznego potwierdzenia zamówienia", erw[0].ToString().Replace("\r", ""), kol.Rows[0], "Produkcja powyższych zamówień jest zagrożona ze względu na status zamówienia,błędne daty obiecane,braki materiałowe,użycie komponentów wycofanych z kolekcji / nie zamawianych");
+                                        int send = await Create_HTMLmail(mal, "Brak możliwości automatycznego potwierdzenia zamówienia", erw[0].ToString().Replace("\r", ""), kol.Rows[0], cancellationToken ,"Produkcja powyższych zamówień jest zagrożona ze względu na status zamówienia,błędne daty obiecane,braki materiałowe,użycie komponentów wycofanych z kolekcji / nie zamawianych");
                                         if (send == 0)
                                         {
                                             using (NpgsqlCommand cmd1 = new NpgsqlCommand("" +
@@ -1209,7 +1209,7 @@ namespace Confirm_server_by_Contracts
                                     mal.Load(re);
                                     if (mal.Rows.Count > 0)
                                     {
-                                        int send = await Create_HTMLmail(mal, "Proszę o zmianę daty wysyłki", erw[0].ToString().Replace("\r", ""), kol.Rows[0], "*Powyższe linie zamówień zostały już przesunięte w produkcji na termin gwarantujący dostawę brakujących komponentów");
+                                        int send = await Create_HTMLmail(mal, "Proszę o zmianę daty wysyłki", erw[0].ToString().Replace("\r", ""), kol.Rows[0], cancellationToken,"*Powyższe linie zamówień zostały już przesunięte w produkcji na termin gwarantujący dostawę brakujących komponentów");
                                         if (send == 0)
                                         {
                                             using (NpgsqlCommand cmd1 = new NpgsqlCommand("" +
@@ -1285,7 +1285,7 @@ namespace Confirm_server_by_Contracts
                                     mal.Load(re);
                                     if (mal.Rows.Count > 0)
                                     {
-                                        int send = await Create_HTMLmail(mal, "Proszę o poprawę dat obiecanych - problem z potwierdzeniem", erw[0].ToString().Replace("\r", ""), kol.Rows[0], "*Dla powyższych linii występuje problem z ustaleniem daty obiecanej - raport zprawdza linie z nieaktywnym DOP");
+                                        int send = await Create_HTMLmail(mal, "Proszę o poprawę dat obiecanych - problem z potwierdzeniem", erw[0].ToString().Replace("\r", ""), kol.Rows[0], cancellationToken, "*Dla powyższych linii występuje problem z ustaleniem daty obiecanej - raport zprawdza linie z nieaktywnym DOP");
                                         if (send == 0)
                                         {
                                             using (NpgsqlCommand cmd1 = new NpgsqlCommand("" +

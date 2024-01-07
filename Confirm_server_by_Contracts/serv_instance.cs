@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Confirm_server_by_Contracts
 {
-    class serv_instance
+    class Serv_instance
     {
         public async void Start_calc()
         {
