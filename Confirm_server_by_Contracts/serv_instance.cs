@@ -203,12 +203,14 @@ namespace Confirm_server_by_Contracts
                 Dataset_executor.Clear();
 
                 Run_query query = new Run_query();
-
-                await query.Execute_in_Postgres(new[] {
+                Parallel.Invoke(
+                async () =>  {
+                    await query.Execute_in_Postgres(new[] {
                     "REFRESH MATERIALIZED VIEW bilans_val" }, "Refresh bilans_val", active_token);
-
-
-                await query.Execute_in_Postgres(new[] {
+                }
+                ,
+                async () => {
+                    await query.Execute_in_Postgres(new[] {
                     @"update public.cust_ord a
                     SET zest = case when a.dop_connection_db = 'AUT' then
                      case when a.line_state= 'Aktywowana' then
@@ -299,6 +301,11 @@ namespace Confirm_server_by_Contracts
                         where indb is null or indb!=chk_in
                     ) as up 
                     where demands.id=up.id;" }, "Refresh Demand and Order_demands", active_token);
+                });
+                
+
+
+                
 
 
                 Steps_executor.Register_step("Validate demands");
