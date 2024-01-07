@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<data>
+	<POSTEGRESQL_MAIN>
+		<Host>192.168.1.66</Host>
+		<Port>5432</Port>
+		<CommandTimeout>100</CommandTimeout>
+		<ConnectionIdleLifetime>20000</ConnectionIdleLifetime>
+		<ApplicationName>Zakupy_APP</ApplicationName>
+		<Username>Username</Username>
+		<Password>Password</Password>
+		<Database>zakupy</Database>
+		<Kalendar_name></Kalendar_name>
+		<Contracts>ST,IN</Contracts>
+	</POSTEGRESQL_MAIN>
+
+	<POSTEGRESQL_ST>
+		<Calendar_id>SITS</Calendar_id>
+	</POSTEGRESQL_ST>
+
+	<POSTEGRESQL_IN>
+		<Calendar_id>IN</Calendar_id>
+	</POSTEGRESQL_IN>
+
+	<ORACLE>
+		<ConnectionString>Password=Password;User ID = User; Data Source = DbName</ConnectionString>
+		<Limit_oracle_conn>6</Limit_oracle_conn>
+		<Email_Order_Report>false</Email_Order_Report>
+		<Set_Planned_Manuf_Date>false</Set_Planned_Manuf_Date>
+	</ORACLE>
+</data>
