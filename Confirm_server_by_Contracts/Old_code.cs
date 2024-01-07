@@ -1009,7 +1009,7 @@ namespace Confirm_server_by_Contracts
             {
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
-                    await conA.OpenAsync();
+                    await conA.OpenAsync(cancellationToken);
                     using (NpgsqlCommand pot = new NpgsqlCommand("" +
                         "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,PROM_WEEK,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,how_many(dop) CONF_COUNT,CREATED " +
                         "from send_mail", conA))
@@ -1037,7 +1037,7 @@ namespace Confirm_server_by_Contracts
                 kol.Rows.Add(rw);
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
-                    await conA.OpenAsync();
+                    await conA.OpenAsync(cancellationToken);
                     using (NpgsqlCommand cmd = new NpgsqlCommand("" +
                         "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,PROM_WEEK,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,how_many(dop) CONF_COUNT,CREATED,info " +
                         "from send_mail " +
@@ -1057,7 +1057,7 @@ namespace Confirm_server_by_Contracts
                                     mal.Load(re);
                                     if (mal.Rows.Count > 0)
                                     {
-                                        int send = await Create_HTMLmail(mal, "Komponent nie zamawiany / wycofany ", erw[0].ToString().Replace("\r", ""), kol.Rows[0], "Produkcja powyższych zamówień jest zagrożona ze względu na użycie komponentów wycofanych z kolekcji / nie zamawianych");
+                                        int send = await Create_HTMLmail(mal, "Komponent nie zamawiany / wycofany ", erw[0].ToString().Replace("\r", ""), kol.Rows[0], cancellationToken, "Produkcja powyższych zamówień jest zagrożona ze względu na użycie komponentów wycofanych z kolekcji / nie zamawianych");
                                         if (send == 0)
                                         {
                                             using (NpgsqlCommand cmd1 = new NpgsqlCommand("" +
@@ -1067,8 +1067,8 @@ namespace Confirm_server_by_Contracts
                                                 "and last_mail is null and created + interval '1 hour' < current_timestamp", conA))
                                             {
                                                 cmd1.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar).Value = erw[0].ToString();
-                                                cmd1.Prepare();
-                                                cmd1.ExecuteNonQuery();
+                                                await cmd1.PrepareAsync(cancellationToken);
+                                                await cmd1.ExecuteNonQueryAsync(cancellationToken);
                                             }
                                         }
                                     }
@@ -1086,7 +1086,7 @@ namespace Confirm_server_by_Contracts
             {
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
-                    await conA.OpenAsync();
+                    await conA.OpenAsync(cancellationToken);
                     using (NpgsqlCommand pot = new NpgsqlCommand("" +
                         "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,PROM_WEEK,PROD_WEEK,TYP_ZDARZENIA,STATUS_INFORMACJI,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,CREATED " +
                         "from send_mail", conA))
@@ -1114,13 +1114,13 @@ namespace Confirm_server_by_Contracts
                 kol.Rows.Add(rw);
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
-                    await conA.OpenAsync();
+                    await conA.OpenAsync(cancellationToken);
                     using (NpgsqlCommand cmd = new NpgsqlCommand("" +
                         "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,PROM_WEEK,PROD_WEEK,TYP_ZDARZENIA,STATUS_INFORMACJI,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,CREATED,info " +
                         "from send_mail where mail=@mail and typ='NIE POTWIERDZAĆ' and last_mail is null and created + interval '1 hour' < current_timestamp order by CORR,CUST_ORD,C_LIN,C_REL", conA))
                     {
                         cmd.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar);
-                        cmd.Prepare();
+                        await cmd.PrepareAsync(cancellationToken);
                         foreach (DataRow erw in rek)
                         {
                             cmd.Parameters[0].Value = erw[0];
@@ -1141,8 +1141,8 @@ namespace Confirm_server_by_Contracts
                                                 "and created + interval '1 hour' < current_timestamp", conA))
                                             {
                                                 cmd1.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar).Value = erw[0].ToString();
-                                                cmd1.Prepare();
-                                                cmd1.ExecuteNonQuery();
+                                                await cmd1.PrepareAsync(cancellationToken);
+                                                await cmd1.ExecuteNonQueryAsync(cancellationToken);
                                             }
                                         }
                                     }
@@ -1160,7 +1160,7 @@ namespace Confirm_server_by_Contracts
             {
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
-                    await conA.OpenAsync();
+                    await conA.OpenAsync(cancellationToken);
                     using (NpgsqlCommand pot = new NpgsqlCommand("" +
                         "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,LOAD_ID,SHIP_DATE,PROM_WEEK,PROD_WEEK,PROD_DATE as NEW_SHIP_DATE,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,how_many(dop) CONF_COUNT,CREATED " +
                         "from send_mail", conA))
@@ -1190,7 +1190,7 @@ namespace Confirm_server_by_Contracts
 
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
-                    await conA.OpenAsync();
+                    await conA.OpenAsync(cancellationToken);
                     using (NpgsqlCommand cmd = new NpgsqlCommand("" +
                         "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,LOAD_ID,SHIP_DATE,PROM_WEEK,PROD_WEEK,PROD_DATE as NEW_SHIP_DATE,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,how_many(dop) CONF_COUNT,CREATED,info " +
                         "from send_mail where mail=@mail and typ='MAIL LOG' and last_mail is null " +
@@ -1198,7 +1198,7 @@ namespace Confirm_server_by_Contracts
                         "order by CORR,CUST_ORD,C_LIN,C_REL", conA))
                     {
                         cmd.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar);
-                        cmd.Prepare();
+                        await cmd.PrepareAsync(cancellationToken);
                         foreach (DataRow erw in rek)
                         {
                             cmd.Parameters[0].Value = erw[0];
@@ -1219,8 +1219,8 @@ namespace Confirm_server_by_Contracts
                                                 "and created + interval '1 hour' < current_timestamp", conA))
                                             {
                                                 cmd1.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar).Value = erw[0].ToString();
-                                                cmd1.Prepare();
-                                                cmd1.ExecuteNonQuery();
+                                                await cmd1.PrepareAsync(cancellationToken);
+                                                await cmd1.ExecuteNonQueryAsync(cancellationToken);
                                             }
                                         }
                                     }
@@ -1238,7 +1238,7 @@ namespace Confirm_server_by_Contracts
             {
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
-                    await conA.OpenAsync();
+                    await conA.OpenAsync(cancellationToken);
                     using (NpgsqlCommand pot = new NpgsqlCommand("" +
                         "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,PROM_WEEK,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,how_many(dop) CONF_COUNT,CREATED " +
                         "from send_mail", conA))
@@ -1265,7 +1265,7 @@ namespace Confirm_server_by_Contracts
 
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
-                    await conA.OpenAsync();
+                    await conA.OpenAsync(cancellationToken);
                     using (NpgsqlCommand cmd = new NpgsqlCommand("" +
                         "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,PROM_WEEK,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,how_many(dop) CONF_COUNT,CREATED,info " +
                         "from send_mail " +
@@ -1274,7 +1274,7 @@ namespace Confirm_server_by_Contracts
                         "order by CORR,CUST_ORD,C_LIN,C_REL", conA))
                     {
                         cmd.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar);
-                        cmd.Prepare();
+                        await cmd.PrepareAsync(cancellationToken);
                         foreach (DataRow erw in rek)
                         {
                             cmd.Parameters[0].Value = erw[0];
@@ -1295,8 +1295,8 @@ namespace Confirm_server_by_Contracts
                                                 "and created + interval '1 hour' < current_timestamp", conA))
                                             {
                                                 cmd1.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar).Value = erw[0].ToString();
-                                                cmd1.Prepare();
-                                                cmd1.ExecuteNonQuery();
+                                                await cmd1.PrepareAsync(cancellationToken);
+                                                await cmd1.ExecuteNonQueryAsync(cancellationToken);
                                             }
                                         }
                                     }
