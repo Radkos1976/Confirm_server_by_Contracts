@@ -323,7 +323,7 @@ namespace Confirm_server_by_Contracts
                     });
                 }
                 Steps_executor.Register_step("Mail");
-                if (Steps_executor.Wait_for(new string[] { "All_lacks", "Lack_report", "Update To_Mail", "Lack_bil", "Calculate_cust_order" }, "Mail", active_token))
+                if (Steps_executor.Wait_for(new string[] { "All_lacks", "Lack_report", "Lack_report1", "Lack_report2", "Update To_Mail", "Lack_bil", "Calculate_cust_order" }, "Mail", active_token))
                 {
                     Steps_executor.End_step("Validate demands");
                     int result = await query.Execute_in_Postgres(new string[] {"" +
