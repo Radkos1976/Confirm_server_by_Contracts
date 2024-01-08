@@ -82,7 +82,7 @@ namespace Confirm_server_by_Contracts
                             NOTE_ID 
                         FROM 
                         ifsapp.inventory_part_pub 
-                        WHERE REGEXP_LIKE(part_no,'{1}') {0} {2} AND TYPE_CODE_DB='4' AND  PART_STATUS != 'N') a
+                        WHERE REGEXP_LIKE(part_no,'{1}') {0} {2} AND TYPE_CODE_DB='4') a
                 ", limit_not_zero_stock ? 
                         String.Format("AND {0} (part_no, contract) in (select part_no, contract from ifsapp.inventory_part_in_stock where REGEXP_LIKE(part_no,'{2}') and QTY_ONHAND>0 or QTY_IN_TRANSIT>0) {1}", 
                             limit_part_no.Count > 0 ? 
