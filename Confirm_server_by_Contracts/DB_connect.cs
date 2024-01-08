@@ -989,7 +989,6 @@ namespace DB_Conect
                             {
                                 await cmd.ExecuteNonQueryAsync(cancellationToken);
                             }
-                            npgsqlTransaction.Commit();
                         }
                         if (cancellationToken.IsCancellationRequested)
                         {
@@ -999,7 +998,7 @@ namespace DB_Conect
                         }
                         else
                         {
-                            
+                            npgsqlTransaction.Commit();
                             Steps_executor.End_step(Task_name);
                             return 0;
                         }
