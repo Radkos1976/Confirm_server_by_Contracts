@@ -390,7 +390,7 @@ namespace Confirm_server_by_Contracts
                         await order_Demands_except4.Update_from_executor_from_list("Check_order_demands4", list4, active_token);
                         order_Demands_except4 = null;
                     });
-
+                    Steps_executor.End_step("Check_order_demands");
                     Steps_executor.Wait_for(new string[] { "Check_order_demands", "Check_order_demands1", "Check_order_demands2", "Check_order_demands3", "Check_order_demands4" }, "Validate demands", active_token);
                     Parallel.Invoke(
                     () =>
