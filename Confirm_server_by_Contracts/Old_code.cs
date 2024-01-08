@@ -725,14 +725,14 @@ namespace Confirm_server_by_Contracts
                 // Command line argument must the the SMTP host.
                 SmtpClient client = new SmtpClient()
                 {
-                    Port = 587,
+                    Port = Mail_conn.Port,
                     DeliveryFormat = SmtpDeliveryFormat.International,
-                    Host = "smtp.office365.com",
-                    EnableSsl = true,
-                    Timeout = 10000,
+                    Host = Mail_conn.Host,
+                    EnableSsl = Mail_conn.EnableSsl,
+                    Timeout = Mail_conn.Timeout,
                     DeliveryMethod = SmtpDeliveryMethod.Network,
-                    UseDefaultCredentials = false,
-                    Credentials = new System.Net.NetworkCredential("radkomat@sits.pl", "mkdhjtxqdgjnvzdd")
+                    UseDefaultCredentials = Mail_conn.UseDefaultCredentials,
+                    Credentials = new System.Net.NetworkCredential(Mail_conn.UserName, Mail_conn.Password)
                 };
                 //MailAddress bcc = new MailAddress("radek.kosobucki@sits.pl");
                 MailMessage mm = new MailMessage("radkomat@sits.pl", mailto, StrTableStart, strTableBody)

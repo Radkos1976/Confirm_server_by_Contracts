@@ -27,4 +27,14 @@
 		<Customer_order_conf>false</Customer_order_conf>
 		<Set_Planned_Manuf_Date>false</Set_Planned_Manuf_Date>
 	</ORACLE>
+
+  <MAIL>
+    <Port></Port>
+    <Host></Host>
+    <EnableSsl></EnableSsl>
+    <Timeout></Timeout>
+    <UseDefaultCredentials></UseDefaultCredentials>
+    <UserName></UserName>
+    <Password></Password>    
+  </MAIL>
 </data>

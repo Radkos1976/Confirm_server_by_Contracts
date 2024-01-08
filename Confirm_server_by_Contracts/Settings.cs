@@ -247,6 +247,55 @@ namespace DB_Conect
         }        
     }
 
+    public static class Mail_conn
+    {
+        /// <summary>
+        /// Get settings for connections with ORACLE
+        /// </summary>
+        public static string UserName { get; set; }
+        public static string Password { get; set; }
+        public static string Host { get; set; }
+        public static bool UseDefaultCredentials { get; set; }
+        public static bool EnableSsl { get; set; }
+        public static int Port { get; set; }
+        public static int Timeout { get; set; }
+        /// <summary>
+        /// Initialize data from XML
+        /// </summary>
+        static Mail_conn()
+        {
+            try
+            {
+                XDocument Doc = XDocument.Load("C:\\serv\\Settings.xml");
+                var oraconn = Doc.Descendants("MAIL")
+                    .Select(x => new
+                    {
+                        XPort = (int)x.Element("Port"),
+                        XHost = (string)x.Element("Host"),
+                        XEnableSsl = (bool)x.Element("EnableSsl"),
+                        XTimeout = (int)x.Element("Timeout"),
+                        XUseDefaultCredentials = (bool)x.Element("UseDefaultCredentials"),
+                        XUserName = (string)x.Element("UserName"),
+                        XPassword = (string)x.Element("Password")
+                    });
+                foreach (var res in oraconn)
+                {
+                    UserName = res.XUserName;
+                    Password = res.XPassword;
+                    Host = res.XHost;
+                    Port = res.XPort;
+                    Timeout = res.XTimeout;
+                    UseDefaultCredentials = res.XUseDefaultCredentials;
+                    EnableSsl = res.XEnableSsl; 
+                }
+            }
+            catch (Exception e)
+            {
+                Loger.Log(String.Format("Error width XML file for ORACLE: {0}", e));
+            }
+        }
+    }
+
     /// <summary>
     /// Get connetions settings to Oracle
     /// </summary>
