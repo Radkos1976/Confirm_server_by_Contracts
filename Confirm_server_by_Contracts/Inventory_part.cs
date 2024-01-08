@@ -62,6 +62,7 @@ namespace Confirm_server_by_Contracts
                     nvl(ifsapp.inventory_part_api.Get_Description(contract, a.part_no),' ') Opis,
                     nvl(a.colection,' ') Kolekcja,
                     nvl(a.mag,0) Mag,PLANNER_BUYER,nvl(PART_PRODUCT_CODE,' ') Rodzaj,
+                    Part_product_family,
                     EXPECTED_LEADTIME Czas_dostawy,
                     ifsapp.work_time_calendar_api.Get_End_Date(ifsapp.site_api.Get_Manuf_Calendar_Id(contract),SYSDATE,EXPECTED_LEADTIME) Data_gwarancji,
                     ifsapp.Inventory_Part_API.Get_Weight_Net(contract, PART_NO) Weight_Net,
@@ -76,6 +77,7 @@ namespace Confirm_server_by_Contracts
                             ifsapp.inventory_part_in_stock_api. Get_Plannable_Qty_Onhand (CONTRACT, part_no,'*') Mag,
                             TYPE_DESIGNATION colection,
                             PART_PRODUCT_CODE,
+                            Part_product_family,
                             EXPECTED_LEADTIME,
                             NOTE_ID 
                         FROM 
@@ -119,6 +121,7 @@ namespace Confirm_server_by_Contracts
             public double Weight_net { get; set; }
             public double Volume_net { get; set; }
             public double Inventory_value { get; set; }
+            public string Part_product_family { get; set; }
             public long Note_id { get; set; }
 
             
