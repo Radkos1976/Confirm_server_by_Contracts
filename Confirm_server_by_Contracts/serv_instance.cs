@@ -534,11 +534,31 @@ namespace Confirm_server_by_Contracts
             Steps_executor.cts.Dispose();
         }
     }
-    public class Small_upd_demands
+    public class Small_upd_demands: IComparable<Small_upd_demands>, IEquatable<Small_upd_demands>
     {
         public string part_no { get; set; }
         public string  contract {  get; set; }
         public DateTime min_d { get; set; }
         public DateTime max_d { get; set;}
+
+        public int CompareTo(Small_upd_demands other)
+        {
+            if (other == null)
+            {
+                return 1;
+            }
+            int var1 = this.part_no.CompareTo(other.part_no);
+            if (var1  != 0)
+            {
+                return  var1;
+            }
+            return this.contract.CompareTo(other.contract);
+        }
+
+        public bool Equals(Small_upd_demands other)
+        {
+            if (other == null) return false;
+            return this.part_no.Equals(other.part_no) && this.contract.Equals(other.contract);
+        }
     }
 }

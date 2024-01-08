@@ -605,6 +605,10 @@ namespace Confirm_server_by_Contracts
             //dop desc,dop_lin,int_ord,LINE_NO,REL_NO
             public virtual int CompareTo(Order_Demands_row other)
             {
+                if (other == null)
+                {
+                    return 1;
+                }
                 int res = this.Dop.CompareTo(other.Dop);
                 if (res != 0) 
                 { 
@@ -631,6 +635,7 @@ namespace Confirm_server_by_Contracts
 
             public virtual bool Equals(Order_Demands_row other)
             {
+                if (other == null) return false;
                 return 
                     this.Dop.Equals(other.Dop) && 
                     this.Dop_lin.Equals(other.Dop_lin) && 
