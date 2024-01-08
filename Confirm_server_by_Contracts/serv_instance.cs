@@ -301,8 +301,7 @@ namespace Confirm_server_by_Contracts
                         where indb is null or indb!=chk_in
                     ) as up 
                     where demands.id=up.id;" }, "Refresh Demand and Order_demands", active_token);
-                });                
-
+                });
                 Steps_executor.Register_step("Validate demands");
                 with_no_err = Steps_executor.Wait_for(new string[] { "Refresh bilans_val", "Refresh Demand and Order_demands" }, "Validate demands", active_token);
                 if (with_no_err)
@@ -438,7 +437,7 @@ namespace Confirm_server_by_Contracts
                     
 
                     Steps_executor.Register_step("Send_mail");
-                    if (Steps_executor.Wait_for(new string[] { "Mail" }, "Send_mail", active_token))
+                    if (Steps_executor.Wait_for(new string[] { "Mail",  }, "Send_mail", active_token))
                     {
                         Old_code old_Code = new Old_code();
                         await old_Code.Modify_prod_date(active_token);
