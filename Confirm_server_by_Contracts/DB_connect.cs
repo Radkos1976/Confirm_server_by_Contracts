@@ -987,7 +987,7 @@ namespace DB_Conect
                         {
                             using (NpgsqlCommand cmd = new NpgsqlCommand(comm, conO))
                             {
-                                await cmd.ExecuteNonQueryAsync(cancellationToken);
+                                cmd.ExecuteNonQuery();
                             }
                         }
                         if (cancellationToken.IsCancellationRequested)

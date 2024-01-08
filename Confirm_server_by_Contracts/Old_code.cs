@@ -821,7 +821,7 @@ namespace Confirm_server_by_Contracts
                                             {
                                                 cmd1.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar).Value = erw[0].ToString();
                                                 cmd1.Prepare();
-                                                await cmd1.ExecuteNonQueryAsync(cancellationToken);
+                                                cmd1.ExecuteNonQuery();
                                             }
                                         }
                                     }
@@ -905,8 +905,8 @@ namespace Confirm_server_by_Contracts
                                                 "and typ='MAIL' and is_alter(status_informacji) is true and last_mail is null and created + interval '1 hour' < current_timestamp", conA))
                                             {
                                                 cmd1.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar).Value = erw[0].ToString();
-                                                await cmd1.PrepareAsync(cancellationToken);
-                                                await cmd1.ExecuteNonQueryAsync(cancellationToken);
+                                                cmd1.Prepare();
+                                                cmd1.ExecuteNonQuery();
                                             }
                                         }
                                     }
@@ -990,8 +990,8 @@ namespace Confirm_server_by_Contracts
                                                 "and created + interval '1 hour' < current_timestamp", conA))
                                             {
                                                 cmd1.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar).Value = erw[0].ToString();
-                                                await cmd1.PrepareAsync(cancellationToken);
-                                                await cmd1.ExecuteNonQueryAsync(cancellationToken);
+                                                cmd1.Prepare();
+                                                cmd1.ExecuteNonQuery();
                                             }
                                         }
                                     }
@@ -1067,8 +1067,8 @@ namespace Confirm_server_by_Contracts
                                                 "and last_mail is null and created + interval '1 hour' < current_timestamp", conA))
                                             {
                                                 cmd1.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar).Value = erw[0].ToString();
-                                                await cmd1.PrepareAsync(cancellationToken);
-                                                await cmd1.ExecuteNonQueryAsync(cancellationToken);
+                                                cmd1.Prepare();
+                                                cmd1.ExecuteNonQuery();
                                             }
                                         }
                                     }
@@ -1141,8 +1141,8 @@ namespace Confirm_server_by_Contracts
                                                 "and created + interval '1 hour' < current_timestamp", conA))
                                             {
                                                 cmd1.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar).Value = erw[0].ToString();
-                                                await cmd1.PrepareAsync(cancellationToken);
-                                                await cmd1.ExecuteNonQueryAsync(cancellationToken);
+                                                cmd1.Prepare();
+                                                cmd1.ExecuteNonQuery();
                                             }
                                         }
                                     }
@@ -1219,8 +1219,8 @@ namespace Confirm_server_by_Contracts
                                                 "and created + interval '1 hour' < current_timestamp", conA))
                                             {
                                                 cmd1.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar).Value = erw[0].ToString();
-                                                await cmd1.PrepareAsync(cancellationToken);
-                                                await cmd1.ExecuteNonQueryAsync(cancellationToken);
+                                                cmd1.Prepare();
+                                                cmd1.ExecuteNonQuery();
                                             }
                                         }
                                     }
@@ -1295,8 +1295,8 @@ namespace Confirm_server_by_Contracts
                                                 "and created + interval '1 hour' < current_timestamp", conA))
                                             {
                                                 cmd1.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar).Value = erw[0].ToString();
-                                                await cmd1.PrepareAsync(cancellationToken);
-                                                await cmd1.ExecuteNonQueryAsync(cancellationToken);
+                                                cmd1.Prepare();
+                                                cmd1.ExecuteNonQuery();
                                             }
                                         }
                                     }
