@@ -73,7 +73,7 @@ namespace Confirm_server_by_Contracts
                             part_no,
                             contract,
                             PLANNER_BUYER,
-                            ifsapp.inventory_part_in_stock_api. Get_Plannable_Qty_Onhand (CONTRACT,part_no,'*') Mag,
+                            ifsapp.inventory_part_in_stock_api. Get_Plannable_Qty_Onhand (CONTRACT, part_no,'*') Mag,
                             TYPE_DESIGNATION colection,
                             PART_PRODUCT_CODE,
                             EXPECTED_LEADTIME,

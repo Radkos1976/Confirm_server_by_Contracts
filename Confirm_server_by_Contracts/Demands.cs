@@ -241,7 +241,12 @@ namespace Confirm_server_by_Contracts
         {
             rw = new Update_pstgr_from_Ora<Order_Demands_row>("MAIN");
         }
-
+        /// <summary>
+        /// Get order_demand form range in Async dictionary
+        /// </summary>
+        /// <param name="Task_name"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<int> Update_from_executor(string  Task_name, CancellationToken cancellationToken)
         {
             int result = 0;
@@ -263,6 +268,32 @@ namespace Confirm_server_by_Contracts
                     Loger.Log(string.Format("Err => {0}", ex.Message)); 
                 }
                              
+            }
+            Steps_executor.End_step(Task_name);
+            return result;
+        }
+
+        public async Task<int> Update_from_executor_from_list(string Task_name, List<Small_upd_demands> dataset, CancellationToken cancellationToken)
+        {
+            int result = 0;
+            Steps_executor.Register_step(Task_name);
+            foreach(Small_upd_demands item  in  dataset)
+            {
+                try
+                {
+                    if (cancellationToken.IsCancellationRequested) { break; }
+                    result += await Update_dataset(
+                        item.part_no, 
+                        item.contract,
+                        new Tuple<DateTime?, DateTime?>( item.min_d, item.max_d ), 
+                        string.Format("{0}:{1}:{2}", Task_name, item.part_no, item.contract), cancellationToken).ConfigureAwait(false);
+                    Dataset_executor.Report_end(item.part_no, item.contract);
+                }
+                catch (Exception ex)
+                {
+                    Loger.Log(string.Format("Err => {0}", ex.Message));
+                }
+
             }
             Steps_executor.End_step(Task_name);
             return result;

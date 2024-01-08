@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using static Confirm_server_by_Contracts.Inventory_part;
 
 namespace Confirm_server_by_Contracts
 {
@@ -306,6 +307,91 @@ namespace Confirm_server_by_Contracts
                 with_no_err = Steps_executor.Wait_for(new string[] { "Refresh bilans_val", "Refresh Demand and Order_demands" }, "Validate demands", active_token);
                 if (with_no_err)
                 {
+                    Steps_executor.Register_step("Check_order_demands");
+                    // check order_demands for duplicated data amt wrong balances
+                    Update_pstgr_from_Ora<Small_upd_demands> upd_dem = new Update_pstgr_from_Ora<Small_upd_demands>("MAIN");
+                    List<Small_upd_demands> not_corr_dem = await upd_dem.Get_PSTGR("" +
+                        @"select a.part_no, a.contract, min(a.min_d), max(a.max_d) from (
+	                        (select b.part_no,b.contract,b.date_required min_d, b.date_required max_d
+                        from 
+                            (select dop,dop_lin,int_ord,part_no,contract,line_no,rel_no,count(order_supp_dmd) as il 
+                                from ord_demands 
+                                group by dop,dop_lin,int_ord,part_no,contract,line_no,rel_no) a,
+                            (select part_no,contract,date_required,dop,dop_lin,int_ord,line_no,rel_no from ord_demands) b 
+                         where a.il >1 and (a.dop=b.dop and a.dop_lin=b.dop_lin and a.int_ord=b.int_ord and a.part_no=b.part_no and a.contract=b.contract
+                            and a.line_no=b.line_no and a.rel_no=b.rel_no) 
+                         group by b.part_no,b.contract,b.date_required order by part_no) 
+                         union ALL
+                         (select indeks part_no,umiejsc contract,mn min_d,max(data_dost) max_d
+                        from 
+                            (select c.indeks,c.umiejsc,c.data_dost,c.mag,c.sum_dost-sum(a.qty_supply) supp,c.sum_potrz-sum(a.qty_demand) dmd,min(a.date_required) mn,b.ma 
+                                from 
+                                    (select * 
+                                        from public.data 
+                                        where typ_zdarzenia not in ('Brak zamówień zakupu','Dostawa na dzisiejsze ilości','Opóźniona dostawa') 
+                                        and planner_buyer!='LUCPRZ')c,
+                                    ord_demands a,
+                                    (select part_no,contract,min(work_day) ma 
+                                        from demands group by part_no, contract) b 
+                                 where c.bilans<0 and b.part_no=c.indeks and a.part_no=c.indeks 
+                                 and (a.date_required<=c.data_dost or a.date_required<=current_date) 
+                                 group by c.indeks, c.umiejsc,c.opis,c.data_dost,c.bilans,c.mag,c.sum_dost,c.sum_potrz,b.ma) a 
+                            where  supp not between -0.001 and 0.001 or dmd not between -0.001 and 0.001 group by indeks,umiejsc,mn,ma)
+                        ) a
+                        group by a.part_no, a.contract;", "Check_order_demands", active_token);
+                    List<Small_upd_demands> list1 = new List<Small_upd_demands>();
+                    List<Small_upd_demands> list2 = new List<Small_upd_demands>();
+                    List<Small_upd_demands> list3 = new List<Small_upd_demands>();
+                    List<Small_upd_demands> list4 = new List<Small_upd_demands>();
+                    int cnt = 0;
+                    foreach(Small_upd_demands item in not_corr_dem)
+                    {
+                        if (cnt == 0)
+                        {
+                            list1.Add(item);
+                        }
+                        else if (cnt == 1) 
+                        {
+                            list2.Add(item);
+                        }
+                        else if (cnt == 2)
+                        {
+                            list3.Add(item);
+                        }
+                        else if (cnt == 3)
+                        {
+                            list4.Add(item);   
+                        }
+                        cnt ++;
+                        if (cnt > 3) { cnt = 0; }
+                    }
+                    Parallel.Invoke(
+                    async () =>
+                    {
+                        Order_Demands order_Demands_except1 = new Order_Demands();
+                        await order_Demands_except1.Update_from_executor_from_list("Check_order_demands1", list1, active_token);
+                        order_Demands_except1 = null;
+                    },
+                    async () =>
+                    {
+                        Order_Demands order_Demands_except2 = new Order_Demands();
+                        await order_Demands_except2.Update_from_executor_from_list("Check_order_demands2", list2,  active_token);
+                        order_Demands_except2 = null;
+                    },
+                    async () =>
+                    {
+                        Order_Demands order_Demands_except3 = new Order_Demands();
+                        await order_Demands_except3.Update_from_executor_from_list("Check_order_demands3", list3, active_token);
+                        order_Demands_except3 = null;
+                    },
+                    async () =>
+                    {
+                        Order_Demands order_Demands_except4 = new Order_Demands();
+                        await order_Demands_except4.Update_from_executor_from_list("Check_order_demands4", list4, active_token);
+                        order_Demands_except4 = null;
+                    });
+
+                    Steps_executor.Wait_for(new string[] { "Check_order_demands", "Check_order_demands1", "Check_order_demands2", "Check_order_demands3", "Check_order_demands4" }, "Validate demands", active_token);
                     Parallel.Invoke(
                     () =>
                     {
@@ -447,5 +533,12 @@ namespace Confirm_server_by_Contracts
             Loger.Srv_stop();
             Steps_executor.cts.Dispose();
         }
+    }
+    public class Small_upd_demands
+    {
+        public string part_no { get; set; }
+        public string  contract {  get; set; }
+        public DateTime min_d { get; set; }
+        public DateTime max_d { get; set;}
     }
 }
