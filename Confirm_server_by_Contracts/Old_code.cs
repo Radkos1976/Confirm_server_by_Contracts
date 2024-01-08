@@ -497,8 +497,8 @@ namespace Confirm_server_by_Contracts
                                                                 cm.Parameters.Add("rw2", NpgsqlTypes.NpgsqlDbType.Varchar).Value = rw[1];
                                                                 cm.Parameters.Add("rw3", NpgsqlTypes.NpgsqlDbType.Varchar).Value = rw[2];
                                                                 cm.Parameters.Add("rw4", NpgsqlTypes.NpgsqlDbType.Varchar).Value = rw[4];
-                                                                await cm.PrepareAsync(cancellationToken);
-                                                                await cm.ExecuteNonQueryAsync(cancellationToken);
+                                                                cm.Prepare();
+                                                                cm.ExecuteNonQuery();
                                                             }
                                                         }
                                                     }
@@ -521,8 +521,8 @@ namespace Confirm_server_by_Contracts
                                                                         cm.Parameters.Add("rw2", NpgsqlTypes.NpgsqlDbType.Varchar).Value = rw[2];
                                                                         cm.Parameters.Add("rw3", NpgsqlTypes.NpgsqlDbType.Varchar).Value = rw[4];
                                                                         cm.Parameters.Add("rw4", NpgsqlTypes.NpgsqlDbType.Varchar).Value = rw[0];
-                                                                        await cm.PrepareAsync(cancellationToken);
-                                                                        await cm.ExecuteNonQueryAsync(cancellationToken);
+                                                                        cm.Prepare();
+                                                                        cm.ExecuteNonQuery();
                                                                     }
                                                                 }
                                                             }

@@ -350,6 +350,7 @@ namespace DB_Conect
         public static string[] Contract_lst {  get; set; }
         public static Dictionary<string, string> Contracts_kalendar { get; set; } = new Dictionary<string, string>();
         public static Dictionary<string, string> Kalendar_eunm { get; set; } = new Dictionary< string, string>();
+        public static string App_name { get; set; }
         private static string Host { get; set; }
         private static int Port { get; set; }
         private static int CommandTimeout { get; set; }
@@ -439,6 +440,7 @@ namespace DB_Conect
                     Database = Database,
                     IncludeErrorDetail = true
                 };
+                
             }
             catch
             {
@@ -462,7 +464,11 @@ namespace DB_Conect
                     {
                         Kalendar_eunm.Add(Kalendar_name, Convert.ToString(Kalendar_eunm.Count() + 1));
                     }
-                }                
+                } 
+                else
+                {
+                    App_name = ApplicationName;
+                }
             }         
             return (Conn_set, Contracts);
         }

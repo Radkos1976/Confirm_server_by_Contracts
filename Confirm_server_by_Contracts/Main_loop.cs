@@ -30,7 +30,14 @@ namespace Confirm_server_by_Contracts
                 {
                     using (NpgsqlCommand cmd = new NpgsqlCommand("select date_fromnow(16);", conB))
                     {
-                        Range_Dat = (DateTime)cmd.ExecuteScalar();
+                        try
+                        {
+                            Range_Dat = (DateTime)cmd.ExecuteScalar();
+                        }
+                        catch
+                        {
+                            Range_Dat = DateTime.Now.AddDays(16);
+                        }
                     }
                 }                
             }
