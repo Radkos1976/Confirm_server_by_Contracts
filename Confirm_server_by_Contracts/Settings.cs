@@ -354,7 +354,7 @@ namespace DB_Conect
         private static int Port { get; set; }
         private static int CommandTimeout { get; set; }
         private static int ConnectionIdleLifetime { get; set; }
-        private static string ApplicationName { get; set; }
+        public static string ApplicationName { get; set; }
         private static string Username { get; set; }
         private static string Password { get; set; }
         private static string Database { get; set; }
@@ -779,11 +779,34 @@ namespace DB_Conect
             if (Log_rek != "") { Srv_stop(); }
             Serw_run = DateTime.Now;
             Log_rek = "Logs Started at " + Serw_run;
+            using (NpgsqlConnection conA = new NpgsqlConnection(Postegresql_conn.Connection_pool["MAIN"].ToString()))
+            {
+                conA.Open();
+                using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                        "UPDATE public.datatbles	" +
+                        "SET start_update=current_timestamp, in_progress=true " +
+                        "WHERE table_name='server_progress'", conA))
+                {
+                    cmd.ExecuteNonQuery();
+                }
+            }
         }
         public static void Srv_stop()
         {
             Save_stat_refr();
             Log_rek = "";
+            using (NpgsqlConnection conA = new NpgsqlConnection(Postegresql_conn.Connection_pool["MAIN"].ToString()))
+            {
+                conA.Open();
+                using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                    "UPDATE public.datatbles " +
+                    "SET last_modify=current_timestamp, in_progress=false,updt_errors=false " +
+                    "WHERE table_name='server_progress'", conA))
+                {
+                    cmd.ExecuteNonQuery();
+                }
+            }
+            Steps_executor.Reset_diary_of_steps();
         }
         private static void Save_stat_refr()
         {
