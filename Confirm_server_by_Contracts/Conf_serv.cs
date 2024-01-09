@@ -12,7 +12,7 @@ namespace Purch_Confirm_server
         
         public Conf_serv()
         {
-            string npA = Postegresql_conn.Connection_pool["MAIN"].ToString();
+            string npA = Postegresql_conn.Connection_pool["CONFIRM_SERVICE"].ToString();
             _timer = new Timer(5000) { AutoReset = true };
             _timer.Elapsed += (sender, eventArgs) =>
             {

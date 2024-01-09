@@ -467,6 +467,20 @@ namespace DB_Conect
                 } 
                 else
                 {
+                    NpgsqlConnectionStringBuilder Windows_service = new NpgsqlConnectionStringBuilder();
+                    Windows_service = new NpgsqlConnectionStringBuilder()
+                    {
+                        Host = Host,
+                        Port = Port,
+                        ConnectionIdleLifetime = ConnectionIdleLifetime,
+                        CommandTimeout = CommandTimeout,
+                        ApplicationName = "CONFIRM_SERVICE",
+                        Username = Username,
+                        Password = Password,
+                        Database = Database,
+                        IncludeErrorDetail = true
+                    };
+                    Connection_pool.Add("CONFIRM_SERVICE", Windows_service);
                     App_name = ApplicationName;
                 }
             }         

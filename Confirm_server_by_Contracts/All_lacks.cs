@@ -23,10 +23,12 @@ namespace Confirm_server_by_Contracts
             async () => {
                 Steps_executor.Register_step("All_lacks");
                 int result = await Update_All_lacks(cancellationToken);                
-                Steps_executor.Wait_for(new string[] { "All_lacks" }, "Validate demands", cancellationToken);
-                Run_query query = new Run_query();
-                result += await query.Execute_in_Postgres(new[] { "REFRESH MATERIALIZED VIEW formatka; " }, "All_lacks", cancellationToken);                
-                query = null;
+                if (Steps_executor.Wait_for(new string[] { "All_lacks" }, "Validate demands", cancellationToken))
+                {
+                    Run_query query = new Run_query();
+                    result += await query.Execute_in_Postgres(new[] { "REFRESH MATERIALIZED VIEW formatka; " }, "All_lacks => REFRESH MATERIALIZED VIEW formatka", cancellationToken);
+                    query = null;
+                }                
             },
             async () => {
                 Steps_executor.Register_step("Lack_bil");
@@ -41,16 +43,19 @@ namespace Confirm_server_by_Contracts
 
         public async Task<int> Update_All_lacks(CancellationToken cancellationToken)
         {
-            int result = await rw.PSTRG_Changes_to_dataTable(
-                await rw.Changes(
-                    await Get_source_for_calc(cancellationToken),
-                    await New_data_for_calc(cancellationToken), 
+            List<Order_Demands_row> source = await Get_source_for_calc(cancellationToken);
+            List<Order_Demands_row> sourceNEW = await New_data_for_calc(cancellationToken);
+            Changes_List < Order_Demands_row >  changes_List = await rw.Changes(
+                    source,
+                    sourceNEW,
                     new[] { "dop", "dop_lin", "int_ord", "line_no", "rel_no" },
                     new[] { "dop", "dop_lin", "int_ord", "line_no", "rel_no", "id" },
                     new[] { "id" },
                     "All_lacks",
                     cancellationToken
-                    ),
+                    );
+            int result = await rw.PSTRG_Changes_to_dataTable(
+                changes_List ,
                 "ord_lack",
                 new[] { "id" }, 
                 null, 
@@ -58,21 +63,27 @@ namespace Confirm_server_by_Contracts
                 "All_lacks", 
                 cancellationToken 
                 );
-            Steps_executor.End_step("All_lacks");
+            if (result == 0)
+            {
+                Steps_executor.End_step("All_lacks");
+            }            
             return result;
         }
         public async Task<int> Update_Lack_bil(CancellationToken cancellationToken)
         {
-            int result = await rw.PSTRG_Changes_to_dataTable(
-                await rw.Changes(
-                    await Get_source_for_bil(cancellationToken),
-                    await New_data_for_bil(cancellationToken),
+            List<Order_Demands_row> New = await Get_source_for_bil(cancellationToken);
+            List<Order_Demands_row> Old = await New_data_for_bil(cancellationToken);
+            Changes_List<Order_Demands_row> changes_List = await rw.Changes(
+                    New,
+                    Old,
                     new[] { "dop", "dop_lin", "int_ord", "line_no", "rel_no" },
                     new[] { "dop", "dop_lin", "int_ord", "line_no", "rel_no", "id" },
                     new[] { "id" },
                     "Lack_bil",
                     cancellationToken
-                    ),
+                    );
+            int result = await rw.PSTRG_Changes_to_dataTable(
+                changes_List,
                 "ord_lack_bil",
                 new[] { "id" },
                 null,
@@ -80,7 +91,10 @@ namespace Confirm_server_by_Contracts
                 "Lack_bil",
                 cancellationToken
                 );
-            Steps_executor.End_step("Lack_bil");
+            if (result == 0)
+            {
+                Steps_executor.End_step("Lack_bil");
+            }            
             return result;
         }
         private Task<List<Order_Demands_row>> Rows_on_lack(List<Orders_lacks> _lacks, CancellationToken cancellationToken)
