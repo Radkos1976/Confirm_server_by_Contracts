@@ -796,37 +796,51 @@ namespace DB_Conect
         }
         public static void Srv_start()
         {
-            if (Log_rek != "") { Srv_stop(); }
-            Serw_run = DateTime.Now;
-            Log_rek = "Logs Started at " + Serw_run;
-            using (NpgsqlConnection conA = new NpgsqlConnection(Postegresql_conn.Connection_pool["MAIN"].ToString()))
+            try
             {
-                conA.Open();
-                using (NpgsqlCommand cmd = new NpgsqlCommand("" +
-                        "UPDATE public.datatbles	" +
-                        "SET start_update=current_timestamp, in_progress=true " +
-                        "WHERE table_name='server_progress'", conA))
+                if (Log_rek != "") { Srv_stop(); }
+                Serw_run = DateTime.Now;
+                Log_rek = "Logs Started at " + Serw_run;
+                using (NpgsqlConnection conA = new NpgsqlConnection(Postegresql_conn.Connection_pool["MAIN"].ToString()))
                 {
-                    cmd.ExecuteNonQuery();
+                    conA.Open();
+                    using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                            "UPDATE public.datatbles	" +
+                            "SET start_update=current_timestamp, in_progress=true " +
+                            "WHERE table_name='server_progress'", conA))
+                    {
+                        cmd.ExecuteNonQuery();
+                    }
+                    conA.Close();
                 }
             }
+            catch 
+            {
+                Loger.Log("Error Srv_start");
+            }
+           
         }
         public static void Srv_stop()
         {
-            Save_stat_refr();
-            Log_rek = "";
-            using (NpgsqlConnection conA = new NpgsqlConnection(Postegresql_conn.Connection_pool["MAIN"].ToString()))
+            try
             {
-                conA.Open();
-                using (NpgsqlCommand cmd = new NpgsqlCommand("" +
-                    "UPDATE public.datatbles " +
-                    "SET last_modify=current_timestamp, in_progress=false,updt_errors=false " +
-                    "WHERE table_name='server_progress'", conA))
+                using (NpgsqlConnection conA = new NpgsqlConnection(Postegresql_conn.Connection_pool["MAIN"].ToString()))
                 {
-                    cmd.ExecuteNonQuery();
+                    conA.Open();
+                    using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                        "UPDATE public.datatbles " +
+                        "SET last_modify=current_timestamp, in_progress=false,updt_errors=false " +
+                        "WHERE table_name='server_progress'", conA))
+                    {
+                        cmd.ExecuteNonQuery();
+                    }
                 }
+                Save_stat_refr();
+                Log_rek = "";
+                Steps_executor.Reset_diary_of_steps();
+                System.Threading.Thread.Sleep(2000);
             }
-            Steps_executor.Reset_diary_of_steps();
+            catch { Loger.Log("Error Srv_stop"); }            
         }
         private static void Save_stat_refr()
         {
