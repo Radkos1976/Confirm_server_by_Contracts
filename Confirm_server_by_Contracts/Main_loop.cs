@@ -253,6 +253,10 @@ namespace Confirm_server_by_Contracts
                                     WHERE regexp_like(part_no, '{0}')
                                 ) b 
                                 where b.part_no=a.indeks and b.work_day between a.data_braku and a.data_dost group by a.id) b,public.data c where b.id=c.id and b.refr!=c.widoczny_od_dnia) b WHERE a.id=b.id;", regex)
+                        ,
+                        @"UPDATE public.datatbles 
+                            SET last_modify=current_timestamp, in_progress=false,updt_errors=false 
+                            WHERE table_name='data'"
                         },
                         string.Format("{0}:{1}", Task_name, "Buyer_info"), cancellationToken);
                     Zak_changes = null;
