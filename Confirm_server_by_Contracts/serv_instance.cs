@@ -71,9 +71,8 @@ namespace Confirm_server_by_Contracts
                         inventory_616_in_PSTGR = null;
                         pstgr_presets = null;
                     });
-
-                    bool end_with_no_err1 = Steps_executor.Wait_for(new string[] { "Demands 616 ",  "Inventory part 616 presets " }, "Inventory part 616 ", active_token);
-                    if (end_with_no_err1)
+                    
+                    if (Steps_executor.Wait_for(new string[] { "Demands 616 ",  "Inventory part 616 presets " }, "Inventory part 616 ", active_token))
                     {
                         Inventory_part inventory_616 = new Inventory_part("^616.*", false, part_616.limit_part_no);
                         part_616 = null;
@@ -95,9 +94,8 @@ namespace Confirm_server_by_Contracts
                                 active_token);
                             Steps_executor.End_step("Inventory part 616 ");
                         });
-                        inventory_616 = null;
-                        bool end_with_no_err = Steps_executor.Wait_for(new string[] { "Demands 616 ", "Inventory part 616 " }, "Main_loop 616 ", active_token);
-                        if (end_with_no_err)
+                        inventory_616 = null;                        
+                        if (Steps_executor.Wait_for(new string[] { "Demands 616 ", "Inventory part 616 " }, "Main_loop 616 ", active_token))
                         {
                             Steps_executor.Register_step("Main_loop 616 ");
                             Main_loop main_Loop = new Main_loop();
@@ -164,8 +162,8 @@ namespace Confirm_server_by_Contracts
                         inventory_except_616 = null;
                         pstgr = null;
                     });
-                    bool end_with_no_err = Steps_executor.Wait_for(new string[] { "Demands except 616 ", "Inventory part except 616 " }, "Main_loop except 616 ", active_token);
-                    if (end_with_no_err)
+                    
+                    if (Steps_executor.Wait_for(new string[] { "Demands except 616 ", "Inventory part except 616 " }, "Main_loop except 616 ", active_token))
                     {
                         Steps_executor.Register_step("Main_loop except 616 ");
                         Main_loop main_Loop = new Main_loop();
@@ -187,14 +185,13 @@ namespace Confirm_server_by_Contracts
                     }
                 }
             });
-            Steps_executor.Register_step("Prepare data for Reports");
-            bool with_no_err = Steps_executor.Wait_for(new string[] { "Main_loop except 616 ", "Main_loop 616 ",
+            Steps_executor.Register_step("Prepare data for Reports");            
+
+            if (Steps_executor.Wait_for(new string[] { "Main_loop except 616 ", "Main_loop 616 ",
                 "Main_loop except 616 Executor1", "Main_loop except 616 Executor2" , "Main_loop except 616 Executor3",
                 "Main_loop first 616 Executor1", "Main_loop first 616 Executor2", "Main_loop first 616 Executor3",
                 "Main_loop second 616 Executor1", "Main_loop second 616 Executor2", "Main_loop second 616 Executor3",
-                "Calendar", "cust_ord"}, "Prepare data for Reports", active_token);
-
-            if (with_no_err)
+                "Calendar", "cust_ord"}, "Prepare data for Reports", active_token))
             {
                 if (Dataset_executor.Count() > 0)
                 {
@@ -303,9 +300,8 @@ namespace Confirm_server_by_Contracts
                     ) as up 
                     where demands.id=up.id;" }, "Refresh Demand and Order_demands", active_token);
                 });
-                Steps_executor.Register_step("Validate demands");
-                with_no_err = Steps_executor.Wait_for(new string[] { "Refresh bilans_val", "Refresh Demand and Order_demands" }, "Validate demands", active_token);
-                if (with_no_err)
+                Steps_executor.Register_step("Validate demands");                
+                if (Steps_executor.Wait_for(new string[] { "Refresh bilans_val", "Refresh Demand and Order_demands" }, "Validate demands", active_token))
                 {
                     Steps_executor.Register_step("Check_order_demands");
                     // check order_demands for duplicated data amt wrong balances
@@ -391,21 +387,26 @@ namespace Confirm_server_by_Contracts
                         order_Demands_except4 = null;
                     });
                     Steps_executor.End_step("Check_order_demands");
-                    Steps_executor.Wait_for(new string[] { "Check_order_demands", "Check_order_demands1", "Check_order_demands2", "Check_order_demands3", "Check_order_demands4" }, "Validate demands", active_token);
-                    Parallel.Invoke(
-                    () =>
+                    if (Steps_executor.Wait_for(new string[] { "Check_order_demands", "Check_order_demands1", "Check_order_demands2", "Check_order_demands3", "Check_order_demands4" }, "Validate demands", active_token))
                     {
-                        Lack_report lack_Report = new Lack_report(active_token);
-                        lack_Report = null;
-                        Steps_executor.Wait_for(new string[] { "Lack_report" }, "Validate demands", active_token);
-                        All_lacks all_Lacks = new All_lacks(active_token);
-                        all_Lacks = null;
-                    },
-                    () =>
-                    {
-                        Calculate_cust_ord calculate_Cust_Ord = new Calculate_cust_ord(active_token);
-                        calculate_Cust_Ord = null;
-                    });
+                        Parallel.Invoke(
+                        () =>
+                        {
+                            Lack_report lack_Report = new Lack_report(active_token);
+                            lack_Report = null;
+                            if (Steps_executor.Wait_for(new string[] { "Lack_report" }, "Validate demands", active_token))
+                            {
+                                All_lacks all_Lacks = new All_lacks(active_token);
+                                all_Lacks = null;
+                            }                           
+                        },
+                        () =>
+                        {
+                            Calculate_cust_ord calculate_Cust_Ord = new Calculate_cust_ord(active_token);
+                            calculate_Cust_Ord = null;
+                        });
+                    }
+                    
                 }
                 Steps_executor.Register_step("Mail");
                 if (Steps_executor.Wait_for(new string[] { "All_lacks", "Lack_report", "Lack_report1", "Lack_report2", "Update To_Mail", "Lack_bil", "Calculate_cust_order" }, "Mail", active_token))

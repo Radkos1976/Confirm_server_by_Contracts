@@ -33,10 +33,12 @@ namespace Confirm_server_by_Contracts
             async () => {
                 Steps_executor.Register_step("Lack_bil");
                 int result = await Update_Lack_bil(cancellationToken);                
-                Steps_executor.Wait_for(new string[] { "Lack_bil" }, "Validate demands", cancellationToken);
-                Run_query query = new Run_query();
-                result = await query.Execute_in_Postgres(new[] { "REFRESH MATERIALIZED VIEW formatka_bil; " }, "Lack_bil", cancellationToken);                
-                query = null;
+                if (Steps_executor.Wait_for(new string[] { "Lack_bil" }, "Validate demands", cancellationToken))
+                {
+                    Run_query query = new Run_query();
+                    result = await query.Execute_in_Postgres(new[] { "REFRESH MATERIALIZED VIEW formatka_bil; " }, "Lack_bil", cancellationToken);
+                    query = null;
+                }                
             });
         }
             
