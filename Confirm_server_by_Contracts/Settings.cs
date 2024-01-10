@@ -494,6 +494,7 @@ namespace DB_Conect
     {
         private static readonly ConcurrentDictionary<string, string, Tuple<DateTime?, DateTime?>> wait_task = new ConcurrentDictionary<string, string, Tuple<DateTime?, DateTime?>>();
         private static readonly ConcurrentDictionary<string, string, Tuple<DateTime?, DateTime?>> on_work_task = new ConcurrentDictionary<string, string, Tuple<DateTime?, DateTime?>>();
+        private static readonly int use_resource = 0;
         public static void Add_task(string part_no, string contract, DateTime Start, DateTime End)
         {
             try
@@ -506,7 +507,11 @@ namespace DB_Conect
             }            
         }
         public static (string, string, Tuple<DateTime?, DateTime?>) Run_next ()
-        {           
+        {
+            while (0 != Interlocked.Exchange(ref use_resource, 1))
+            {
+                System.Threading.Thread.Sleep(20);
+            }
             if (wait_task.Count > 0)
             {
                 bool chk = false;
@@ -550,9 +555,11 @@ namespace DB_Conect
                         range = new Tuple<DateTime?, DateTime?>((DateTime?)null, (DateTime?)null);
                     }
 
-                }            
+                }
+                Interlocked.Exchange(ref use_resource, 0)
                 return (part_no, contract, range);
             }
+            Interlocked.Exchange(ref use_resource, 0)
             return ("", "", new Tuple<DateTime?, DateTime?>((DateTime?)null, (DateTime?)null));
         }
         public static void Clear()
@@ -743,26 +750,33 @@ namespace DB_Conect
     {
         private static readonly int max_connections = Oracle_conn.Limit_oracle_conn;
         private static int count = 0;
+        private static int use_resource = 0;
         static Count_oracle_conn()
         {
             max_connections = Oracle_conn.Limit_oracle_conn;
         }
+
         /// <summary>
         /// Freezes task For limit max_connections Const
         /// </summary>
         public static void Wait_for_Oracle(CancellationToken cancellationToken)
         {
+            while (0!=Interlocked.Exchange(ref use_resource, 1))
+            {
+                System.Threading.Thread.Sleep(250);
+            }
             while (count >= max_connections && !cancellationToken.IsCancellationRequested)
             {
                 System.Threading.Thread.Sleep(250);
-            }            
-            count++;
-            System.Threading.Thread.Sleep(50);
+            }
+            Interlocked.Increment(ref count);
+            Interlocked.Exchange(ref use_resource, 0)
         }
 
         public static void Oracle_conn_ended()
         {
-            count--;
+            Interlocked.Decrement(ref count);
+            //count--;
             System.Threading.Thread.Sleep(50);
         }
 
