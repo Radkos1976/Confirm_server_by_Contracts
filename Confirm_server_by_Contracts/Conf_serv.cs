@@ -13,7 +13,7 @@ namespace Purch_Confirm_server
         public Conf_serv()
         {
             string npA = Postegresql_conn.Connection_pool["CONFIRM_SERVICE"].ToString();
-            _timer = new Timer(5000) { AutoReset = true };
+            _timer = new Timer(10000) { AutoReset = true };
             _timer.Elapsed += (sender, eventArgs) =>
             {
                 try
@@ -57,14 +57,13 @@ namespace Purch_Confirm_server
                         Serv_instance srv = new Serv_instance();                        
                         srv.Start_calc();
                         Steps_executor.Reset_diary_of_steps();
-                        _timer.Start();
                         srv = null;
+                        _timer.Start();                        
                     }
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e);
-                    Steps_executor.Reset_diary_of_steps();
+                    Console.WriteLine(e);                    
                 }
             };
 

@@ -37,6 +37,7 @@ namespace Confirm_server_by_Contracts
         }
         public async Task<int> Update_Lack_reports(CancellationToken cancellationToken)
         {
+
             int result =  await rw.PSTRG_Changes_to_dataTable(
                 await rw.Changes(
                     await Old_data(cancellationToken),
