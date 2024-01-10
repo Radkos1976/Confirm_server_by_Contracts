@@ -489,6 +489,10 @@ namespace Confirm_server_by_Contracts
                                             cmd.Prepare();
                                             foreach (DataRow rw in nullmail)
                                             {
+                                                if (cancellationToken.IsCancellationRequested) 
+                                                {
+                                                    break;
+                                                }
                                                 using (DataTable reko = new DataTable())
                                                 {
                                                     cmd.Parameters[0].Value = rw[0];
@@ -652,6 +656,7 @@ namespace Confirm_server_by_Contracts
                                         comm.Prepare();
                                         foreach (DataRow rek in conf_addr.Rows)
                                         {
+                                            if (cancellationToken.IsCancellationRequested) { break; }
                                             if (!rek.IsNull("mail"))
                                             {
                                                 if (rek["mail"].ToString().Length > 5)
@@ -819,6 +824,7 @@ namespace Confirm_server_by_Contracts
                         cmd.Prepare();
                         foreach (DataRow erw in rek)
                         {
+                            if (cancellationToken.IsCancellationRequested) { break; }
                             cmd.Parameters[0].Value = erw[0];
                             using (NpgsqlDataReader re = cmd.ExecuteReader())
                             {
@@ -905,6 +911,7 @@ namespace Confirm_server_by_Contracts
                         cmd.Prepare();
                         foreach (DataRow erw in rek)
                         {
+                            if (cancellationToken.IsCancellationRequested) { break; }
                             cmd.Parameters[0].Value = erw[0];
                             using (NpgsqlDataReader re = cmd.ExecuteReader())
                             {
@@ -1081,6 +1088,7 @@ namespace Confirm_server_by_Contracts
                         cmd.Prepare();
                         foreach (DataRow erw in rek)
                         {
+                            if (cancellationToken.IsCancellationRequested) { break; }
                             cmd.Parameters[0].Value = erw[0];
                             using (NpgsqlDataReader re = cmd.ExecuteReader())
                             {
@@ -1159,6 +1167,7 @@ namespace Confirm_server_by_Contracts
                         cmd.Prepare();
                         foreach (DataRow erw in rek)
                         {
+                            if (cancellationToken.IsCancellationRequested) { break; }
                             cmd.Parameters[0].Value = erw[0];
                             using (NpgsqlDataReader re = cmd.ExecuteReader())
                             {
@@ -1241,6 +1250,7 @@ namespace Confirm_server_by_Contracts
                         cmd.Prepare();
                         foreach (DataRow erw in rek)
                         {
+                            if (cancellationToken.IsCancellationRequested) { break; }
                             cmd.Parameters[0].Value = erw[0];
                             using (NpgsqlDataReader re = cmd.ExecuteReader())
                             {
@@ -1321,6 +1331,7 @@ namespace Confirm_server_by_Contracts
                         cmd.Prepare();
                         foreach (DataRow erw in rek)
                         {
+                            if (cancellationToken.IsCancellationRequested) { break; }
                             cmd.Parameters[0].Value = erw[0];
                             using (NpgsqlDataReader re = cmd.ExecuteReader())
                             {
