@@ -412,6 +412,18 @@ namespace Confirm_server_by_Contracts
                             using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                             {
                                 conA.Open();
+                                using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                                "select cast(count(table_name) as integer) busy " +
+                                "from public.datatbles " +
+                                "where  table_name='TR_sendm' and in_progress=true", conA))
+                                {
+                                    int busy_il = 1;
+                                    while (busy_il > 0)
+                                    {
+                                        busy_il = Convert.ToInt16(cmd.ExecuteScalar());
+                                        if (busy_il > 0) { System.Threading.Thread.Sleep(250); }
+                                    }
+                                }
 
                                 using (NpgsqlCommand cmd = new NpgsqlCommand("" +
                                     "DELETE FROM public.conf_mail_null " +
@@ -1378,8 +1390,22 @@ namespace Confirm_server_by_Contracts
                         conA.Open();
                         Steps_executor.Register_step("TR_sendm");
                         Steps_executor.Register_step("send_mail");
+                        using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                            "UPDATE public.datatbles " +
+                            "SET start_update=current_timestamp, in_progress=true,updt_errors=false " +
+                            "WHERE table_name='TR_sendm'", conA))
+                        {
+                            cmd.ExecuteNonQuery();
+                        }
                         using (NpgsqlTransaction TR_sendm = conA.BeginTransaction())
-                        {                           
+                        {
+                            using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                                "UPDATE public.datatbles " +
+                                "SET start_update=current_timestamp, in_progress=true,updt_errors=false " +
+                                "WHERE table_name='send_mail'", conA))
+                            {
+                                cmd.ExecuteNonQuery();
+                            }
                             using (NpgsqlCommand cmd = new NpgsqlCommand("" +
                                 "delete from send_mail where dop||'_'||mail||'_'||typ in (select a.dop||'_'||a.mail||'_'||a.typ " +
                                 "from " +
@@ -1398,8 +1424,27 @@ namespace Confirm_server_by_Contracts
                             {
                                 cmd.ExecuteNonQuery();
                             }
+                            using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                                "UPDATE public.datatbles " +
+                                "SET  last_modify=current_timestamp,in_progress=false,updt_errors=false " +
+                                "WHERE table_name='TR_sendm'", conA))
+                            {
+                                cmd.ExecuteNonQuery();
+                            }
                             TR_sendm.Commit();
                             Steps_executor.End_step("TR_sendm");
+                        }
+                        using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                            "select cast(count(table_name) as integer) busy " +
+                            "from public.datatbles " +
+                            "where  table_name='TR_sendm' and in_progress=true", conA))
+                        {
+                            int busy_il = 1;
+                            while (busy_il > 0)
+                            {
+                                busy_il = Convert.ToInt16(cmd.ExecuteScalar());
+                                if (busy_il > 0) { System.Threading.Thread.Sleep(250); }
+                            }
                         }
                         if (Steps_executor.Wait_for(new string[] { "TR_sendm" }, "Confirm_ORd", cancellationToken))
                         {
@@ -1452,10 +1497,34 @@ namespace Confirm_server_by_Contracts
                     }
                     
                 }
+                using (NpgsqlConnection conA = new NpgsqlConnection(npC))
+                {
+                    await conA.OpenAsync();
+                    using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                        "UPDATE public.datatbles " +
+                        "SET  last_modify=current_timestamp,in_progress=false,updt_errors=false " +
+                        "WHERE table_name='send_mail'", conA))
+                    {
+                        cmd.ExecuteNonQuery();
+                    }
+                    conA.Close();
+                }
                 return 0;
             }
             catch (Exception e)
-            {               
+            {
+                using (NpgsqlConnection conA = new NpgsqlConnection(npC))
+                {
+                    await conA.OpenAsync();
+                    using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                        "UPDATE public.datatbles " +
+                        "SET  last_modify=current_timestamp,in_progress=false,updt_errors=true " +
+                        "WHERE table_name='send_mail'", conA))
+                    {
+                        cmd.ExecuteNonQuery();
+                    }
+                    conA.Close();
+                }
                 Loger.Log("Error => Błąd w wysłaniu informacji o przepotwierdzeniach:" + e);
                 Steps_executor.Step_error("send_mail");
                 return 1;

@@ -1,5 +1,6 @@
 ﻿using Confirm_server_by_Contracts;
 using DB_Conect;
+using Npgsql;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -402,8 +403,20 @@ namespace Confirm_server_by_Contracts
                         },
                         () =>
                         {
+                            using (NpgsqlConnection conA = new NpgsqlConnection(Postegresql_conn.Connection_pool["MAIN"].ToString()))
+                            {
+                                conA.Open();
+                                using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                                    "UPDATE public.datatbles	" +
+                                    "SET start_update=current_timestamp, in_progress=true " +
+                                    "WHERE substring(table_name,1,7)='cal_ord'", conA))
+                                {
+                                    cmd.ExecuteNonQuery();
+                                }
+                            }
                             Calculate_cust_ord calculate_Cust_Ord = new Calculate_cust_ord(active_token);
                             calculate_Cust_Ord = null;
+
                         });
                     }
                     
@@ -520,12 +533,30 @@ namespace Confirm_server_by_Contracts
                         "DELETE FROM public.mail WHERE cust_id not in (select id from public.cust_ord)"
                         ,
                         "DELETE FROM public.mail WHERE cust_id in (select a.cust_id from mail a left join to_mail b on b.cust_id=a.cust_id where b.cust_id is null and (is_for_mail(a.status_informacji)=false or a.status_informacji='POPRAWIĆ'))",
+                        "UPDATE public.datatbles SET last_modify=current_timestamp, in_progress=false,updt_errors=false WHERE substring(table_name,1,7)='cal_ord'"
                         }, "Mail", active_token);
                     
 
                     Steps_executor.Register_step("Send_mail");
                     if (Steps_executor.Wait_for(new string[] { "Mail",  }, "Send_mail", active_token))
                     {
+                        using (NpgsqlConnection conA = new NpgsqlConnection(Postegresql_conn.Connection_pool["MAIN"].ToString()))
+                        {
+                            await conA.OpenAsync();
+                            using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                                "select cast(count(table_name) as integer) busy " +
+                                "from public.datatbles " +
+                                "where substring(table_name,1,7)='cal_ord' and in_progress=true", conA))
+                            {
+                                int busy_il = 1;
+                                while (busy_il > 0)
+                                {
+                                    busy_il = Convert.ToInt16(cmd.ExecuteScalar());
+                                    if (busy_il > 0) { System.Threading.Thread.Sleep(250); }
+                                }
+                            }
+                            conA.Close();
+                        }
                         Old_code old_Code = new Old_code();
                         await old_Code.Modify_prod_date(active_token);
                     }
