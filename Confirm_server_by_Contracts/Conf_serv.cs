@@ -11,13 +11,13 @@ namespace Purch_Confirm_server
         readonly Timer _timer;
         
         public Conf_serv()
-        {
-            string npA = Postegresql_conn.Connection_pool["CONFIRM_SERVICE"].ToString();
+        {            
             _timer = new Timer(10000) { AutoReset = true };
             _timer.Elapsed += (sender, eventArgs) =>
             {
                 try
                 {
+                    string npA = Postegresql_conn.Connection_pool["CONFIRM_SERVICE"].ToString();
                     int ser_run, cnt_serw = 0;
                     using (NpgsqlConnection conA = new NpgsqlConnection(npA))
                     {
@@ -71,27 +71,31 @@ namespace Purch_Confirm_server
         public void Start() { _timer.Start(); }
         public void Stop()
         {
-            string npA = Postegresql_conn.Connection_pool["MAIN"].ToString();
-            using (NpgsqlConnection conA = new NpgsqlConnection(npA))
+            try
             {
-                conA.Open();
-                using (NpgsqlCommand cmd = new NpgsqlCommand("select cast(count(table_name) as integer) busy  from datatbles where table_name='server_progress' and in_progress=true", conA))
+                string npA = Postegresql_conn.Connection_pool["MAIN"].ToString();
+                using (NpgsqlConnection conA = new NpgsqlConnection(npA))
                 {
-                    int busy_il = 1;
-                    while (busy_il > 0)
+                    conA.Open();
+                    using (NpgsqlCommand cmd = new NpgsqlCommand("select cast(count(table_name) as integer) busy  from datatbles where table_name='server_progress' and in_progress=true", conA))
                     {
-                        busy_il = Convert.ToInt16(cmd.ExecuteScalar());
-                        if (busy_il > 0) {
-                            if (!Steps_executor.cts.IsCancellationRequested)
+                        int busy_il = 1;
+                        while (busy_il > 0 && !Steps_executor.cts.IsCancellationRequested)
+                        {
+                            busy_il = Convert.ToInt16(cmd.ExecuteScalar());
+                            if (busy_il > 0)
                             {
                                 Steps_executor.cts.Cancel();
-                            }                            
-                            System.Threading.Thread.Sleep(1000); 
+                                System.Threading.Thread.Sleep(100);
+                            }
                         }
                     }
                 }
             }
-            _timer.Stop();
+            finally 
+            { 
+                _timer.Stop(); 
+            } 
         }
 
     }

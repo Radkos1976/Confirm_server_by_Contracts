@@ -559,9 +559,10 @@ namespace Confirm_server_by_Contracts
                         }
                         Old_code old_Code = new Old_code();
                         await old_Code.Modify_prod_date(active_token);
+                        Steps_executor.Wait_for(new string[] { "Modify_prod_date", "send_mail" }, "Service_stop", active_token);
                     }
                 }
-            }
+            }            
             Loger.Srv_stop();
             Steps_executor.cts.Dispose();
         }

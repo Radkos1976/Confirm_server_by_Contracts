@@ -169,6 +169,7 @@ namespace Confirm_server_by_Contracts
         {
             try
             {
+                Steps_executor.Register_step("Modify_prod_date");
                 int ra = await Send_mail_lack(cancellationToken);
                 Loger.Log("Start modyfing prod date in ORD_DOP");
                 if (Oracle_conn.Set_Planned_Manuf_Date)
@@ -390,6 +391,7 @@ namespace Confirm_server_by_Contracts
                         }
                     }
                 }
+                Steps_executor.End_step("Modify_prod_date");
                 Loger.Log("END modyfing prod date in ORD_DOP");
                 return 0;
             }
