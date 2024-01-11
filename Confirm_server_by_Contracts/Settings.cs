@@ -763,7 +763,7 @@ namespace DB_Conect
         {
             while (0!=Interlocked.Exchange(ref use_resource, 1))
             {
-                System.Threading.Thread.Sleep(250);
+                System.Threading.Thread.Sleep(50);
             }
             while (count >= max_connections && !cancellationToken.IsCancellationRequested)
             {
