@@ -8,8 +8,7 @@ namespace Purch_Confirm_server
 {
     public class Conf_serv
     {
-        readonly Timer _timer;
-        
+        readonly Timer _timer;        
         public Conf_serv()
         {            
             _timer = new Timer(10000) { AutoReset = true };
