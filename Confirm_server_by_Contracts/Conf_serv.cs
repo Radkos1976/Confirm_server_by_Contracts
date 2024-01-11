@@ -63,7 +63,10 @@ namespace Purch_Confirm_server
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e);                    
+                    _timer.Stop();
+                    Console.WriteLine(e);
+                    System.Threading.Thread.Sleep(1000);
+                    _timer.Start();
                 }
             };
 
