@@ -564,7 +564,7 @@ namespace Confirm_server_by_Contracts
                 }
             }            
             Loger.Srv_stop();
-            Steps_executor.cts.Dispose();
+            //Steps_executor.cts.Dispose();
         }
     }
     public class Small_upd_demands: IComparable<Small_upd_demands>, IEquatable<Small_upd_demands>
