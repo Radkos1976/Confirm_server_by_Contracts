@@ -494,7 +494,7 @@ namespace DB_Conect
     {
         private static readonly ConcurrentDictionary<string, string, Tuple<DateTime?, DateTime?>> wait_task = new ConcurrentDictionary<string, string, Tuple<DateTime?, DateTime?>>();
         private static readonly ConcurrentDictionary<string, string, Tuple<DateTime?, DateTime?>> on_work_task = new ConcurrentDictionary<string, string, Tuple<DateTime?, DateTime?>>();
-        private static readonly int use_resource = 0;
+        private static int use_resource = 0;
         public static void Add_task(string part_no, string contract, DateTime Start, DateTime End)
         {
             try
@@ -556,10 +556,10 @@ namespace DB_Conect
                     }
 
                 }
-                Interlocked.Exchange(ref use_resource, 0)
+                Interlocked.Exchange(ref use_resource, 0);
                 return (part_no, contract, range);
             }
-            Interlocked.Exchange(ref use_resource, 0)
+            Interlocked.Exchange(ref use_resource, 0);
             return ("", "", new Tuple<DateTime?, DateTime?>((DateTime?)null, (DateTime?)null));
         }
         public static void Clear()
@@ -770,7 +770,7 @@ namespace DB_Conect
                 System.Threading.Thread.Sleep(250);
             }
             Interlocked.Increment(ref count);
-            Interlocked.Exchange(ref use_resource, 0)
+            Interlocked.Exchange(ref use_resource, 0);
         }
 
         public static void Oracle_conn_ended()
