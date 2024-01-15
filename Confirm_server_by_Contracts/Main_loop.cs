@@ -167,6 +167,9 @@ namespace Confirm_server_by_Contracts
                 async () =>
                 {
                     Steps_executor.Register_step(string.Format("{0}:{1}", Task_name, "Buyer_info"));
+                    Run_query query = new Run_query();
+                    await query.Execute_in_Postgres(new[] {
+                        string.Format("UPDATE public.datatbles SET start_update=current_timestamp, in_progress=true WHERE table_name='{0}'", Task_name) }, string.Format("Start {0}",Task_name), cancellationToken);
                     SourceDataSet = await Limit_length(await rw.Get_PSTGR("" +
                         string.Format(@"SELECT * FROM public.data WHERE regexp_like(indeks, '{0}')", regex),
                         string.Format("{0}:{1}", Task_name, "Buyer_info"), cancellationToken));
@@ -252,13 +255,31 @@ namespace Confirm_server_by_Contracts
                                     from demands
                                     WHERE regexp_like(part_no, '{0}')
                                 ) b 
-                                where b.part_no=a.indeks and b.work_day between a.data_braku and a.data_dost group by a.id) b,public.data c where b.id=c.id and b.refr!=c.widoczny_od_dnia) b WHERE a.id=b.id;", regex)
+                                where b.part_no=a.indeks and b.work_day between a.data_braku and a.data_dost group by a.id) b,
+                                public.data c where b.id=c.id and b.refr!=c.widoczny_od_dnia) b WHERE a.id=b.id;", regex)
                         ,
-                        @"UPDATE public.datatbles 
+                        string.Format(@"UPDATE public.datatbles 
                             SET last_modify=current_timestamp, in_progress=false,updt_errors=false 
-                            WHERE table_name='data'"
+                            WHERE table_name='{0}'", Task_name)
                         },
                         string.Format("{0}:{1}", Task_name, "Buyer_info"), cancellationToken);
+                    using (NpgsqlConnection conA = new NpgsqlConnection(Postegresql_conn.Connection_pool["MAIN"].ToString()))
+                    {
+                        await conA.OpenAsync();
+                        using (NpgsqlCommand cmd = new NpgsqlCommand(
+                            string.Format(@"select cast(count(table_name) as integer) busy 
+                            from public.datatbles 
+                            where table_name='{0}' and in_progress=true", Task_name), conA))
+                        {
+                            int busy_il = 1;
+                            while (busy_il > 0)
+                            {
+                                busy_il = Convert.ToInt16(cmd.ExecuteScalar());
+                                if (busy_il > 0) { System.Threading.Thread.Sleep(250); }
+                            }
+                        }
+                        conA.Close();
+                    }
                     Zak_changes = null;
                     Steps_executor.End_step(string.Format("{0}:{1}", Task_name, "Buyer_info"));
                 });
