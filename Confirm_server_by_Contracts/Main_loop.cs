@@ -261,6 +261,10 @@ namespace Confirm_server_by_Contracts
                         string.Format(@"UPDATE public.datatbles 
                             SET last_modify=current_timestamp, in_progress=false,updt_errors=false 
                             WHERE table_name='{0}'", Task_name)
+                        ,
+                        @"UPDATE public.datatbles 
+                            SET last_modify=current_timestamp, in_progress=false,updt_errors=false 
+                            WHERE table_name='data'"
                         },
                         string.Format("{0}:{1}", Task_name, "Buyer_info"), cancellationToken);
                     using (NpgsqlConnection conA = new NpgsqlConnection(Postegresql_conn.Connection_pool["MAIN"].ToString()))
