@@ -296,8 +296,8 @@ namespace Confirm_server_by_Contracts
                                             }
                                             catch
                                             {
-                                                //int check_err = await Kick_off_err_orders((int)rek["dop"], (DateTime)rek["prod"]);
-                                                int check_err = 1;
+                                                int check_err = await Kick_off_err_orders((int)rek["dop"], (DateTime)rek["prod"]);
+                                                //int check_err = 1;
                                                 if (check_err == 1)
                                                 {
                                                     rek.BeginEdit();
