@@ -202,10 +202,15 @@ namespace Confirm_server_by_Contracts
                 Dataset_executor.Clear();
 
                 Run_query query = new Run_query();
+                await query.Execute_in_Postgres(new[] { 
+                    "UPDATE public.datatbles SET start_update=current_timestamp, in_progress=true WHERE table_name='bil_val'",
+                    "UPDATE public.datatbles SET start_update=current_timestamp, in_progress=true WHERE table_name='ord_dem'"
+                }, "Wait point Demand and Order_demands", active_token);
                 Parallel.Invoke(
                 async () =>  {
                     await query.Execute_in_Postgres(new[] {
-                    "REFRESH MATERIALIZED VIEW bilans_val" }, "Refresh bilans_val", active_token);
+                    "REFRESH MATERIALIZED VIEW bilans_val",
+                    "UPDATE public.datatbles SET last_modify=current_timestamp, in_progress=false,updt_errors=false WHERE table_name='bil_val'"}, "Refresh bilans_val", active_token);
                 }
                 ,
                 async () => {
@@ -299,11 +304,30 @@ namespace Confirm_server_by_Contracts
                         ) as b 
                         where indb is null or indb!=chk_in
                     ) as up 
-                    where demands.id=up.id;" }, "Refresh Demand and Order_demands", active_token);
+                    where demands.id=up.id;",
+                    "UPDATE public.datatbles SET last_modify=current_timestamp, in_progress=false,updt_errors=false WHERE table_name='ord_dem'"
+                    }, "Refresh Demand and Order_demands", active_token);
                 });
                 Steps_executor.Register_step("Validate demands");                
                 if (Steps_executor.Wait_for(new string[] { "Refresh bilans_val", "Refresh Demand and Order_demands" }, "Validate demands", active_token))
                 {
+                    using (NpgsqlConnection conA = new NpgsqlConnection(Postegresql_conn.Connection_pool["MAIN"].ToString()))
+                    {
+                        await conA.OpenAsync();
+                        using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                            "select cast(count(table_name) as integer) busy " +
+                            "from public.datatbles " +
+                            "where (substring(table_name,1,7)='bil_val' or table_name='ord_dem' ) and in_progress=true", conA))
+                        {
+                            int busy_il = 1;
+                            while (busy_il > 0)
+                            {
+                                busy_il = Convert.ToInt16(cmd.ExecuteScalar());
+                                if (busy_il > 0) { System.Threading.Thread.Sleep(250); }
+                            }
+                        }
+                        conA.Close();
+                    }
                     Steps_executor.Register_step("Check_order_demands");
                     // check order_demands for duplicated data amt wrong balances
                     Update_pstgr_from_Ora<Small_upd_demands> upd_dem = new Update_pstgr_from_Ora<Small_upd_demands>("MAIN");
@@ -425,6 +449,7 @@ namespace Confirm_server_by_Contracts
                 if (Steps_executor.Wait_for(new string[] { "All_lacks", "Lack_report", "Lack_report1", "Lack_report2", "Update To_Mail", "Lack_bil", "Calculate_cust_order" }, "Mail", active_token))
                 {
                     Steps_executor.End_step("Validate demands");
+                    await query.Execute_in_Postgres(new string[] { "UPDATE public.datatbles SET start_update=current_timestamp, in_progress=true WHERE substring(table_name,1,7)='cal_ord'" }, "Start_update mail", active_token);
                     int result = await query.Execute_in_Postgres(new string[] {"" +
                         @"INSERT INTO public.mail
                         (ordid,dop, koor, order_no, line_no, rel_no, part_no, descr, country, prom_date, prom_week, load_id, ship_date, date_entered, cust_id, 
