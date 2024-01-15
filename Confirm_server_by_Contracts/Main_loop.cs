@@ -526,13 +526,9 @@ namespace Confirm_server_by_Contracts
                     {
                         if (Date_reQ > DATNOW && (bilans < 0 || balance < 0))
                         {
-                            if (Date_reQ > gwar_DT)
+                            if (balance < 0)
                             {
                                 rpt_short = Date_reQ;
-                            }
-                            else
-                            {
-                                rpt_short = gwar_DT;
                             }
                             string state = balance < 0 ? "Brakujące ilości" : "Dostawa na dzisiejsze ilości";
                             DataSet.Add(new Buyer_info_row
