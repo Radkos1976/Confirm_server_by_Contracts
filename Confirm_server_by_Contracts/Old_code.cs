@@ -231,7 +231,7 @@ namespace Confirm_server_by_Contracts
                                         Loger.Log("Error => Nie zdjęto harmonogramu " + e);
                                     }
                                 }
-                                conO.Close();
+                                //conO.Close();
                             }
                             using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                             {
