@@ -1,4 +1,5 @@
 ﻿using DB_Conect;
+using Npgsql;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -41,6 +42,9 @@ namespace Confirm_server_by_Contracts
 
         private async Task<int> Update(CancellationToken cancellationToken)
         {
+            Run_query query = new Run_query();
+            await query.Execute_in_Postgres(new[] {
+                 "UPDATE public.datatbles SET start_update=current_timestamp, in_progress=true WHERE table_name='mail'" }, "Set wait mail", cancellationToken);
             List<Order_lack_row> Old = await Old_data(cancellationToken);
             List<Order_lack_row> New = await Calculate(cancellationToken);
             Old.Sort(delegate (Order_lack_row c1, Order_lack_row c2)
@@ -72,10 +76,28 @@ namespace Confirm_server_by_Contracts
                 "braki",
                 new[] { "id" },
                 null,
-                null,
+                new[] {
+                 "UPDATE public.datatbles SET last_modify=current_timestamp, in_progress=false,updt_errors=false WHERE table_name='mail'" },
                 "Calculate_cust_order",
                 cancellationToken
                 );
+            using (NpgsqlConnection conA = new NpgsqlConnection(Postegresql_conn.Connection_pool["MAIN"].ToString()))
+            {
+                await conA.OpenAsync();
+                using (NpgsqlCommand cmd = new NpgsqlCommand(
+                    string.Format(@"select cast(count(table_name) as integer) busy 
+                            from public.datatbles 
+                            where table_name='{0}' and in_progress=true", "mail"), conA))
+                {
+                    int busy_il = 1;
+                    while (busy_il > 0)
+                    {
+                        busy_il = Convert.ToInt16(cmd.ExecuteScalar());
+                        if (busy_il > 0) { System.Threading.Thread.Sleep(250); }
+                    }
+                }
+                conA.Close();
+            }
             Steps_executor.End_step("Calculate_cust_order");
             return result;
         }

@@ -284,6 +284,7 @@ namespace Confirm_server_by_Contracts
                         }
                         conA.Close();
                     }
+                    query = null;
                     Zak_changes = null;
                     Steps_executor.End_step(string.Format("{0}:{1}", Task_name, "Buyer_info"));
                 });
