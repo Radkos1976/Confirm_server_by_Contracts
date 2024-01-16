@@ -1,0 +1,99 @@
+-- View: public.aktual_hist
+
+-- DROP VIEW public.aktual_hist;
+
+CREATE OR REPLACE VIEW public.aktual_hist
+ AS
+ SELECT koor,
+    work_day,
+    type,
+    contract,
+    product_family,
+    sumal,
+    brak,
+    brak_mag
+   FROM ( SELECT a_1.koor,
+            'now'::text::date AS work_day,
+            a_1.type,
+            a_1.contract,
+            a_1.product_family,
+            sum(a_1.qty_demand) AS sumal,
+            sum(
+                CASE
+                    WHEN a_1.brak < 0::double precision THEN a_1.brak
+                    ELSE 0::double precision
+                END) AS brak,
+            sum(
+                CASE
+                    WHEN a_1.brak_mag < 0::double precision THEN a_1.brak_mag
+                    ELSE 0::double precision
+                END) AS brak_mag
+           FROM ( SELECT a_2.koor,
+                    a_2.part_no,
+                    'now'::text::date AS work_day,
+                    get_part_product_family(a_2.part_no, a_2.contract) AS product_family,
+                    a_2.type,
+                    a_2.contract,
+                    sum(a_2.qty_demand) AS qty_demand,
+                    min(a_2.balance) AS brak,
+                    min(a_2.bal_stock) AS brak_mag
+                   FROM demands a_2
+                  WHERE a_2.work_day <= 'now'::text::date AND a_2.koor::text <> '*'::text AND a_2.koor::text <> 'LUCPRZ'::text
+                  GROUP BY a_2.koor, a_2.part_no, a_2.type, a_2.contract, (get_part_product_family(a_2.part_no, a_2.contract))) a_1
+          WHERE a_1.work_day <= 'now'::text::date AND a_1.koor::text <> '*'::text AND a_1.koor::text <> 'LUCPRZ'::text
+          GROUP BY a_1.koor, a_1.type, a_1.contract, a_1.product_family
+        UNION ALL
+         SELECT a_1.koor,
+            a_1.work_day,
+            a_1.type,
+            a_1.contract,
+            get_part_product_family(a_1.part_no, a_1.contract) AS product_family,
+            sum(a_1.qty_demand) AS sumal,
+            sum(
+                CASE
+                    WHEN a_1.balance < 0::double precision THEN
+                    CASE
+                        WHEN a_1.balance < (a_1.qty_demand * '-1'::integer::double precision) THEN a_1.qty_demand * '-1'::integer::double precision
+                        ELSE a_1.balance
+                    END
+                    ELSE 0::double precision
+                END) AS brak,
+            sum(
+                CASE
+                    WHEN a_1.bal_stock < 0::double precision THEN
+                    CASE
+                        WHEN a_1.bal_stock < (a_1.qty_demand * '-1'::integer::double precision) THEN a_1.qty_demand * '-1'::integer::double precision
+                        ELSE a_1.bal_stock
+                    END
+                    ELSE 0::double precision
+                END) AS brak_mag
+           FROM demands a_1
+          WHERE a_1.work_day > 'now'::text::date AND a_1.koor::text <> '*'::text AND a_1.koor::text <> 'LUCPRZ'::text
+          GROUP BY a_1.koor, a_1.work_day, a_1.type, a_1.contract, (get_part_product_family(a_1.part_no, a_1.contract))) a
+  ORDER BY koor, work_day, type, contract, product_family;
+
+ALTER TABLE public.aktual_hist
+    OWNER TO postgres;
+
+GRANT SELECT ON TABLE public.aktual_hist TO "NoPostgresql";
+GRANT SELECT ON TABLE public.aktual_hist TO "PLANNERS";
+GRANT ALL ON TABLE public.aktual_hist TO "RADKOS" WITH GRANT OPTION;
+GRANT ALL ON TABLE public.aktual_hist TO postgres;
+
+-- FUNCTION: public.get_part_product_family(character varying, character varying)
+
+-- DROP FUNCTION IF EXISTS public.get_part_product_family(character varying, character varying);
+
+CREATE OR REPLACE FUNCTION public.get_part_product_family(
+	"Indeks" character varying,
+	"Contract" character varying)
+    RETURNS character varying
+    LANGUAGE 'sql'
+    COST 100
+    STABLE PARALLEL SAFE 
+AS $BODY$
+SELECT part_product_family From public.mag where indeks=$1 and contract=$2
+$BODY$;
+
+ALTER FUNCTION public.get_part_product_family(character varying, character varying)
+    OWNER TO postgres;
