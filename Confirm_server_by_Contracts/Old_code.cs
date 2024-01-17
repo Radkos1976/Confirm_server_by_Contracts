@@ -710,7 +710,7 @@ namespace Confirm_server_by_Contracts
             try
             {
                 string firstbod = "<?xml version=" + (Char)34 + "1.0" + (Char)34 + " encoding =" + (Char)34 + "utf-8" + (Char)34 + " ?> <!DOCTYPE html PUBLIC " + (Char)34 + "-//W3C//DTD XHTML 1.0 Transitional//EN" + (Char)34 + " " + (Char)34 + "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd" + (Char)34 + "> <html xmlns=" + (Char)34 + "http://www.w3.org/1999/xhtml" + (Char)34 + "> <head> <meta http-equiv=" + (Char)34 + "Content-Type" + (Char)34 + " content =" + (Char)34 + "text/html charset=UTF-8" + (Char)34 + " />  <meta name=" + (Char)34 + "viewport" + (Char)34 + " content=" + (Char)34 + "width=device-width,initial-scale=1.0" + (Char)34 + "/>  <title>" + HTMLEncode(StrTableStart) + "</title>  <style type=" + (Char)34 + "text/css" + (Char)34 + ">  body,table{font-family:verdana,arial,sans-serif;font-size:12px;border-collapse:collapse;}  td,th{margin:3px;border:1px solid #BBB;} </style> </head> <body>";
-                string Shortcut = " <p> <a href=" + (Char)34 + "http://sitsifsapp1.sits.local:59080/client/runtime/Ifs.Fnd.Explorer.application?url=ifsapf%3AtbwOverviewCustOrdLine%3Faction%3Dget";
+                string Shortcut = " <p> <a href=" + (Char)34 + "http://sitsifsapp.sits.local:59080/client/runtime/Ifs.Fnd.Explorer.application?url=ifsapf%3AtbwOverviewCustOrdLine%3Faction%3Dget";
                 string StrTableStart1 = " <h5>WITAM<br />" + StrTableStart + "</h5> ";
                 string strTableBeg = "<table>";
                 string strTableEnd = "</table><i>" + tblfoot + "</i><h5>Pozdrawiam<br />Serwis potwierdzeń</h5>";
