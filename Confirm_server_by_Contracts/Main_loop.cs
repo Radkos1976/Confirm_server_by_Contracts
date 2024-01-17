@@ -220,10 +220,11 @@ namespace Confirm_server_by_Contracts
                                 a.status_informacji,
                                 b.info 
                             from 
-                                public.data a 
+                                (SELECT * from
+                                    HERE regexp_like(indeks, '{0}'))a
                                 left join 
                                 potw b 
-                                on regexp_like(a.indeks, '{0}') and b.indeks=a.indeks and b.umiejsc=a.umiejsc and (b.data_dost=a.data_dost or b.rodzaj_potw='NIE ZAMAWIAM') 
+                                on b.indeks=a.indeks and b.umiejsc=a.umiejsc and (b.data_dost=a.data_dost or b.rodzaj_potw='NIE ZAMAWIAM') 
                             where 
                                 coalesce (a.status_informacji,'N')!=coalesce(case when a.typ_zdarzenia in ('Dzisiejsza dostawa','Opóźniona dostawa','Nieaktualne Dostawy') then null 
                                     else coalesce(b.rodzaj_potw,'BRAK') end,'N') 
