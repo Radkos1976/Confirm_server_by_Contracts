@@ -1606,28 +1606,25 @@ namespace Confirm_server_by_Contracts
                             async () => dontconf = await Prep_NIEpotw(adres_list.Select("typ = 'NIE POTWIERDZAĆ'"), cancellationToken),
                             async () => seria_z = await Prep_seriaz(adres_list.Select("typ = 'Seria Zero'"), cancellationToken),
                             async () => log = await Send_logist(adres_list.Select("typ = 'MAIL LOG'"), cancellationToken),
-                            async () => popr = await Popraw(adres_list.Select("typ = 'MAIL' and tp='POPRAWIĆ'"), cancellationToken),
-                            () =>
+                            async () => popr = await Popraw(adres_list.Select("typ = 'MAIL' and tp='POPRAWIĆ'"), cancellationToken)
+                        );
+                        if (Steps_executor.Wait_for(new string[] { "Prep_potw", "Prep_FR", "Prep_seriaz", "Prep_NIEzam", "Prep_NIEpotw", "Prep_seriaz", "Send_logist", "Popraw" }, "send_mail", cancellationToken))
+                        {
+                            using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                             {
-                                if (Steps_executor.Wait_for(new string[] { "Prep_potw", "Prep_FR", "Prep_seriaz", "Prep_NIEzam", "Prep_NIEpotw", "Prep_seriaz", "Send_logist", "Popraw" }, "send_mail", cancellationToken))
-                                {                                    
-                                    using (NpgsqlConnection conA = new NpgsqlConnection(npC))
-                                    {
-                                        conA.Open();                                        
-                                        using (NpgsqlCommand cmd = new NpgsqlCommand("" +
-                                            "UPDATE public.datatbles " +
-                                            "SET  last_modify=current_timestamp,in_progress=false,updt_errors=false " +
-                                            "WHERE table_name='send_mail'", conA))
-                                        {
-                                            cmd.ExecuteNonQuery();
-                                        }
-                                        conA.Close();
-                                        Loger.Log("Koniec wysyłania informacji o przepotwierdzeniach");
-                                    }
-                                    Steps_executor.End_step("send_mail");
+                                conA.Open();
+                                using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                                    "UPDATE public.datatbles " +
+                                    "SET  last_modify=current_timestamp,in_progress=false,updt_errors=false " +
+                                    "WHERE table_name='send_mail'", conA))
+                                {
+                                    cmd.ExecuteNonQuery();
                                 }
-
-                            });                                                 
+                                conA.Close();
+                                Loger.Log("Koniec wysyłania informacji o przepotwierdzeniach");
+                            }
+                            Steps_executor.End_step("send_mail");
+                        }
                         //Parallel.Invoke(async () => R_pot = await Prep_potw(adres_list.Select("confirm = true")), async () => R_alter = await Prep_FR(adres_list.Select("alt = true")), async () => R_dontpurch = await Prep_NIEzam(adres_list.Select("niezam = true")), async () => seria_z = await Prep_seriaz(adres_list.Select("typ = 'Seria Zero'")), async () => log = await Send_logist(adres_list.Select("typ = 'MAIL LOG'")), async () => popr = await Popraw(adres_list.Select("typ = 'MAIL' and tp='POPRAWIĆ'")), async () => conirm = await Confirm_ORd());
                     }
                 }
