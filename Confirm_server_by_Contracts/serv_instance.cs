@@ -186,7 +186,7 @@ namespace Confirm_server_by_Contracts
                     }
                 }
             });
-            Steps_executor.Register_step("Prepare data for Reports");            
+            Steps_executor.Register_step("Prepare data for Reports");
 
             if (Steps_executor.Wait_for(new string[] { "Main_loop except 616 ", "Main_loop 616 ",
                 "Main_loop except 616 Executor1", "Main_loop except 616 Executor2" , "Main_loop except 616 Executor3",
@@ -202,12 +202,12 @@ namespace Confirm_server_by_Contracts
                 Dataset_executor.Clear();
 
                 Run_query query = new Run_query();
-                await query.Execute_in_Postgres(new[] { 
+                await query.Execute_in_Postgres(new[] {
                     "UPDATE public.datatbles SET start_update=current_timestamp, in_progress=true WHERE table_name='bil_val'",
                     "UPDATE public.datatbles SET start_update=current_timestamp, in_progress=true WHERE table_name='ord_dem'"
                 }, "Wait point Demand and Order_demands", active_token);
                 Parallel.Invoke(
-                async () =>  {
+                async () => {
                     await query.Execute_in_Postgres(new[] {
                     "REFRESH MATERIALIZED VIEW bilans_val",
                     "UPDATE public.datatbles SET last_modify=current_timestamp, in_progress=false,updt_errors=false WHERE table_name='bil_val'"}, "Refresh bilans_val", active_token);
@@ -308,7 +308,7 @@ namespace Confirm_server_by_Contracts
                     "UPDATE public.datatbles SET last_modify=current_timestamp, in_progress=false,updt_errors=false WHERE table_name='ord_dem'"
                     }, "Refresh Demand and Order_demands", active_token);
                 });
-                Steps_executor.Register_step("Validate demands");                
+                Steps_executor.Register_step("Validate demands");
                 if (Steps_executor.Wait_for(new string[] { "Refresh bilans_val", "Refresh Demand and Order_demands" }, "Validate demands", active_token))
                 {
                     using (NpgsqlConnection conA = new NpgsqlConnection(Postegresql_conn.Connection_pool["MAIN"].ToString()))
@@ -365,13 +365,13 @@ namespace Confirm_server_by_Contracts
                     List<Small_upd_demands> list3 = new List<Small_upd_demands>();
                     List<Small_upd_demands> list4 = new List<Small_upd_demands>();
                     int cnt = 0;
-                    foreach(Small_upd_demands item in not_corr_dem)
+                    foreach (Small_upd_demands item in not_corr_dem)
                     {
                         if (cnt == 0)
                         {
                             list1.Add(item);
                         }
-                        else if (cnt == 1) 
+                        else if (cnt == 1)
                         {
                             list2.Add(item);
                         }
@@ -381,9 +381,9 @@ namespace Confirm_server_by_Contracts
                         }
                         else if (cnt == 3)
                         {
-                            list4.Add(item);   
+                            list4.Add(item);
                         }
-                        cnt ++;
+                        cnt++;
                         if (cnt > 3) { cnt = 0; }
                     }
                     Parallel.Invoke(
@@ -396,7 +396,7 @@ namespace Confirm_server_by_Contracts
                     async () =>
                     {
                         Order_Demands order_Demands_except2 = new Order_Demands();
-                        await order_Demands_except2.Update_from_executor_from_list("Check_order_demands2", list2,  active_token);
+                        await order_Demands_except2.Update_from_executor_from_list("Check_order_demands2", list2, active_token);
                         order_Demands_except2 = null;
                     },
                     async () =>
@@ -423,7 +423,7 @@ namespace Confirm_server_by_Contracts
                             {
                                 All_lacks all_Lacks = new All_lacks(active_token);
                                 all_Lacks = null;
-                            }                           
+                            }
                         },
                         () =>
                         {
@@ -443,10 +443,11 @@ namespace Confirm_server_by_Contracts
 
                         });
                     }
-                    
+
                 }
                 Steps_executor.Register_step("Modify_prod_date");
                 Steps_executor.Register_step("send_mail");
+                Steps_executor.Register_step("Send_mail");
                 Steps_executor.Register_step("Mail");
                 if (Steps_executor.Wait_for(new string[] { "All_lacks", "Lack_report", "Lack_report1", "Lack_report2", "Update To_Mail", "Lack_bil", "Calculate_cust_order" }, "Mail", active_token))
                 {
@@ -562,35 +563,32 @@ namespace Confirm_server_by_Contracts
                         "DELETE FROM public.mail WHERE cust_id in (select a.cust_id from mail a left join to_mail b on b.cust_id=a.cust_id where b.cust_id is null and (is_for_mail(a.status_informacji)=false or a.status_informacji='POPRAWIĆ'))",
                         "UPDATE public.datatbles SET last_modify=current_timestamp, in_progress=false,updt_errors=false WHERE substring(table_name,1,7)='cal_ord'"
                         }, "Mail", active_token);
-                    
 
-                    Steps_executor.Register_step("Send_mail");
-                    
-                    if (Steps_executor.Wait_for(new string[] { "Mail", }, "Send_mail", active_token))
-                    {
-                        using (NpgsqlConnection conA = new NpgsqlConnection(Postegresql_conn.Connection_pool["MAIN"].ToString()))
-                        {
-                            await conA.OpenAsync();
-                            using (NpgsqlCommand cmd = new NpgsqlCommand("" +
-                                "select cast(count(table_name) as integer) busy " +
-                                "from public.datatbles " +
-                                "where substring(table_name,1,7)='cal_ord' and in_progress=true", conA))
-                            {
-                                int busy_il = 1;
-                                while (busy_il > 0)
-                                {
-                                    busy_il = Convert.ToInt16(cmd.ExecuteScalar());
-                                    if (busy_il > 0) { System.Threading.Thread.Sleep(250); }
-                                }
-                            }
-                            conA.Close();
-                        }
-                        Old_code old_Code = new Old_code();
-                        await old_Code.Modify_prod_date(active_token);
-                        old_Code = null;                        
-                    }
                 }
-            }
+            }                
+            if (Steps_executor.Wait_for(new string[] { "Mail", }, "Send_mail", active_token))
+            {
+                using (NpgsqlConnection conA = new NpgsqlConnection(Postegresql_conn.Connection_pool["MAIN"].ToString()))
+                {
+                    await conA.OpenAsync();
+                    using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                        "select cast(count(table_name) as integer) busy " +
+                        "from public.datatbles " +
+                        "where substring(table_name,1,7)='cal_ord' and in_progress=true", conA))
+                    {
+                        int busy_il = 1;
+                        while (busy_il > 0)
+                        {
+                            busy_il = Convert.ToInt16(cmd.ExecuteScalar());
+                            if (busy_il > 0) { System.Threading.Thread.Sleep(250); }
+                        }
+                    }
+                    conA.Close();
+                }
+                Old_code old_Code = new Old_code();
+                await old_Code.Modify_prod_date(active_token);
+                old_Code = null;
+            } 
             if (Steps_executor.Wait_for(new string[] { "Modify_prod_date", "send_mail" }, "Wait for last steps", active_token))
             {
                 using (NpgsqlConnection conA = new NpgsqlConnection(Postegresql_conn.Connection_pool["MAIN"].ToString()))
