@@ -804,6 +804,13 @@ namespace Confirm_server_by_Contracts
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
                     conA.Open();
+                    using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                                "UPDATE public.datatbles " +
+                                "SET  start_update=current_timestamp,in_progress=true,updt_errors=false " +
+                                "WHERE table_name='pot'", conA))
+                    {
+                        cmd.ExecuteNonQuery();
+                    }
                     using (NpgsqlCommand pot = new NpgsqlCommand("" +
                         "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,PROM_WEEK,PROD_WEEK,PROD_DATE,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,how_many(dop) CONF_COUNT,CREATED " +
                         "from send_mail", conA))
@@ -872,6 +879,13 @@ namespace Confirm_server_by_Contracts
                                 }
                             }
                         }
+                        using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                                "UPDATE public.datatbles " +
+                                "SET  last_modify=current_timestamp,in_progress=false,updt_errors=false " +
+                                "WHERE table_name='pot'", conA))
+                        {
+                            cmd.ExecuteNonQuery();
+                        }
                         prep_potw.Commit();
                         Steps_executor.End_step("Prep_potw");
                     } 
@@ -901,6 +915,13 @@ namespace Confirm_server_by_Contracts
                                 }
                             }
                         }
+                    }
+                    using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                        "UPDATE public.datatbles " +
+                        "SET  start_update=current_timestamp,in_progress=true,updt_errors=false " +
+                        "WHERE table_name='fr'", conA))
+                    {
+                        cmd.ExecuteNonQuery();
                     }
                     conA.Close();
                 }
@@ -964,6 +985,13 @@ namespace Confirm_server_by_Contracts
                                 }
                             }                            
                         }
+                        using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                            "UPDATE public.datatbles " +
+                            "SET  last_modify=current_timestamp,in_progress=false,updt_errors=false " +
+                            "WHERE table_name='fr'", conA))
+                        {
+                            cmd.ExecuteNonQuery();
+                        }
                         prep_fr.Commit();
                         Steps_executor.End_step("Prep_FR");
                     }                    
@@ -993,6 +1021,13 @@ namespace Confirm_server_by_Contracts
                                 }
                             }
                         }
+                    }
+                    using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                        "UPDATE public.datatbles " +
+                        "SET  start_update=current_timestamp,in_progress=true,updt_errors=false " +
+                        "WHERE table_name='seriaz'", conA))
+                    {
+                        cmd.ExecuteNonQuery();
                     }
                     conA.Close();
                 }
@@ -1055,6 +1090,13 @@ namespace Confirm_server_by_Contracts
                                 }
                             }
                         }
+                        using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                            "UPDATE public.datatbles " +
+                            "SET  last_modify=current_timestamp,in_progress=false,updt_errors=false " +
+                            "WHERE table_name='seriaz'", conA))
+                        {
+                            cmd.ExecuteNonQuery();
+                        }
                         prep_zero.Commit();
                         Steps_executor.End_step("Prep_seriaz");
                     }                    
@@ -1084,6 +1126,13 @@ namespace Confirm_server_by_Contracts
                                 }
                             }
                         }
+                    }
+                    using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                        "UPDATE public.datatbles " +
+                        "SET  start_update=current_timestamp,in_progress=true,updt_errors=false " +
+                        "WHERE table_name='niezam'", conA))
+                    {
+                        cmd.ExecuteNonQuery();
                     }
                     conA.Close();
                 }
@@ -1139,6 +1188,13 @@ namespace Confirm_server_by_Contracts
                                 }
                             }
                         }
+                        using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                            "UPDATE public.datatbles " +
+                            "SET  last_modify=current_timestamp,in_progress=false,updt_errors=false " +
+                            "WHERE table_name='niezam'", conA))
+                        {
+                            cmd.ExecuteNonQuery();
+                        }
                         prep_nie.Commit();
                         Steps_executor.End_step("Prep_NIEzam");
                     } 
@@ -1169,6 +1225,13 @@ namespace Confirm_server_by_Contracts
                                 }
                             }
                         }
+                    }
+                    using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                        "UPDATE public.datatbles " +
+                        "SET  start_update=current_timestamp,in_progress=true,updt_errors=false " +
+                        "WHERE table_name='niepotw'", conA))
+                    {
+                        cmd.ExecuteNonQuery();
                     }
                     conA.Close();
                 }
@@ -1221,6 +1284,13 @@ namespace Confirm_server_by_Contracts
                                 }
                             }
                         }
+                        using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                            "UPDATE public.datatbles " +
+                            "SET  last_modify=current_timestamp,in_progress=false,updt_errors=false " +
+                            "WHERE table_name='niepotw'", conA))
+                        {
+                            cmd.ExecuteNonQuery();
+                        }
                         prep_niepotw.Commit();
                         Steps_executor.End_step("Prep_NIEpotw");
                     }  
@@ -1250,6 +1320,13 @@ namespace Confirm_server_by_Contracts
                                 }
                             }
                         }
+                    }
+                    using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                        "UPDATE public.datatbles " +
+                        "SET  start_update=current_timestamp,in_progress=true,updt_errors=false " +
+                        "WHERE table_name='logist'", conA))
+                    {
+                        cmd.ExecuteNonQuery();
                     }
                     conA.Close();
                 }
@@ -1306,6 +1383,13 @@ namespace Confirm_server_by_Contracts
                                 }
                             }
                         }
+                        using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                            "UPDATE public.datatbles " +
+                            "SET  last_modify=current_timestamp,in_progress=false,updt_errors=false " +
+                            "WHERE table_name='logist'", conA))
+                        {
+                            cmd.ExecuteNonQuery();
+                        }
                         logist.Commit();
                         Steps_executor.End_step("Send_logist");
                     } 
@@ -1335,6 +1419,13 @@ namespace Confirm_server_by_Contracts
                                 }
                             }
                         }
+                    }
+                    using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                        "UPDATE public.datatbles " +
+                        "SET  start_update=current_timestamp,in_progress=true,updt_errors=false " +
+                        "WHERE table_name='popraw'", conA))
+                    {
+                        cmd.ExecuteNonQuery();
                     }
                     conA.Close();
                 }
@@ -1388,6 +1479,13 @@ namespace Confirm_server_by_Contracts
                                     }
                                 }
                             }
+                        }
+                        using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                            "UPDATE public.datatbles " +
+                            "SET  last_modify=current_timestamp,in_progress=false,updt_errors=false " +
+                            "WHERE table_name='popraw'", conA))
+                        {
+                            cmd.ExecuteNonQuery();
                         }
                         popraw.Commit();
                         Steps_executor.End_step("Popraw");
@@ -1504,11 +1602,22 @@ namespace Confirm_server_by_Contracts
                             () =>
                             {
                                 if (Steps_executor.Wait_for(new string[] { "Prep_potw", "Prep_FR", "Prep_seriaz", "Prep_NIEzam", "Prep_NIEpotw", "Prep_seriaz", "Send_logist", "Popraw" }, "send_mail", cancellationToken))
-                                {
-                                    Steps_executor.End_step("send_mail");
+                                {                                    
                                     using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                                     {
                                         conA.Open();
+                                        using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                                        "select cast(count(table_name) as integer) busy " +
+                                        "from public.datatbles " +
+                                        "where (table_name ='pot' or table_name ='fr' or table_name ='popraw' or table_name ='logist' or table_name ='niepotw' or table_name ='niezam' or table_name ='seriaz') and in_progress=true", conA))
+                                        {
+                                            int busy_il = 1;
+                                            while (busy_il > 0)
+                                            {
+                                                busy_il = Convert.ToInt16(cmd.ExecuteScalar());
+                                                if (busy_il > 0) { System.Threading.Thread.Sleep(250); }
+                                            }
+                                        }
                                         using (NpgsqlCommand cmd = new NpgsqlCommand("" +
                                             "UPDATE public.datatbles " +
                                             "SET  last_modify=current_timestamp,in_progress=false,updt_errors=false " +
@@ -1519,6 +1628,7 @@ namespace Confirm_server_by_Contracts
                                         conA.Close();
                                         Loger.Log("Koniec wysyłania informacji o przepotwierdzeniach");
                                     }
+                                    Steps_executor.End_step("send_mail");
                                 }
 
                             });                                                 
