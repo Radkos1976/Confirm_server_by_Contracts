@@ -391,6 +391,7 @@ namespace Confirm_server_by_Contracts
                         }
                     }
                 }
+
                 Steps_executor.End_step("Modify_prod_date");
                 Loger.Log("END modyfing prod date in ORD_DOP");
                 return 0;
@@ -832,46 +833,48 @@ namespace Confirm_server_by_Contracts
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
                     conA.Open();
-                    using (NpgsqlCommand cmd = new NpgsqlCommand("select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,PROM_WEEK,PROD_WEEK,PROD_DATE,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,how_many(dop) CONF_COUNT,CREATED,info from send_mail where mail=@mail and typ='MAIL' and is_confirm(status_informacji) is true and last_mail is null and created + interval '1 hour' < current_timestamp order by CORR,CUST_ORD,C_LIN,C_REL", conA))
+                    using (NpgsqlTransaction prep_potw = conA.BeginTransaction())
                     {
-                        cmd.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar);
-                        cmd.Prepare();
-                        foreach (DataRow erw in rek)
+                        using (NpgsqlCommand cmd = new NpgsqlCommand("select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,PROM_WEEK,PROD_WEEK,PROD_DATE,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,how_many(dop) CONF_COUNT,CREATED,info from send_mail where mail=@mail and typ='MAIL' and is_confirm(status_informacji) is true and last_mail is null and created + interval '1 hour' < current_timestamp order by CORR,CUST_ORD,C_LIN,C_REL", conA))
                         {
-                            if (cancellationToken.IsCancellationRequested) { break; }
-                            cmd.Parameters[0].Value = erw[0];
-                            using (NpgsqlDataReader re = cmd.ExecuteReader())
+                            cmd.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar);
+                            cmd.Prepare();
+                            foreach (DataRow erw in rek)
                             {
-                                using (DataTable mal = new DataTable())
+                                if (cancellationToken.IsCancellationRequested) { break; }
+                                cmd.Parameters[0].Value = erw[0];
+                                using (NpgsqlDataReader re = cmd.ExecuteReader())
                                 {
-                                    mal.Load(re);
-                                    if (mal.Rows.Count > 0)
+                                    using (DataTable mal = new DataTable())
                                     {
-                                        int send = await Create_HTMLmail(
-                                            mal, 
-                                            "Proszę o zmianę daty obiecanej", 
-                                            erw[0].ToString().Replace("\r", ""), 
-                                            kol.Rows[0], 
-                                            cancellationToken, 
-                                            "*Powyższe linie zamówień zostały już przesunięte w produkcji na termin gwarantujący dostawę brakujących komponentów"
-                                            );
-                                        if (send == 0)
+                                        mal.Load(re);
+                                        if (mal.Rows.Count > 0)
                                         {
-                                            using (NpgsqlCommand cmd1 = new NpgsqlCommand("UPDATE public.send_mail	SET last_mail=current_date WHERE  mail=@mail and typ='MAIL' and is_confirm(status_informacji) is true and last_mail is null and created + interval '1 hour' < current_timestamp", conA))
+                                            int send = await Create_HTMLmail(
+                                                mal,
+                                                "Proszę o zmianę daty obiecanej",
+                                                erw[0].ToString().Replace("\r", ""),
+                                                kol.Rows[0],
+                                                cancellationToken,
+                                                "*Powyższe linie zamówień zostały już przesunięte w produkcji na termin gwarantujący dostawę brakujących komponentów"
+                                                );
+                                            if (send == 0)
                                             {
-                                                cmd1.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar).Value = erw[0].ToString();
-                                                cmd1.Prepare();
-                                                cmd1.ExecuteNonQuery();
+                                                using (NpgsqlCommand cmd1 = new NpgsqlCommand("UPDATE public.send_mail	SET last_mail=current_date WHERE  mail=@mail and typ='MAIL' and is_confirm(status_informacji) is true and last_mail is null and created + interval '1 hour' < current_timestamp", conA))
+                                                {
+                                                    cmd1.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar).Value = erw[0].ToString();
+                                                    cmd1.Prepare();
+                                                    cmd1.ExecuteNonQuery();
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
                         }
-                        
-                    }
-                    conA.Close();
-                    Steps_executor.End_step("Prep_potw");
+                        prep_potw.Commit();
+                        Steps_executor.End_step("Prep_potw");
+                    } 
                 }
             }
             return 0;
@@ -914,54 +917,56 @@ namespace Confirm_server_by_Contracts
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
                     conA.Open();
-                    using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                    using (NpgsqlTransaction prep_fr = conA.BeginTransaction())
+                    {
+                        using (NpgsqlCommand cmd = new NpgsqlCommand("" +
                         "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,PROM_WEEK,PROD_WEEK,PROD_DATE,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,how_many(dop) CONF_COUNT,CREATED,info " +
                         "from send_mail " +
                         "where mail=@mail and typ='MAIL' " +
                         "and is_alter(status_informacji) is true and last_mail is null and created + interval '1 hour' < current_timestamp " +
                         "order by CORR,CUST_ORD,C_LIN,C_REL", conA))
-                    {
-                        cmd.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar);
-                        cmd.Prepare();
-                        foreach (DataRow erw in rek)
                         {
-                            if (cancellationToken.IsCancellationRequested) { break; }
-                            cmd.Parameters[0].Value = erw[0];
-                            using (NpgsqlDataReader re = cmd.ExecuteReader())
+                            cmd.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar);
+                            cmd.Prepare();
+                            foreach (DataRow erw in rek)
                             {
-                                using (DataTable mal = new DataTable())
+                                if (cancellationToken.IsCancellationRequested) { break; }
+                                cmd.Parameters[0].Value = erw[0];
+                                using (NpgsqlDataReader re = cmd.ExecuteReader())
                                 {
-                                    mal.Load(re);
-                                    if (mal.Rows.Count > 0)
+                                    using (DataTable mal = new DataTable())
                                     {
-                                        int send = await Create_HTMLmail(
-                                            mal,
-                                            "Proszę o zmianę daty obiecanej lub podmianę komponentu",
-                                            erw[0].ToString().Replace("\r", ""),
-                                            kol.Rows[0],
-                                            cancellationToken
-                                            );
-                                        if (send == 0)
+                                        mal.Load(re);
+                                        if (mal.Rows.Count > 0)
                                         {
-                                            using (NpgsqlCommand cmd1 = new NpgsqlCommand("" +
-                                                "UPDATE public.send_mail	" +
-                                                "SET last_mail=current_date " +
-                                                "WHERE  mail=@mail " +
-                                                "and typ='MAIL' and is_alter(status_informacji) is true and last_mail is null and created + interval '1 hour' < current_timestamp", conA))
+                                            int send = await Create_HTMLmail(
+                                                mal,
+                                                "Proszę o zmianę daty obiecanej lub podmianę komponentu",
+                                                erw[0].ToString().Replace("\r", ""),
+                                                kol.Rows[0],
+                                                cancellationToken
+                                                );
+                                            if (send == 0)
                                             {
-                                                cmd1.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar).Value = erw[0].ToString();
-                                                cmd1.Prepare();
-                                                cmd1.ExecuteNonQuery();
+                                                using (NpgsqlCommand cmd1 = new NpgsqlCommand("" +
+                                                    "UPDATE public.send_mail	" +
+                                                    "SET last_mail=current_date " +
+                                                    "WHERE  mail=@mail " +
+                                                    "and typ='MAIL' and is_alter(status_informacji) is true and last_mail is null and created + interval '1 hour' < current_timestamp", conA))
+                                                {
+                                                    cmd1.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar).Value = erw[0].ToString();
+                                                    cmd1.Prepare();
+                                                    cmd1.ExecuteNonQuery();
+                                                }
                                             }
                                         }
                                     }
                                 }
-                            }
+                            }                            
                         }
-
-                    }
-                    conA.Close();
-                    Steps_executor.End_step("Prep_FR");
+                        prep_fr.Commit();
+                        Steps_executor.End_step("Prep_FR");
+                    }                    
                 }
             }
             return 0;
@@ -1004,53 +1009,55 @@ namespace Confirm_server_by_Contracts
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
                     conA.Open();
-                    using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                    using (NpgsqlTransaction prep_zero = conA.BeginTransaction())
+                    {
+                        using (NpgsqlCommand cmd = new NpgsqlCommand("" +
                         "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,PROM_WEEK,PROD_WEEK,PROD_DATE,TYP_ZDARZENIA,STATUS_INFORMACJI,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,CREATED,info " +
                         "from send_mail " +
                         "where mail=@mail and typ='Seria Zero' and last_mail is null " +
                         "and created + interval '1 hour' < current_timestamp order by CORR,CUST_ORD,C_LIN,C_REL", conA))
-                    {
-                        cmd.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar);
-                        cmd.Prepare();
-                        foreach (DataRow erw in rek)
                         {
-                            if (cancellationToken.IsCancellationRequested) { break; }
-                            cmd.Parameters[0].Value = erw[0];
-                            using (NpgsqlDataReader re = cmd.ExecuteReader())
+                            cmd.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar);
+                            cmd.Prepare();
+                            foreach (DataRow erw in rek)
                             {
-                                using (DataTable mal = new DataTable())
+                                if (cancellationToken.IsCancellationRequested) { break; }
+                                cmd.Parameters[0].Value = erw[0];
+                                using (NpgsqlDataReader re = cmd.ExecuteReader())
                                 {
-                                    mal.Load(re);
-                                    if (mal.Rows.Count > 0)
+                                    using (DataTable mal = new DataTable())
                                     {
-                                        int send = await Create_HTMLmail(
-                                            mal, 
-                                            "Proszę o zmianę daty obiecanej/zmianę daty wykonania SERII ZERO", 
-                                            erw[0].ToString().Replace("\r", ""), 
-                                            kol.Rows[0], 
-                                            cancellationToken
-                                            );
-                                        if (send == 0)
+                                        mal.Load(re);
+                                        if (mal.Rows.Count > 0)
                                         {
-                                            using (NpgsqlCommand cmd1 = new NpgsqlCommand("" +
-                                                "UPDATE public.send_mail	" +
-                                                "SET last_mail=current_date " +
-                                                "WHERE  mail=@mail and typ='Seria Zero' and last_mail is null " +
-                                                "and created + interval '1 hour' < current_timestamp", conA))
+                                            int send = await Create_HTMLmail(
+                                                mal,
+                                                "Proszę o zmianę daty obiecanej/zmianę daty wykonania SERII ZERO",
+                                                erw[0].ToString().Replace("\r", ""),
+                                                kol.Rows[0],
+                                                cancellationToken
+                                                );
+                                            if (send == 0)
                                             {
-                                                cmd1.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar).Value = erw[0].ToString();
-                                                cmd1.Prepare();
-                                                cmd1.ExecuteNonQuery();
+                                                using (NpgsqlCommand cmd1 = new NpgsqlCommand("" +
+                                                    "UPDATE public.send_mail	" +
+                                                    "SET last_mail=current_date " +
+                                                    "WHERE  mail=@mail and typ='Seria Zero' and last_mail is null " +
+                                                    "and created + interval '1 hour' < current_timestamp", conA))
+                                                {
+                                                    cmd1.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar).Value = erw[0].ToString();
+                                                    cmd1.Prepare();
+                                                    cmd1.ExecuteNonQuery();
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
                         }
-                        
-                    }
-                    conA.Close();
-                    Steps_executor.End_step("Prep_seriaz");
+                        prep_zero.Commit();
+                        Steps_executor.End_step("Prep_seriaz");
+                    }                    
                 }
             }
             return 0;
@@ -1091,48 +1098,50 @@ namespace Confirm_server_by_Contracts
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
                     conA.Open();
-                    using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                    using (NpgsqlTransaction prep_nie= conA.BeginTransaction())
+                    {
+                        using (NpgsqlCommand cmd = new NpgsqlCommand("" +
                         "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,PROM_WEEK,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,how_many(dop) CONF_COUNT,CREATED,info " +
                         "from send_mail " +
                         "where mail=@mail and typ='MAIL' and is_dontpurch(status_informacji) is true " +
                         "and last_mail is null and created + interval '1 hour' < current_timestamp " +
                         "order by CORR,CUST_ORD,C_LIN,C_REL", conA))
-                    {
-                        cmd.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar);
-                        cmd.Prepare();
-                        foreach (DataRow erw in rek)
                         {
-                            if (cancellationToken.IsCancellationRequested) { break; }
-                            cmd.Parameters[0].Value = erw[0];
-                            using (NpgsqlDataReader re = cmd.ExecuteReader())
+                            cmd.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar);
+                            cmd.Prepare();
+                            foreach (DataRow erw in rek)
                             {
-                                using (DataTable mal = new DataTable())
+                                if (cancellationToken.IsCancellationRequested) { break; }
+                                cmd.Parameters[0].Value = erw[0];
+                                using (NpgsqlDataReader re = cmd.ExecuteReader())
                                 {
-                                    mal.Load(re);
-                                    if (mal.Rows.Count > 0)
+                                    using (DataTable mal = new DataTable())
                                     {
-                                        int send = await Create_HTMLmail(mal, "Komponent nie zamawiany / wycofany ", erw[0].ToString().Replace("\r", ""), kol.Rows[0], cancellationToken, "Produkcja powyższych zamówień jest zagrożona ze względu na użycie komponentów wycofanych z kolekcji / nie zamawianych");
-                                        if (send == 0)
+                                        mal.Load(re);
+                                        if (mal.Rows.Count > 0)
                                         {
-                                            using (NpgsqlCommand cmd1 = new NpgsqlCommand("" +
-                                                "UPDATE public.send_mail	" +
-                                                "SET last_mail=current_date " +
-                                                "WHERE  mail=@mail and typ='MAIL' and is_dontpurch(status_informacji) is true " +
-                                                "and last_mail is null and created + interval '1 hour' < current_timestamp", conA))
+                                            int send = await Create_HTMLmail(mal, "Komponent nie zamawiany / wycofany ", erw[0].ToString().Replace("\r", ""), kol.Rows[0], cancellationToken, "Produkcja powyższych zamówień jest zagrożona ze względu na użycie komponentów wycofanych z kolekcji / nie zamawianych");
+                                            if (send == 0)
                                             {
-                                                cmd1.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar).Value = erw[0].ToString();
-                                                cmd1.Prepare();
-                                                cmd1.ExecuteNonQuery();
+                                                using (NpgsqlCommand cmd1 = new NpgsqlCommand("" +
+                                                    "UPDATE public.send_mail	" +
+                                                    "SET last_mail=current_date " +
+                                                    "WHERE  mail=@mail and typ='MAIL' and is_dontpurch(status_informacji) is true " +
+                                                    "and last_mail is null and created + interval '1 hour' < current_timestamp", conA))
+                                                {
+                                                    cmd1.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar).Value = erw[0].ToString();
+                                                    cmd1.Prepare();
+                                                    cmd1.ExecuteNonQuery();
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
                         }
-                        
-                    }
-                    conA.Close();
-                    Steps_executor.End_step("Prep_NIEzam");
+                        prep_nie.Commit();
+                        Steps_executor.End_step("Prep_NIEzam");
+                    } 
                 }
             }
             return 0;
@@ -1145,9 +1154,10 @@ namespace Confirm_server_by_Contracts
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
                     conA.Open();
+
                     using (NpgsqlCommand pot = new NpgsqlCommand("" +
-                        "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,PROM_WEEK,PROD_WEEK,TYP_ZDARZENIA,STATUS_INFORMACJI,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,CREATED " +
-                        "from send_mail", conA))
+                    "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,PROM_WEEK,PROD_WEEK,TYP_ZDARZENIA,STATUS_INFORMACJI,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,CREATED " +
+                    "from send_mail", conA))
                     {
                         using (NpgsqlDataReader po = pot.ExecuteReader())
                         {
@@ -1173,45 +1183,47 @@ namespace Confirm_server_by_Contracts
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
                     conA.Open();
-                    using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                    using (NpgsqlTransaction prep_niepotw = conA.BeginTransaction())
+                    {
+                        using (NpgsqlCommand cmd = new NpgsqlCommand("" +
                         "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,PROM_WEEK,PROD_WEEK,TYP_ZDARZENIA,STATUS_INFORMACJI,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,CREATED,info " +
                         "from send_mail where mail=@mail and typ='NIE POTWIERDZAĆ' and last_mail is null and created + interval '1 hour' < current_timestamp order by CORR,CUST_ORD,C_LIN,C_REL", conA))
-                    {
-                        cmd.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar);
-                        cmd.Prepare();
-                        foreach (DataRow erw in rek)
                         {
-                            if (cancellationToken.IsCancellationRequested) { break; }
-                            cmd.Parameters[0].Value = erw[0];
-                            using (NpgsqlDataReader re = cmd.ExecuteReader())
+                            cmd.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar);
+                            cmd.Prepare();
+                            foreach (DataRow erw in rek)
                             {
-                                using (DataTable mal = new DataTable())
+                                if (cancellationToken.IsCancellationRequested) { break; }
+                                cmd.Parameters[0].Value = erw[0];
+                                using (NpgsqlDataReader re = cmd.ExecuteReader())
                                 {
-                                    mal.Load(re);
-                                    if (mal.Rows.Count > 0)
+                                    using (DataTable mal = new DataTable())
                                     {
-                                        int send = await Create_HTMLmail(mal, "Brak możliwości automatycznego potwierdzenia zamówienia", erw[0].ToString().Replace("\r", ""), kol.Rows[0], cancellationToken ,"Produkcja powyższych zamówień jest zagrożona ze względu na status zamówienia,błędne daty obiecane,braki materiałowe,użycie komponentów wycofanych z kolekcji / nie zamawianych");
-                                        if (send == 0)
+                                        mal.Load(re);
+                                        if (mal.Rows.Count > 0)
                                         {
-                                            using (NpgsqlCommand cmd1 = new NpgsqlCommand("" +
-                                                "UPDATE public.send_mail	" +
-                                                "SET last_mail=current_date " +
-                                                "WHERE  mail=@mail and typ='NIE POTWIERDZAĆ' and last_mail is null " +
-                                                "and created + interval '1 hour' < current_timestamp", conA))
+                                            int send = await Create_HTMLmail(mal, "Brak możliwości automatycznego potwierdzenia zamówienia", erw[0].ToString().Replace("\r", ""), kol.Rows[0], cancellationToken, "Produkcja powyższych zamówień jest zagrożona ze względu na status zamówienia,błędne daty obiecane,braki materiałowe,użycie komponentów wycofanych z kolekcji / nie zamawianych");
+                                            if (send == 0)
                                             {
-                                                cmd1.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar).Value = erw[0].ToString();
-                                                cmd1.Prepare();
-                                                cmd1.ExecuteNonQuery();
+                                                using (NpgsqlCommand cmd1 = new NpgsqlCommand("" +
+                                                    "UPDATE public.send_mail	" +
+                                                    "SET last_mail=current_date " +
+                                                    "WHERE  mail=@mail and typ='NIE POTWIERDZAĆ' and last_mail is null " +
+                                                    "and created + interval '1 hour' < current_timestamp", conA))
+                                                {
+                                                    cmd1.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar).Value = erw[0].ToString();
+                                                    cmd1.Prepare();
+                                                    cmd1.ExecuteNonQuery();
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
                         }
-                        
-                    }
-                    conA.Close();
-                    Steps_executor.End_step("Prep_NIEpotw");
+                        prep_niepotw.Commit();
+                        Steps_executor.End_step("Prep_NIEpotw");
+                    }  
                 }
             }
             return 0;
@@ -1254,47 +1266,49 @@ namespace Confirm_server_by_Contracts
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
                     conA.Open();
-                    using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                    using (NpgsqlTransaction logist = conA.BeginTransaction())
+                    {
+                        using (NpgsqlCommand cmd = new NpgsqlCommand("" +
                         "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,LOAD_ID,SHIP_DATE,PROM_WEEK,PROD_WEEK,PROD_DATE as NEW_SHIP_DATE,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,how_many(dop) CONF_COUNT,CREATED,info " +
                         "from send_mail where mail=@mail and typ='MAIL LOG' and last_mail is null " +
                         "and created + interval '1 hour' < current_timestamp " +
                         "order by CORR,CUST_ORD,C_LIN,C_REL", conA))
-                    {
-                        cmd.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar);
-                        cmd.Prepare();
-                        foreach (DataRow erw in rek)
                         {
-                            if (cancellationToken.IsCancellationRequested) { break; }
-                            cmd.Parameters[0].Value = erw[0];
-                            using (NpgsqlDataReader re = cmd.ExecuteReader())
+                            cmd.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar);
+                            cmd.Prepare();
+                            foreach (DataRow erw in rek)
                             {
-                                using (DataTable mal = new DataTable())
+                                if (cancellationToken.IsCancellationRequested) { break; }
+                                cmd.Parameters[0].Value = erw[0];
+                                using (NpgsqlDataReader re = cmd.ExecuteReader())
                                 {
-                                    mal.Load(re);
-                                    if (mal.Rows.Count > 0)
+                                    using (DataTable mal = new DataTable())
                                     {
-                                        int send = await Create_HTMLmail(mal, "Proszę o zmianę daty wysyłki", erw[0].ToString().Replace("\r", ""), kol.Rows[0], cancellationToken,"*Powyższe linie zamówień zostały już przesunięte w produkcji na termin gwarantujący dostawę brakujących komponentów");
-                                        if (send == 0)
+                                        mal.Load(re);
+                                        if (mal.Rows.Count > 0)
                                         {
-                                            using (NpgsqlCommand cmd1 = new NpgsqlCommand("" +
-                                                "UPDATE public.send_mail	" +
-                                                "SET last_mail=current_date " +
-                                                "WHERE  mail=@mail and typ='MAIL LOG' and last_mail is null " +
-                                                "and created + interval '1 hour' < current_timestamp", conA))
+                                            int send = await Create_HTMLmail(mal, "Proszę o zmianę daty wysyłki", erw[0].ToString().Replace("\r", ""), kol.Rows[0], cancellationToken, "*Powyższe linie zamówień zostały już przesunięte w produkcji na termin gwarantujący dostawę brakujących komponentów");
+                                            if (send == 0)
                                             {
-                                                cmd1.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar).Value = erw[0].ToString();
-                                                cmd1.Prepare();
-                                                cmd1.ExecuteNonQuery();
+                                                using (NpgsqlCommand cmd1 = new NpgsqlCommand("" +
+                                                    "UPDATE public.send_mail	" +
+                                                    "SET last_mail=current_date " +
+                                                    "WHERE  mail=@mail and typ='MAIL LOG' and last_mail is null " +
+                                                    "and created + interval '1 hour' < current_timestamp", conA))
+                                                {
+                                                    cmd1.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar).Value = erw[0].ToString();
+                                                    cmd1.Prepare();
+                                                    cmd1.ExecuteNonQuery();
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
                         }
-
-                    }
-                    conA.Close();
-                    Steps_executor.End_step("Send_logist");
+                        logist.Commit();
+                        Steps_executor.End_step("Send_logist");
+                    } 
                 }
             }
             return 0;
@@ -1334,47 +1348,50 @@ namespace Confirm_server_by_Contracts
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
                     conA.Open();
-                    using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                    using (NpgsqlTransaction popraw = conA.BeginTransaction())
+                    {
+                        using (NpgsqlCommand cmd = new NpgsqlCommand("" +
                         "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,PROM_WEEK,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,how_many(dop) CONF_COUNT,CREATED,info " +
                         "from send_mail " +
                         "where mail=@mail and typ='MAIL' and status_informacji='POPRAWIĆ' and last_mail is null " +
                         "and created + interval '1 hour' < current_timestamp " +
                         "order by CORR,CUST_ORD,C_LIN,C_REL", conA))
-                    {
-                        cmd.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar);
-                        cmd.Prepare();
-                        foreach (DataRow erw in rek)
                         {
-                            if (cancellationToken.IsCancellationRequested) { break; }
-                            cmd.Parameters[0].Value = erw[0];
-                            using (NpgsqlDataReader re = cmd.ExecuteReader())
+                            cmd.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar);
+                            cmd.Prepare();
+                            foreach (DataRow erw in rek)
                             {
-                                using (DataTable mal = new DataTable())
+                                if (cancellationToken.IsCancellationRequested) { break; }
+                                cmd.Parameters[0].Value = erw[0];
+                                using (NpgsqlDataReader re = cmd.ExecuteReader())
                                 {
-                                    mal.Load(re);
-                                    if (mal.Rows.Count > 0)
+                                    using (DataTable mal = new DataTable())
                                     {
-                                        int send = await Create_HTMLmail(mal, "Proszę o poprawę dat obiecanych - problem z potwierdzeniem", erw[0].ToString().Replace("\r", ""), kol.Rows[0], cancellationToken, "*Dla powyższych linii występuje problem z ustaleniem daty obiecanej - raport zprawdza linie z nieaktywnym DOP");
-                                        if (send == 0)
+                                        mal.Load(re);
+                                        if (mal.Rows.Count > 0)
                                         {
-                                            using (NpgsqlCommand cmd1 = new NpgsqlCommand("" +
-                                                "UPDATE public.send_mail	" +
-                                                "SET last_mail=current_date " +
-                                                "WHERE  mail=@mail and typ='MAIL' and status_informacji='POPRAWIĆ' " +
-                                                "and created + interval '1 hour' < current_timestamp", conA))
+                                            int send = await Create_HTMLmail(mal, "Proszę o poprawę dat obiecanych - problem z potwierdzeniem", erw[0].ToString().Replace("\r", ""), kol.Rows[0], cancellationToken, "*Dla powyższych linii występuje problem z ustaleniem daty obiecanej - raport zprawdza linie z nieaktywnym DOP");
+                                            if (send == 0)
                                             {
-                                                cmd1.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar).Value = erw[0].ToString();
-                                                cmd1.Prepare();
-                                                cmd1.ExecuteNonQuery();
+                                                using (NpgsqlCommand cmd1 = new NpgsqlCommand("" +
+                                                    "UPDATE public.send_mail	" +
+                                                    "SET last_mail=current_date " +
+                                                    "WHERE  mail=@mail and typ='MAIL' and status_informacji='POPRAWIĆ' " +
+                                                    "and created + interval '1 hour' < current_timestamp", conA))
+                                                {
+                                                    cmd1.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar).Value = erw[0].ToString();
+                                                    cmd1.Prepare();
+                                                    cmd1.ExecuteNonQuery();
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
-                        }                       
+                        }
+                        popraw.Commit();
+                        Steps_executor.End_step("Popraw");
                     }
-                    conA.Close();
-                    Steps_executor.End_step("Popraw");
                 }
             }
             return 0;
@@ -1489,30 +1506,27 @@ namespace Confirm_server_by_Contracts
                                 if (Steps_executor.Wait_for(new string[] { "Prep_potw", "Prep_FR", "Prep_seriaz", "Prep_NIEzam", "Prep_NIEpotw", "Prep_seriaz", "Send_logist", "Popraw" }, "send_mail", cancellationToken))
                                 {
                                     Steps_executor.End_step("send_mail");
+                                    using (NpgsqlConnection conA = new NpgsqlConnection(npC))
+                                    {
+                                        conA.Open();
+                                        using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                                            "UPDATE public.datatbles " +
+                                            "SET  last_modify=current_timestamp,in_progress=false,updt_errors=false " +
+                                            "WHERE table_name='send_mail'", conA))
+                                        {
+                                            cmd.ExecuteNonQuery();
+                                        }
+                                        conA.Close();
+                                        Loger.Log("Koniec wysyłania informacji o przepotwierdzeniach");
+                                    }
                                 }
-                            });                                                   
 
-                   
+                            });                                                 
                         //Parallel.Invoke(async () => R_pot = await Prep_potw(adres_list.Select("confirm = true")), async () => R_alter = await Prep_FR(adres_list.Select("alt = true")), async () => R_dontpurch = await Prep_NIEzam(adres_list.Select("niezam = true")), async () => seria_z = await Prep_seriaz(adres_list.Select("typ = 'Seria Zero'")), async () => log = await Send_logist(adres_list.Select("typ = 'MAIL LOG'")), async () => popr = await Popraw(adres_list.Select("typ = 'MAIL' and tp='POPRAWIĆ'")), async () => conirm = await Confirm_ORd());
-                        
-                        Loger.Log("Koniec wysyłania informacji o przepotwierdzeniach");
                     }
-                    
                 }
-                using (NpgsqlConnection conA = new NpgsqlConnection(npC))
-                {
-                    await conA.OpenAsync();
-                    using (NpgsqlCommand cmd = new NpgsqlCommand("" +
-                        "UPDATE public.datatbles " +
-                        "SET  last_modify=current_timestamp,in_progress=false,updt_errors=false " +
-                        "WHERE table_name='send_mail'", conA))
-                    {
-                        cmd.ExecuteNonQuery();
-                    }
-                    conA.Close();
-                    return 0;
-                }
-                
+                return 0;
+
             }
             catch (Exception e)
             {
