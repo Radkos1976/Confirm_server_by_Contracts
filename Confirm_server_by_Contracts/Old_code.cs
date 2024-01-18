@@ -1510,8 +1510,9 @@ namespace Confirm_server_by_Contracts
                         cmd.ExecuteNonQuery();
                     }
                     conA.Close();
+                    return 0;
                 }
-                return 0;
+                
             }
             catch (Exception e)
             {

@@ -838,21 +838,29 @@ namespace DB_Conect
         {
             try
             {
+
                 using (NpgsqlConnection conA = new NpgsqlConnection(Postegresql_conn.Connection_pool["MAIN"].ToString()))
                 {
                     conA.Open();
-                    using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                    using (NpgsqlTransaction tr_save = conA.BeginTransaction())
+                    {
+                        using (NpgsqlCommand cmd = new NpgsqlCommand("" +
                         "UPDATE public.datatbles " +
                         "SET last_modify=current_timestamp, in_progress=false,updt_errors=false " +
                         "WHERE table_name='server_progress'", conA))
-                    {
-                        cmd.ExecuteNonQuery();
+                        {
+                            cmd.ExecuteNonQuery();
+                        }
+                        Steps_executor.End_step("Server_STOP");
+                        tr_save.Commit();
                     }
-                }
-                Save_stat_refr();
-                Log_rek = "";
-                Steps_executor.Reset_diary_of_steps();
-                System.Threading.Thread.Sleep(2000);
+                    Steps_executor.Register_step("Save Logs");
+                    Save_stat_refr();
+                    Log_rek = "";
+                    Steps_executor.Reset_diary_of_steps();
+                }                
+                System.Threading.Thread.Sleep(20000);
+
             }
             catch { Loger.Log("Error Srv_stop"); }            
         }

@@ -587,7 +587,8 @@ namespace Confirm_server_by_Contracts
                         Steps_executor.Wait_for(new string[] { "Modify_prod_date", "send_mail" }, "Service_stop", active_token);
                     }
                 }
-            }            
+            }
+            Steps_executor.Register_step("Server_STOP");
             Loger.Srv_stop();
             //Steps_executor.cts.Dispose();
         }
