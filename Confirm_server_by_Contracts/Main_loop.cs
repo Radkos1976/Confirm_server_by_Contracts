@@ -220,8 +220,8 @@ namespace Confirm_server_by_Contracts
                                 a.status_informacji,
                                 b.info 
                             from 
-                                (SELECT * from
-                                    HERE regexp_like(indeks, '{0}'))a
+                                (SELECT * from public.data
+                                    WHERE regexp_like(indeks, '{0}'))a
                                 left join 
                                 potw b 
                                 on b.indeks=a.indeks and b.umiejsc=a.umiejsc and (b.data_dost=a.data_dost or b.rodzaj_potw='NIE ZAMAWIAM') 
