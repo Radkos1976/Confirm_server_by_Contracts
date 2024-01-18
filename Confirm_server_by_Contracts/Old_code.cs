@@ -5,6 +5,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics.SymbolStore;
 using System.Linq;
 using System.Net.Mail;
 using System.Text;
@@ -393,7 +394,7 @@ namespace Confirm_server_by_Contracts
 
                 Steps_executor.End_step("Modify_prod_date");
                 Loger.Log("END modyfing prod date in ORD_DOP");
-                return 0;
+                return Convert.ToInt32(Steps_executor.Wait_for(new string[] { "Modify_prod_date", "send_mail" }, "WAIT", cancellationToken)); ;
             }
             catch (Exception e)
             {
@@ -1463,7 +1464,7 @@ namespace Confirm_server_by_Contracts
                     using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                     {
                         conA.Open();
-                        Steps_executor.Register_step("TR_sendm");                        
+                        Steps_executor.Register_step("TR_sendm");
                         using (NpgsqlCommand cmd = new NpgsqlCommand("" +
                             "UPDATE public.datatbles " +
                             "SET start_update=current_timestamp, in_progress=true,updt_errors=false " +
@@ -1606,27 +1607,27 @@ namespace Confirm_server_by_Contracts
                             async () => log = await Send_logist(adres_list.Select("typ = 'MAIL LOG'"), cancellationToken),
                             async () => popr = await Popraw(adres_list.Select("typ = 'MAIL' and tp='POPRAWIĆ'"), cancellationToken)
                         );
-                        if (Steps_executor.Wait_for(new string[] { "Prep_potw", "Prep_FR", "Prep_seriaz", "Prep_NIEzam", "Prep_NIEpotw", "Prep_seriaz", "Send_logist", "Popraw" }, "send_mail", cancellationToken))
+                    }                 
+                    if (Steps_executor.Wait_for(new string[] { "Prep_potw", "Prep_FR", "Prep_seriaz", "Prep_NIEzam", "Prep_NIEpotw", "Prep_seriaz", "Send_logist", "Popraw" }, "send_mail", cancellationToken))
+                    {
+                        using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                         {
-                            using (NpgsqlConnection conA = new NpgsqlConnection(npC))
+                            conA.Open();
+                            using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                                "UPDATE public.datatbles " +
+                                "SET  last_modify=current_timestamp,in_progress=false,updt_errors=false " +
+                                "WHERE table_name='send_mail'", conA))
                             {
-                                conA.Open();
-                                using (NpgsqlCommand cmd = new NpgsqlCommand("" +
-                                    "UPDATE public.datatbles " +
-                                    "SET  last_modify=current_timestamp,in_progress=false,updt_errors=false " +
-                                    "WHERE table_name='send_mail'", conA))
-                                {
-                                    cmd.ExecuteNonQuery();
-                                }
-                                conA.Close();
-                                Loger.Log("Koniec wysyłania informacji o przepotwierdzeniach");
+                                cmd.ExecuteNonQuery();
                             }
-                            Steps_executor.End_step("send_mail");
+                            conA.Close();
+                            Loger.Log("Koniec wysyłania informacji o przepotwierdzeniach");
                         }
-                        //Parallel.Invoke(async () => R_pot = await Prep_potw(adres_list.Select("confirm = true")), async () => R_alter = await Prep_FR(adres_list.Select("alt = true")), async () => R_dontpurch = await Prep_NIEzam(adres_list.Select("niezam = true")), async () => seria_z = await Prep_seriaz(adres_list.Select("typ = 'Seria Zero'")), async () => log = await Send_logist(adres_list.Select("typ = 'MAIL LOG'")), async () => popr = await Popraw(adres_list.Select("typ = 'MAIL' and tp='POPRAWIĆ'")), async () => conirm = await Confirm_ORd());
+                        Steps_executor.End_step("send_mail");
                     }
+                    //Parallel.Invoke(async () => R_pot = await Prep_potw(adres_list.Select("confirm = true")), async () => R_alter = await Prep_FR(adres_list.Select("alt = true")), async () => R_dontpurch = await Prep_NIEzam(adres_list.Select("niezam = true")), async () => seria_z = await Prep_seriaz(adres_list.Select("typ = 'Seria Zero'")), async () => log = await Send_logist(adres_list.Select("typ = 'MAIL LOG'")), async () => popr = await Popraw(adres_list.Select("typ = 'MAIL' and tp='POPRAWIĆ'")), async () => conirm = await Confirm_ORd());
                 }
-                return 0;
+                return Convert.ToInt32(Steps_executor.Wait_for(new string[] { "send_mail" } ,"WAIT", cancellationToken));
 
             }
             catch (Exception e)
