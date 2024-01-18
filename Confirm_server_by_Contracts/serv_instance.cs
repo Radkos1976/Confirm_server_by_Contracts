@@ -563,7 +563,7 @@ namespace Confirm_server_by_Contracts
                     
 
                     Steps_executor.Register_step("Send_mail");
-                    if (Steps_executor.Wait_for(new string[] { "Mail",  }, "Send_mail", active_token))
+                    if (Steps_executor.Wait_for(new string[] { "Mail", }, "Send_mail", active_token))
                     {
                         using (NpgsqlConnection conA = new NpgsqlConnection(Postegresql_conn.Connection_pool["MAIN"].ToString()))
                         {
@@ -585,23 +585,26 @@ namespace Confirm_server_by_Contracts
                         Old_code old_Code = new Old_code();
                         await old_Code.Modify_prod_date(active_token);
                         old_Code = null;
-                    }
-                    using (NpgsqlConnection conA = new NpgsqlConnection(Postegresql_conn.Connection_pool["MAIN"].ToString()))
-                    {
-                        using (NpgsqlCommand cmd = new NpgsqlCommand("" +
-                                        "select cast(count(table_name) as integer) busy " +
-                                        "from public.datatbles " +
-                                        "where (table_name='send_mail' or table_name ='pot' or table_name ='fr' or table_name ='popraw' or table_name ='logist' or table_name ='niepotw' or table_name ='niezam' or table_name ='seriaz') and in_progress=true", conA))
+
+                        if (Steps_executor.Wait_for(new string[] { "Modify_prod_date", "send_mail" }, "Wait for last steps", active_token))
                         {
-                            int busy_il = 1;
-                            while (busy_il > 0)
+                            using (NpgsqlConnection conA = new NpgsqlConnection(Postegresql_conn.Connection_pool["MAIN"].ToString()))
                             {
-                                busy_il = Convert.ToInt16(cmd.ExecuteScalar());
-                                if (busy_il > 0) { System.Threading.Thread.Sleep(250); }
+                                using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                                                "select cast(count(table_name) as integer) busy " +
+                                                "from public.datatbles " +
+                                                "where (table_name='send_mail' or table_name ='pot' or table_name ='fr' or table_name ='popraw' or table_name ='logist' or table_name ='niepotw' or table_name ='niezam' or table_name ='seriaz') and in_progress=true", conA))
+                                {
+                                    int busy_il = 1;
+                                    while (busy_il > 0)
+                                    {
+                                        busy_il = Convert.ToInt16(cmd.ExecuteScalar());
+                                        if (busy_il > 0) { System.Threading.Thread.Sleep(250); }
+                                    }
+                                }
                             }
                         }
                     }
-                    Steps_executor.Wait_for(new string[] { "Modify_prod_date", "send_mail" }, "Service_stop", active_token);
                 }
             }
             Steps_executor.Register_step("Server_STOP");
