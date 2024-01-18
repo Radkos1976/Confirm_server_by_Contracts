@@ -445,6 +445,8 @@ namespace Confirm_server_by_Contracts
                     }
                     
                 }
+                Steps_executor.Register_step("Modify_prod_date");
+                Steps_executor.Register_step("send_mail");
                 Steps_executor.Register_step("Mail");
                 if (Steps_executor.Wait_for(new string[] { "All_lacks", "Lack_report", "Lack_report1", "Lack_report2", "Update To_Mail", "Lack_bil", "Calculate_cust_order" }, "Mail", active_token))
                 {
@@ -563,6 +565,7 @@ namespace Confirm_server_by_Contracts
                     
 
                     Steps_executor.Register_step("Send_mail");
+                    
                     if (Steps_executor.Wait_for(new string[] { "Mail", }, "Send_mail", active_token))
                     {
                         using (NpgsqlConnection conA = new NpgsqlConnection(Postegresql_conn.Connection_pool["MAIN"].ToString()))

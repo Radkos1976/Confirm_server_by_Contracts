@@ -168,8 +168,7 @@ namespace Confirm_server_by_Contracts
         public async Task<int> Modify_prod_date(CancellationToken cancellationToken)
         {
             try
-            {
-                Steps_executor.Register_step("Modify_prod_date");
+            {                
                 int ra = await Send_mail_lack(cancellationToken);
                 Loger.Log("Start modyfing prod date in ORD_DOP");
                 if (Oracle_conn.Set_Planned_Manuf_Date)
@@ -1464,8 +1463,7 @@ namespace Confirm_server_by_Contracts
                     using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                     {
                         conA.Open();
-                        Steps_executor.Register_step("TR_sendm");
-                        Steps_executor.Register_step("send_mail");
+                        Steps_executor.Register_step("TR_sendm");                        
                         using (NpgsqlCommand cmd = new NpgsqlCommand("" +
                             "UPDATE public.datatbles " +
                             "SET start_update=current_timestamp, in_progress=true,updt_errors=false " +
