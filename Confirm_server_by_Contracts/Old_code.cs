@@ -804,13 +804,7 @@ namespace Confirm_server_by_Contracts
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
                     conA.Open();
-                    using (NpgsqlCommand cmd = new NpgsqlCommand("" +
-                                "UPDATE public.datatbles " +
-                                "SET  start_update=current_timestamp,in_progress=true,updt_errors=false " +
-                                "WHERE table_name='pot'", conA))
-                    {
-                        cmd.ExecuteNonQuery();
-                    }
+                    
                     using (NpgsqlCommand pot = new NpgsqlCommand("" +
                         "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,PROM_WEEK,PROD_WEEK,PROD_DATE,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,how_many(dop) CONF_COUNT,CREATED " +
                         "from send_mail", conA))
@@ -901,13 +895,7 @@ namespace Confirm_server_by_Contracts
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
                     conA.Open();
-                    using (NpgsqlCommand cmd = new NpgsqlCommand("" +
-                        "UPDATE public.datatbles " +
-                        "SET  start_update=current_timestamp,in_progress=true,updt_errors=false " +
-                        "WHERE table_name='fr'", conA))
-                    {
-                        cmd.ExecuteNonQuery();
-                    }
+                    
                     using (NpgsqlCommand pot = new NpgsqlCommand("" +
                         "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,PROM_WEEK,PROD_WEEK,PROD_DATE,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,how_many(dop) CONF_COUNT,CREATED " +
                         "from send_mail", conA))
@@ -1008,13 +996,7 @@ namespace Confirm_server_by_Contracts
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
                     conA.Open();
-                    using (NpgsqlCommand cmd = new NpgsqlCommand("" +
-                        "UPDATE public.datatbles " +
-                        "SET  start_update=current_timestamp,in_progress=true,updt_errors=false " +
-                        "WHERE table_name='seriaz'", conA))
-                    {
-                        cmd.ExecuteNonQuery();
-                    }
+                    
                     using (NpgsqlCommand pot = new NpgsqlCommand("" +
                         "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,PROM_WEEK,PROD_WEEK,PROD_DATE,TYP_ZDARZENIA,STATUS_INFORMACJI,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,CREATED " +
                         "from send_mail", conA))
@@ -1113,14 +1095,7 @@ namespace Confirm_server_by_Contracts
             {
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
-                    conA.Open();
-                    using (NpgsqlCommand cmd = new NpgsqlCommand("" +
-                        "UPDATE public.datatbles " +
-                        "SET  start_update=current_timestamp,in_progress=true,updt_errors=false " +
-                        "WHERE table_name='niezam'", conA))
-                    {
-                        cmd.ExecuteNonQuery();
-                    }
+                    conA.Open();                    
                     using (NpgsqlCommand pot = new NpgsqlCommand("" +
                         "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,PROM_WEEK,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,how_many(dop) CONF_COUNT,CREATED " +
                         "from send_mail", conA))
@@ -1212,14 +1187,7 @@ namespace Confirm_server_by_Contracts
             {
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
-                    conA.Open();
-                    using (NpgsqlCommand cmd = new NpgsqlCommand("" +
-                        "UPDATE public.datatbles " +
-                        "SET  start_update=current_timestamp,in_progress=true,updt_errors=false " +
-                        "WHERE table_name='niepotw'", conA))
-                    {
-                        cmd.ExecuteNonQuery();
-                    }
+                    conA.Open();                    
                     using (NpgsqlCommand pot = new NpgsqlCommand("" +
                     "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,PROM_WEEK,PROD_WEEK,TYP_ZDARZENIA,STATUS_INFORMACJI,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,CREATED " +
                     "from send_mail", conA))
@@ -1308,14 +1276,7 @@ namespace Confirm_server_by_Contracts
             {
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
-                    conA.Open();
-                    using (NpgsqlCommand cmd = new NpgsqlCommand("" +
-                        "UPDATE public.datatbles " +
-                        "SET  start_update=current_timestamp,in_progress=true,updt_errors=false " +
-                        "WHERE table_name='logist'", conA))
-                    {
-                        cmd.ExecuteNonQuery();
-                    }
+                    conA.Open();                    
                     using (NpgsqlCommand pot = new NpgsqlCommand("" +
                         "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,LOAD_ID,SHIP_DATE,PROM_WEEK,PROD_WEEK,PROD_DATE as NEW_SHIP_DATE,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,how_many(dop) CONF_COUNT,CREATED " +
                         "from send_mail", conA))
@@ -1408,14 +1369,7 @@ namespace Confirm_server_by_Contracts
             {
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
-                    conA.Open();
-                    using (NpgsqlCommand cmd = new NpgsqlCommand("" +
-                        "UPDATE public.datatbles " +
-                        "SET  start_update=current_timestamp,in_progress=true,updt_errors=false " +
-                        "WHERE table_name='popraw'", conA))
-                    {
-                        cmd.ExecuteNonQuery();
-                    }
+                    conA.Open();                   
                     using (NpgsqlCommand pot = new NpgsqlCommand("" +
                         "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,PROM_WEEK,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,how_many(dop) CONF_COUNT,CREATED " +
                         "from send_mail", conA))
@@ -1516,6 +1470,55 @@ namespace Confirm_server_by_Contracts
                             "UPDATE public.datatbles " +
                             "SET start_update=current_timestamp, in_progress=true,updt_errors=false " +
                             "WHERE table_name='TR_sendm'", conA))
+                        {
+                            cmd.ExecuteNonQuery();
+                        }
+                        using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                            "UPDATE public.datatbles " +
+                            "SET  start_update=current_timestamp,in_progress=true,updt_errors=false " +
+                            "WHERE table_name='popraw'", conA))
+                        {
+                            cmd.ExecuteNonQuery();
+                        }
+                        using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                            "UPDATE public.datatbles " +
+                            "SET  start_update=current_timestamp,in_progress=true,updt_errors=false " +
+                            "WHERE table_name='logist'", conA))
+                        {
+                            cmd.ExecuteNonQuery();
+                        }
+                        using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                            "UPDATE public.datatbles " +
+                            "SET  start_update=current_timestamp,in_progress=true,updt_errors=false " +
+                            "WHERE table_name='niepotw'", conA))
+                        {
+                            cmd.ExecuteNonQuery();
+                        }
+                        using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                            "UPDATE public.datatbles " +
+                            "SET  start_update=current_timestamp,in_progress=true,updt_errors=false " +
+                            "WHERE table_name='niezam'", conA))
+                        {
+                            cmd.ExecuteNonQuery();
+                        }
+                        using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                            "UPDATE public.datatbles " +
+                            "SET  start_update=current_timestamp,in_progress=true,updt_errors=false " +
+                            "WHERE table_name='seriaz'", conA))
+                        {
+                            cmd.ExecuteNonQuery();
+                        }
+                        using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                            "UPDATE public.datatbles " +
+                            "SET  start_update=current_timestamp,in_progress=true,updt_errors=false " +
+                            "WHERE table_name='fr'", conA))
+                        {
+                            cmd.ExecuteNonQuery();
+                        }
+                        using (NpgsqlCommand cmd = new NpgsqlCommand("" +
+                                    "UPDATE public.datatbles " +
+                                    "SET  start_update=current_timestamp,in_progress=true,updt_errors=false " +
+                                    "WHERE table_name='pot'", conA))
                         {
                             cmd.ExecuteNonQuery();
                         }
