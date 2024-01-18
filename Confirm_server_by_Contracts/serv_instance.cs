@@ -593,10 +593,11 @@ namespace Confirm_server_by_Contracts
             {
                 using (NpgsqlConnection conA = new NpgsqlConnection(Postegresql_conn.Connection_pool["MAIN"].ToString()))
                 {
+                    conA.Open();    
                     using (NpgsqlCommand cmd = new NpgsqlCommand("" +
-                                    "select cast(count(table_name) as integer) busy " +
-                                    "from public.datatbles " +
-                                    "where (table_name='send_mail' or table_name ='pot' or table_name ='fr' or table_name ='popraw' or table_name ='logist' or table_name ='niepotw' or table_name ='niezam' or table_name ='seriaz') and in_progress=true", conA))
+                        "select cast(count(table_name) as integer) busy " +
+                        "from public.datatbles " +
+                        "where (table_name='send_mail' or table_name ='pot' or table_name ='fr' or table_name ='popraw' or table_name ='logist' or table_name ='niepotw' or table_name ='niezam' or table_name ='seriaz') and in_progress=true", conA))
                     {
                         int busy_il = 1;
                         while (busy_il > 0)
