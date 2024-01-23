@@ -51,7 +51,11 @@ namespace Confirm_server_by_Contracts
         {
             Dictionary<string, string, Tuple<DateTime, DateTime>> range_dates = 
                 new Dictionary<string, string, Tuple<DateTime, DateTime>>();
-            Loger.Log(string.Format("Fill Dataset_executor {0}", Task_name));
+            Loger.Log(
+                string.Format(
+                    "Fill Dataset_executor {0}",
+                    Task_name)
+                );
             void min_max(List<Demands_row> changes)
             {
                 foreach (Demands_row demand in changes)
@@ -134,140 +138,252 @@ namespace Confirm_server_by_Contracts
             Changes_List<Demands_row> Changes = new Changes_List<Demands_row>();
             int returned = 0;
 
-            Steps_executor.Register_step(string.Format("{0}:{1}", Task_name, "Calculate"));
-            (DataSet, DemandSet) = await Calculate(Demands, Inv_Part, cancellationToken);
+            Steps_executor.Register_step(
+                string.Format(
+                    "{0}:{1}",
+                    Task_name,
+                    "Calculate")
+                );
+            (DataSet, DemandSet) = await Calculate(
+                Demands,
+                Inv_Part,
+                cancellationToken);
             Demands = null; Inv_Part = null;
-            Steps_executor.End_step(string.Format("{0}:{1}", Task_name, "Calculate"));
 
-            Steps_executor.Register_step(string.Format("{0}:{1}", Task_name, "Parallel Calc"));
+            Steps_executor.End_step(
+                string.Format(
+                    "{0}:{1}",
+                    Task_name,
+                    "Calculate")
+                );
+
+            Steps_executor.Register_step(
+                string.Format(
+                    "{0}:{1}",
+                    Task_name,
+                    "Parallel Calc")
+                );
             if (Steps_executor.Wait_for(new string[] { string.Format("{0}:{1}", Task_name, "Calculate") }, string.Format("{0}:{1}", Task_name, "Parallel Calc"), cancellationToken))
             {
                 //new[] { string.Format("DELETE FROM public.ord_demands WHERE (part_no,contract) in ({0});", string.Join(",", Erase_dont_exist.Select(t => string.Format("( '{0}', '{1}')", t.Item1, t.Item2)))) }
                 Parallel.Invoke(
                 async () =>
                 {
-                    Steps_executor.Register_step(string.Format("{0}:{1}", Task_name, "Update Demands"));
+                    Steps_executor.Register_step(
+                        string.Format(
+                            "{0}:{1}",
+                            Task_name,
+                            "Update Demands")
+                        );
+
                     SourceDemandSet = await dmr.Get_PSTGR("" +
-                        string.Format(@"SELECT * FROM public.demands WHERE regexp_like(part_no, '{0}')", regex),
-                        string.Format("{0}:{1}", Task_name, "Update Demands"), cancellationToken);
-                    Changes = await dmr.Changes(SourceDemandSet, DemandSet,
+                        string.Format(
+                            @"SELECT * FROM public.demands WHERE regexp_like(part_no, '{0}')",
+                            regex),
+                        string.Format(
+                            "{0}:{1}",
+                            Task_name,
+                            "Update Demands"),
+                        cancellationToken);
+
+                    Changes = await dmr.Changes(
+                        SourceDemandSet,
+                        DemandSet,
                         new[] { "part_no", "contract", "work_day" },
                         new[] { "part_no", "contract", "work_day", "id", "dat_shortage", "objversion", "indb" },
                         new[] { "id", "dat_shortage", "indb" },
-                        Task_name, cancellationToken);
-                    Steps_executor.Register_step(string.Format("{0}:{1}", Task_name, "Fill_executor"));
-                    Fill_executor(Changes, string.Format("{0}:{1}", Task_name, "Fill_executor"), cancellationToken);
-                    Steps_executor.End_step(string.Format("{0}:{1}", Task_name, "Fill_executor"));
-                    returned += await dmr.PSTRG_Changes_to_dataTable(Changes, "demands",
-                            new[] { "id" }, null, null,
-                            string.Format("{0}:{1}", Task_name, "Update Demands"), cancellationToken);
-                    Steps_executor.End_step(string.Format("{0}:{1}", Task_name, "Update Demands"));
+                        Task_name,
+                        cancellationToken);
+
+                    Steps_executor.Register_step(
+                        string.Format("{0}:{1}",
+                        Task_name,
+                        "Fill_executor")
+                        );
+
+                    Fill_executor(
+                        Changes,
+                        string.Format(
+                            "{0}:{1}",
+                            Task_name,
+                            "Fill_executor"),
+                        cancellationToken);
+
+                    Steps_executor.End_step(
+                        string.Format(
+                            "{0}:{1}",
+                            Task_name,
+                            "Fill_executor")
+                        );
+
+                    returned += await dmr.PSTRG_Changes_to_dataTable(
+                        Changes,
+                        "demands",
+                        new[] { "id" },
+                        null,
+                        null,
+                        string.Format(
+                            "{0}:{1}",
+                            Task_name,
+                            "Update Demands"),
+                        cancellationToken);
+                    Steps_executor.End_step(
+                        string.Format(
+                            "{0}:{1}",
+                            Task_name,
+                            "Update Demands")
+                        );
                     Changes = null;                    
                 },
                 async () =>
                 {
-                    Steps_executor.Register_step(string.Format("{0}:{1}", Task_name, "Buyer_info"));
+                    Steps_executor.Register_step(
+                        string.Format(
+                            "{0}:{1}",
+                            Task_name,
+                            "Buyer_info")
+                        );
                     Run_query query = new Run_query();
-                    await query.Execute_in_Postgres(new[] {
-                        string.Format("UPDATE public.datatbles SET start_update=current_timestamp, in_progress=true WHERE table_name='{0}'", Task_name) }, string.Format("Start {0}",Task_name), cancellationToken);
-                    SourceDataSet = await Limit_length(await rw.Get_PSTGR("" +
-                        string.Format(@"SELECT * FROM public.data WHERE regexp_like(indeks, '{0}')", regex),
-                        string.Format("{0}:{1}", Task_name, "Buyer_info"), cancellationToken));
-                    Changes_List<Buyer_info_row> Zak_changes = await rw.Changes(SourceDataSet,await Limit_length(DataSet),
+                    await query.Execute_in_Postgres(
+                        new[] {
+                            string.Format(
+                                "UPDATE public.datatbles SET start_update=current_timestamp, in_progress=true WHERE table_name='{0}'",
+                                Task_name) },
+                        string.Format(
+                            "Start {0}",
+                            Task_name), 
+                        cancellationToken);
+
+                    SourceDataSet = await Limit_length(
+                        await rw.Get_PSTGR("" +
+                            string.Format(
+                                @"SELECT * FROM public.data WHERE regexp_like(indeks, '{0}')",
+                                regex),
+                            string.Format(
+                                "{0}:{1}",
+                                Task_name,
+                                "Buyer_info"),
+                            cancellationToken)
+                        );
+
+                    Changes_List<Buyer_info_row> Zak_changes = await rw.Changes(
+                        SourceDataSet,
+                        await Limit_length(DataSet),
                         new[] { "indeks", "umiejsc", "data_dost" },
                         new[] { "indeks", "umiejsc", "data_dost", "status_informacji", "informacja", "id", "widoczny_od_dnia" , "refr_date" },
                         new[] { "id", "widoczny_od_dnia", "informacja" },
-                        string.Format("{0}:{1}", Task_name, "Buyer_info"), cancellationToken);
-                    returned += await rw.PSTRG_Changes_to_dataTable(Zak_changes, "data",
-                        new[] { "id" }, null, new[] {"" +
-                        string.Format(@"UPDATE public.data a 
-                            SET widoczny_od_dnia=b.ab 
-                            from 
-                            (
-                                select
-                                a.id,
-                                min(b.dat_shortage) ab 
-                            from 
+                        string.Format(
+                            "{0}:{1}", 
+                            Task_name,
+                            "Buyer_info"),
+                        cancellationToken);
+
+                    returned += await rw.PSTRG_Changes_to_dataTable(
+                        Zak_changes,
+                        "data",
+                        new[] { "id" },
+                        null,
+                        new[] {"" +
+                            string.Format(
+                                @"UPDATE public.data a 
+                                    SET widoczny_od_dnia=b.ab 
+                                    from 
+                                    (
+                                        select
+                                        a.id,
+                                        min(b.dat_shortage) ab 
+                                    from 
+                                        (
+                                            select 
+                                                id,
+                                                indeks,
+                                                umiejsc,
+                                                data_dost,
+                                                data_braku
+                                                from
+                                                public.data 
+                                            where regexp_like(indeks, '{0}') and widoczny_od_dnia is null) a,
+                                        (
+                                            select 
+                                                part_no,
+                                                contract,
+                                                work_day,
+                                                dat_shortage 
+                                                from 
+                                                demands 
+                                            where regexp_like(part_no, '{0}') and dat_shortage is not null) b 
+                                        where b.part_no=a.indeks and a.umiejsc=b.contract and b.work_day between a.data_braku and a.data_dost group by a.id) b 
+                                   where a.id=b.id",
+                                regex)
+                            ,
+                            string.Format(
+                                @"UPDATE public.data b 
+                                    SET status_informacji=a.potw, informacja=a.info 
+                                    from 
+                                    (
+                                    select 
+                                        a.id,
+                                        case when a.typ_zdarzenia in ('Dzisiejsza dostawa','Opóźniona dostawa','Nieaktualne Dostawy') then null else coalesce(b.rodzaj_potw,'BRAK') end potw,
+                                        a.status_informacji,
+                                        b.info 
+                                    from 
+                                        (SELECT * from public.data
+                                            WHERE regexp_like(indeks, '{0}'))a
+                                        left join 
+                                        potw b 
+                                        on b.indeks=a.indeks and b.umiejsc=a.umiejsc and (b.data_dost=a.data_dost or b.rodzaj_potw='NIE ZAMAWIAM') 
+                                    where 
+                                        coalesce (a.status_informacji,'N')!=coalesce(case when a.typ_zdarzenia in ('Dzisiejsza dostawa','Opóźniona dostawa','Nieaktualne Dostawy') then null 
+                                            else coalesce(b.rodzaj_potw,'BRAK') end,'N') 
+                                        or coalesce(a.informacja,'n')!=coalesce(b.info,'n')) a  
+                                    where b.id=a.id",
+                                regex)
+                            ,
+                            string.Format(
+                                @"UPDATE public.data a 
+                                SET widoczny_od_dnia=b.refr 
+                                from 
                                 (
                                     select 
-                                        id,
-                                        indeks,
-                                        umiejsc,
-                                        data_dost,
-                                        data_braku
+                                        b.id,
+                                        b.refr 
+                                    from 
+                                    (
+                                        select
+                                            a.id,
+                                            min(b.dat_shortage) refr
                                         from
-                                        public.data 
-                                    where regexp_like(indeks, '{0}') and widoczny_od_dnia is null) a,
-                                (
-                                    select 
-                                        part_no,
-                                        contract,
-                                        work_day,
-                                        dat_shortage 
-                                        from 
-                                        demands 
-                                    where regexp_like(part_no, '{0}') and dat_shortage is not null) b 
-                                where b.part_no=a.indeks and a.umiejsc=b.contract and b.work_day between a.data_braku and a.data_dost group by a.id) b 
-                           where a.id=b.id", regex)
-                        ,
-                        string.Format(@"UPDATE public.data b 
-                            SET status_informacji=a.potw, informacja=a.info 
-                            from 
-                            (
-                            select 
-                                a.id,
-                                case when a.typ_zdarzenia in ('Dzisiejsza dostawa','Opóźniona dostawa','Nieaktualne Dostawy') then null else coalesce(b.rodzaj_potw,'BRAK') end potw,
-                                a.status_informacji,
-                                b.info 
-                            from 
-                                (SELECT * from public.data
-                                    WHERE regexp_like(indeks, '{0}'))a
-                                left join 
-                                potw b 
-                                on b.indeks=a.indeks and b.umiejsc=a.umiejsc and (b.data_dost=a.data_dost or b.rodzaj_potw='NIE ZAMAWIAM') 
-                            where 
-                                coalesce (a.status_informacji,'N')!=coalesce(case when a.typ_zdarzenia in ('Dzisiejsza dostawa','Opóźniona dostawa','Nieaktualne Dostawy') then null 
-                                    else coalesce(b.rodzaj_potw,'BRAK') end,'N') 
-                                or coalesce(a.informacja,'n')!=coalesce(b.info,'n')) a  
-                            where b.id=a.id", regex)
-                        ,
-                        string.Format(@"UPDATE public.data a 
-                        SET widoczny_od_dnia=b.refr 
-                        from 
-                        (
-                            select 
-                                b.id,
-                                b.refr 
-                            from 
-                            (
-                                select
-                                    a.id,
-                                    min(b.dat_shortage) refr
-                                from
-                                (
-                                    select * from public.data where regexp_like(indeks, '{0}')
-                                ) a,
-                                (
-                                    select 
-                                        part_no,
-                                        contract,
-                                        work_day,
-                                        dat_shortage 
-                                    from demands
-                                    WHERE regexp_like(part_no, '{0}')
-                                ) b 
-                                where b.part_no=a.indeks and b.work_day between a.data_braku and a.data_dost group by a.id) b,
-                                public.data c where b.id=c.id and b.refr!=c.widoczny_od_dnia) b WHERE a.id=b.id;", regex)
-                        ,
-                        string.Format(@"UPDATE public.datatbles 
-                            SET last_modify=current_timestamp, in_progress=false,updt_errors=false 
-                            WHERE table_name='{0}'", Task_name)
-                        ,
-                        @"UPDATE public.datatbles 
-                            SET last_modify=current_timestamp, in_progress=false,updt_errors=false 
-                            WHERE table_name='data'"
-                        },
-                        string.Format("{0}:{1}", Task_name, "Buyer_info"), cancellationToken);
+                                        (
+                                            select * from public.data where regexp_like(indeks, '{0}')
+                                        ) a,
+                                        (
+                                            select 
+                                                part_no,
+                                                contract,
+                                                work_day,
+                                                dat_shortage 
+                                            from demands
+                                            WHERE regexp_like(part_no, '{0}')
+                                        ) b 
+                                        where b.part_no=a.indeks and b.work_day between a.data_braku and a.data_dost group by a.id) b,
+                                        public.data c where b.id=c.id and b.refr!=c.widoczny_od_dnia) b WHERE a.id=b.id;",
+                                regex)
+                            ,
+                            string.Format(
+                                @"UPDATE public.datatbles 
+                                    SET last_modify=current_timestamp, in_progress=false,updt_errors=false 
+                                    WHERE table_name='{0}'",
+                                Task_name)
+                            ,
+                            @"UPDATE public.datatbles 
+                                SET last_modify=current_timestamp, in_progress=false,updt_errors=false 
+                                WHERE table_name='data'"
+                            },
+                        string.Format(
+                            "{0}:{1}",
+                            Task_name,
+                            "Buyer_info"),
+                        cancellationToken);
                     using (NpgsqlConnection conA = new NpgsqlConnection(Postegresql_conn.Connection_pool["MAIN"].ToString()))
                     {
                         await conA.OpenAsync();
@@ -287,12 +403,21 @@ namespace Confirm_server_by_Contracts
                     }
                     query = null;
                     Zak_changes = null;
-                    Steps_executor.End_step(string.Format("{0}:{1}", Task_name, "Buyer_info"));
+                    Steps_executor.End_step(string.Format(
+                        "{0}:{1}",
+                        Task_name,
+                        "Buyer_info")
+                        );
                 });
             }
             if(Steps_executor.Wait_for(new string[] { string.Format("{0}:{1}", Task_name, "Buyer_info"), string.Format("{0}:{1}", Task_name, "Update Demands"), string.Format("{0}:{1}", Task_name, "Fill_executor") }, string.Format("{0}:{1}", Task_name, "Parallel Calc"), cancellationToken))
             {
-                Steps_executor.End_step(string.Format("{0}:{1}", Task_name, "Parallel Calc"));
+                Steps_executor.End_step(
+                    string.Format(
+                        "{0}:{1}",
+                        Task_name, 
+                        "Parallel Calc")
+                    );
                 Steps_executor.End_step(Task_name);
             }            
             return returned;
