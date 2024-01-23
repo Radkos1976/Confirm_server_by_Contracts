@@ -1,0 +1,70 @@
+ SELECT a.order_no,
+    a.cust_no,
+    a.reference,
+    a.addr1,
+    max(a.date_entered) AS date1,
+    max(a.objversion) AS date2,
+    sum(a.gotowe) AS sum,
+    a.contract,
+    a.country
+   FROM ( SELECT a_1.koor,
+            a_1.order_no,
+            a_1.line_no,
+            a_1.rel_no,
+            a_1.line_item_no,
+            a_1.last_mail_conf,
+            a_1.state_conf,
+            a_1.line_state,
+            a_1.cust_order_state,
+            a_1.country,
+            a_1.cust_no,
+            a_1.zip_code,
+            a_1.addr1,
+            a_1.prom_date,
+            a_1.prom_week,
+            a_1.load_id,
+            a_1.ship_date,
+            a_1.part_no,
+            a_1.descr,
+            a_1.configuration,
+            a_1.buy_qty_due,
+            a_1.desired_qty,
+            a_1.qty_invoiced,
+            a_1.qty_shipped,
+            a_1.qty_assigned,
+            a_1.dop_connection_db,
+            a_1.dop_id,
+            a_1.dop_state,
+            a_1.data_dop,
+            a_1.dop_qty,
+            a_1.dop_made,
+            a_1.date_entered,
+            a_1.chksum,
+            a_1.custid,
+            a_1.id,
+            a_1.zest,
+            a_1.seria0,
+            a_1.data0,
+            a_1.objversion,
+            a_1.contract,
+            get_refer(a_1.addr1) AS reference,
+                CASE
+                    WHEN a_1.dop_connection_db::text = 'AUT'::text AND a_1.dop_state IS NULL THEN 1
+                    ELSE 0
+                END AS gotowe
+           FROM cust_ord a_1
+             LEFT JOIN ( SELECT send_mail.cust_ord
+                   FROM send_mail
+                  WHERE send_mail.typ::text = 'NIE POTWIERDZAĆ'::text
+                  GROUP BY send_mail.cust_ord) b ON b.cust_ord::text = a_1.order_no::text
+             LEFT JOIN ( SELECT mail.order_no
+                   FROM mail
+                  WHERE mail.info_handlo = true OR mail.status_informacji::text = 'POPRAWIĆ'::text
+                  GROUP BY mail.order_no) g ON g.order_no::text = a_1.order_no::text
+             LEFT JOIN ( SELECT cust_ord.order_no
+                   FROM cust_ord
+                  WHERE cust_ord.state_conf::text = 'Wydrukow.'::text AND cust_ord.last_mail_conf IS NOT NULL
+                  GROUP BY cust_ord.order_no) c ON c.order_no::text = a_1.order_no::text
+          WHERE b.cust_ord IS NULL AND g.order_no IS NULL AND (a_1.state_conf::text = 'Nie wydruk.'::text OR a_1.last_mail_conf IS NULL) AND is_refer(a_1.addr1) = true AND ("substring"(a_1.order_no::text, 1, 1) = ANY (ARRAY['S'::text, 'G'::text])) AND (a_1.cust_order_state::text <> ALL (ARRAY['Częściowo dostarczone'::character varying::text, 'Zaplanowane'::character varying::text, 'Zablok. kredyt'::character varying::text])) AND ("substring"(a_1.part_no::text, 1, 3) <> ALL (ARRAY['633'::text, '628'::text, '1K1'::text, '1U2'::text, '632'::text])) AND (c.order_no IS NOT NULL AND a_1.dop_connection_db::text <> 'MAN'::text OR c.order_no IS NULL)) a
+  GROUP BY a.order_no, a.cust_no, a.reference, a.addr1, a.contract, a.country
+ HAVING sum(a.gotowe) = 0 AND COALESCE(max(a.date_entered)::timestamp with time zone, now() - '03:00:00'::interval) < (now() - '02:00:00'::interval) AND max(a.objversion) < (now() - '02:00:00'::interval);

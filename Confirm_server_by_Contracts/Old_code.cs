@@ -450,7 +450,7 @@ namespace Confirm_server_by_Contracts
                                     cmd.ExecuteNonQuery();
                                 }
                                 using (NpgsqlCommand cmd = new NpgsqlCommand("" +
-                                    "select a.order_no,a.cust_no,a.reference,cast('' as varchar )mail,a.country,current_date as date_add " +
+                                    "select a.order_no,a.cust_no,a.reference,cast('' as varchar )mail,a.country,current_date as date_add, contract " +
                                     "from confirm_ord a " +
                                     "order by cust_no,reference,order_no", conA))
                                 {
@@ -679,7 +679,7 @@ namespace Confirm_server_by_Contracts
                                                     {
                                                         comm.Parameters[0].Value = (string)rek["order_no"];
                                                         comm.Parameters[1].Value = (string)rek["reference"];
-                                                        comm.Parameters[2].Value = "ST";
+                                                        comm.Parameters[2].Value = (string)rek["contract"]; ;
                                                         comm.Parameters[3].Value = (string)rek["mail"];
                                                         comm.Parameters[4].Value = (string)rek["cust_no"];
                                                         comm.Parameters[5].Value = "CUSTOMER_ORDER_CONF_REP";
