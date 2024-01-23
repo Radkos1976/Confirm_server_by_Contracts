@@ -91,10 +91,22 @@ namespace Confirm_server_by_Contracts
                         list_pstgr = await Get_PSTGR_List(cancellationToken);
                     }
                 );
-                Changes_List<Orders_row> tmp = await rw.Changes(list_pstgr, list_ora, new[] { "custid" }, new[] { "id", "zest", "objversion" }, new[] { "id" }, "cust_ord", cancellationToken);
+                Changes_List<Orders_row> tmp = await rw.Changes(
+                    list_pstgr,
+                    list_ora,
+                    new[] { "custid" },
+                    new[] { "id", "zest", "objversion" },
+                    new[] { "id" },
+                    "cust_ord",
+                    cancellationToken);
                 list_ora = null;
                 list_pstgr = null;
-                return await PSTRG_Changes_to_dataTable(tmp, "cust_ord", new[] { "id" }, null, new[] {                    
+                return await PSTRG_Changes_to_dataTable(
+                    tmp,
+                    "cust_ord",
+                    new[] { "id" },
+                    null, 
+                    new[] {                    
                     
                     @"Delete from public.late_ord
                       where cust_id in (SELECT a.cust_id
@@ -112,7 +124,9 @@ namespace Confirm_server_by_Contracts
                             left join
                             public.cust_ord b
                             on a.id=b.id
-                            where b.id is null)"}, "cust_ord", cancellationToken);                
+                            where b.id is null)"}, 
+                    "cust_ord",
+                    cancellationToken);                
             }
             catch (Exception e)
             {
@@ -126,13 +140,19 @@ namespace Confirm_server_by_Contracts
         /// </summary>
         /// <param name="rw"></param>
         /// <returns></returns>
-        private async Task<List<Orders_row>> Get_PSTGR_List(CancellationToken cancellationToken) => await rw.Get_PSTGR("Select * from cust_ord", "cust_ord", cancellationToken);
+        private async Task<List<Orders_row>> Get_PSTGR_List(CancellationToken cancellationToken) 
+            => await rw.Get_PSTGR(
+                "Select * from cust_ord",
+                "cust_ord",
+                cancellationToken);
 
         /// <summary>
         /// Get present list of customer orders stored in ERP
         /// </summary>
         /// <returns>Present list of orders</returns>
-        private async Task<List<Orders_row>> Get_Ora_list(CancellationToken cancellationToken) => await Check_length(await rw.Get_Ora("" +
+        private async Task<List<Orders_row>> Get_Ora_list(CancellationToken cancellationToken) 
+            => await Check_length(
+                await rw.Get_Ora("" +
                @"SELECT 
                     ifsapp.customer_order_api.Get_Authorize_Code(a.ORDER_NO) KOOR,
                     a.ORDER_NO,
@@ -213,7 +233,10 @@ namespace Confirm_server_by_Contracts
                             WHERE a.order_no = b.order_no AND SubStr(MESSAGE_TEXT, 1, 3) = 'Wys'
                             GROUP BY a.ORDER_NO, LINE_NO, REL_NO, LINE_ITEM_NO) b
                             WHERE a.HISTORY_NO = b.HI) c
-                    ON c.id = a.id", "cust_ord", cancellationToken));
+                    ON c.id = a.id",
+                    "cust_ord",
+                    cancellationToken)
+                );
 
         public Task<List<Orders_row>> Check_length(List<Orders_row> source)
         {

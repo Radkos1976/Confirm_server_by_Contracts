@@ -21,8 +21,14 @@ namespace Purch_Confirm_server
                     using (NpgsqlConnection conA = new NpgsqlConnection(npA))
                     {
                         conA.Open();
-                        using (NpgsqlCommand cmd = new NpgsqlCommand(string.Format(@"SELECT count(application_name) il 
-                                                                        FROM pg_catalog.pg_stat_activity where application_name='{0}'", Postegresql_conn.App_name), conA))
+                        using (NpgsqlCommand cmd = new NpgsqlCommand(
+                            string.Format(
+                            @"SELECT count(application_name) il 
+                                FROM pg_catalog.pg_stat_activity 
+                                where application_name='{0}'",
+                            Postegresql_conn.App_name),
+                            conA)
+                        )
                         {
                             cnt_serw = Convert.ToInt32(cmd.ExecuteScalar());
                         }

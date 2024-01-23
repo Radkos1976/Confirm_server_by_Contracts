@@ -33,7 +33,11 @@ namespace DB_Conect
         /// <summary>
         /// Get datasets from ORACLE - use this override when columns in query and in class T is same and create prepared parameters 
         /// </summary>
-        public async Task<List<T>> Get_Ora(string Sql_ora, string Task_name, ORA_parameters parameters, CancellationToken cancellationToken)
+        public async Task<List<T>> Get_Ora(
+            string Sql_ora,
+            string Task_name,
+            ORA_parameters parameters,
+            CancellationToken cancellationToken)
         {
             Dictionary<string, int> D_columns = new Dictionary<string, int>();
             Dictionary<int, string> P_columns = new Dictionary<int, string>();
@@ -48,7 +52,14 @@ namespace DB_Conect
                 P_columns.Add(counter, p.PropertyInfo.Name.ToLower());
                 counter++;
             }
-            return await Get_Ora(Sql_ora, Task_name, D_columns, P_columns, P_types, cancellationToken, parameters);
+            return await Get_Ora(
+                Sql_ora,
+                Task_name,
+                D_columns,
+                P_columns,
+                P_types,
+                cancellationToken,
+                parameters);
         }
         /// <summary>
         /// Get datasets from ORACLE - use this override when columns in query and in class T is diferent and use prepared parameters 
@@ -58,7 +69,14 @@ namespace DB_Conect
         /// <param name="D_columns"></param>
         /// <param name="P_columns"></param>
         /// <returns></returns>
-        public async Task<List<T>> Get_Ora(string Sql_ora, string Task_name, Dictionary<string, int> D_columns, Dictionary<int, string> P_columns, Dictionary<int, Type> P_types, CancellationToken cancellationToken, ORA_parameters parameters)
+        public async Task<List<T>> Get_Ora(
+            string Sql_ora,
+            string Task_name,
+            Dictionary<string, int> D_columns,
+            Dictionary<int, string> P_columns,
+            Dictionary<int, Type> P_types,
+            CancellationToken cancellationToken,
+            ORA_parameters parameters)
         {
             List<T> Rows = new List<T>();
             try
@@ -109,7 +127,13 @@ namespace DB_Conect
                                             if (readData != System.DBNull.Value)
                                             {
                                                 Type pt = P_types[counter];
-                                                Accessor.SetValue(Row, Convert.ChangeType(readData, Nullable.GetUnderlyingType(pt) ?? pt, null));
+                                                Accessor.SetValue(
+                                                    Row,
+                                                    Convert.ChangeType(
+                                                        readData,
+                                                        Nullable.GetUnderlyingType(pt) ?? pt,
+                                                        null)
+                                                    );
                                             }
                                         }
                                         counter++;
@@ -143,7 +167,13 @@ namespace DB_Conect
         /// <param name="D_columns"></param>
         /// <param name="P_columns"></param>
         /// <returns></returns>
-        public async Task<List<T>> Get_Ora(string Sql_ora, string Task_name, Dictionary<string, int> D_columns, Dictionary<int, string> P_columns, Dictionary<int, Type> P_types, CancellationToken cancellationToken)
+        public async Task<List<T>> Get_Ora(
+            string Sql_ora,
+            string Task_name,
+            Dictionary<string, int> D_columns,
+            Dictionary<int, string> P_columns, 
+            Dictionary<int, Type> P_types,
+            CancellationToken cancellationToken)
         {
             List<T> Rows = new List<T>();
             try
@@ -192,7 +222,13 @@ namespace DB_Conect
                                             if (readData != System.DBNull.Value)
                                             {
                                                 Type pt = P_types[counter];
-                                                Accessor.SetValue(Row, Convert.ChangeType(readData, Nullable.GetUnderlyingType(pt) ?? pt, null));
+                                                Accessor.SetValue(
+                                                    Row, 
+                                                    Convert.ChangeType(
+                                                        readData,
+                                                        Nullable.GetUnderlyingType(pt) ?? pt,
+                                                        null)
+                                                    );
                                             }
                                         }
                                         counter++;
@@ -220,7 +256,10 @@ namespace DB_Conect
         /// <summary>
         /// Get datasets from ORACLE - use this override when columns in query and in class T is same  
         /// </summary>
-        public async Task<List<T>> Get_Ora(string Sql_ora, string Task_name, CancellationToken cancellationToken)
+        public async Task<List<T>> Get_Ora(
+            string Sql_ora,
+            string Task_name,
+            CancellationToken cancellationToken)
         {
             Dictionary<string, int> D_columns = new Dictionary<string, int>();
             Dictionary<int, string> P_columns = new Dictionary<int, string>();
@@ -235,7 +274,13 @@ namespace DB_Conect
                 P_columns.Add(counter, p.PropertyInfo.Name.ToLower());
                 counter++;
             }
-            return await Get_Ora(Sql_ora, Task_name, D_columns, P_columns, P_types, cancellationToken);
+            return await Get_Ora(
+                Sql_ora,
+                Task_name,
+                D_columns,
+                P_columns,
+                P_types,
+                cancellationToken);
         }
         /// <summary>
         /// Get datasets from POSTEGRES - use this override when columns in query and in class T is diferent  
@@ -245,7 +290,13 @@ namespace DB_Conect
         /// <param name="D_columns"></param>
         /// <param name="P_columns"></param>
         /// <returns></returns>
-        public async Task<List<T>> Get_PSTGR(string Sql_ora, string Task_name, Dictionary<string, int> D_columns, Dictionary<int, string> P_columns, Dictionary<int, Type> P_types, CancellationToken cancellationToken)
+        public async Task<List<T>> Get_PSTGR(
+            string Sql_ora,
+            string Task_name,
+            Dictionary<string, int> D_columns,
+            Dictionary<int, string> P_columns,
+            Dictionary<int, Type> P_types,
+            CancellationToken cancellationToken)
         {
             List<T> Rows = new List<T>();
             try
@@ -288,7 +339,13 @@ namespace DB_Conect
                                             if (readData != System.DBNull.Value)
                                             {
                                                 Type pt = P_types[counter];
-                                                Accessor.SetValue(Row, Convert.ChangeType(readData, Nullable.GetUnderlyingType(pt) ?? pt, null));
+                                                Accessor.SetValue(
+                                                    Row,
+                                                    Convert.ChangeType(
+                                                        readData,
+                                                        Nullable.GetUnderlyingType(pt) ?? pt,
+                                                        null)
+                                                    );
                                             }
                                         }
                                         counter++;
@@ -315,7 +372,10 @@ namespace DB_Conect
         /// <param name="Sql_ora"></param>
         /// <param name="Task_name"></param>
         /// <returns></returns>
-        public async Task<List<T>> Get_PSTGR(string Sql_ora, string Task_name, CancellationToken cancellationToken )
+        public async Task<List<T>> Get_PSTGR(
+            string Sql_ora,
+            string Task_name,
+            CancellationToken cancellationToken )
         {
             Dictionary<string, int> D_columns = new Dictionary<string, int>();
             Dictionary<int, string> P_columns = new Dictionary<int, string>();
@@ -330,7 +390,13 @@ namespace DB_Conect
                 P_columns.Add(counter, p.PropertyInfo.Name.ToLower());
                 counter++;
             }
-            return await Get_PSTGR(Sql_ora, Task_name, D_columns, P_columns, P_types, cancellationToken);
+            return await Get_PSTGR(
+                Sql_ora,
+                Task_name,
+                D_columns,
+                P_columns,
+                P_types,
+                cancellationToken);
         }
         /// <summary>
         /// Compare columns in rows by order assigned in ID array,
@@ -342,7 +408,12 @@ namespace DB_Conect
         /// <param name="Accessors"></param>
         /// <param name="P_types"></param>
         /// <returns></returns>
-        public Task<int> Compare_rows(T new_row, T old_row, int[] ID, IPropertyAccessor[] Accessors, Dictionary<int, Type> P_types)
+        public Task<int> Compare_rows(
+            T new_row, 
+            T old_row, 
+            int[] ID, 
+            IPropertyAccessor[] Accessors,
+            Dictionary<int, Type> P_types)
         {
             int result = 0;
             foreach (int item in ID)
@@ -408,7 +479,14 @@ namespace DB_Conect
         /// <param name="not_compare"></param>
         /// <param name="guid_col"></param>
         /// <returns>  </returns>
-        public async Task<Changes_List<T>> Changes(List<T> Old_list, List<T> New_list, string[] ID_column, string[] not_compare, string[] guid_col, string Task_name, CancellationToken cancellationToken)
+        public async Task<Changes_List<T>> Changes(
+            List<T> Old_list,
+            List<T> New_list,
+            string[] ID_column,
+            string[] not_compare,
+            string[] guid_col,
+            string Task_name,
+            CancellationToken cancellationToken)
         {
             Changes_List<T> modyfications = new Changes_List<T>();
             try
@@ -448,7 +526,12 @@ namespace DB_Conect
                     }
                     if (ID.Length > found.Count)
                     {
-                        throw new Exception(String.Format("Task {1},Some Parameters of ID_column like field name:{0} have fields name width no existence in DataSet", ID_column, Task_name));
+                        throw new Exception(
+                            String.Format(
+                                "Task {1},Some Parameters of ID_column like field name:{0} have fields name width no existence in DataSet",
+                                ID_column,
+                                Task_name)
+                            );
                     }                    
                     counter = 0;
                     int max_old_rows = Old_list.Count;
@@ -461,13 +544,23 @@ namespace DB_Conect
                         }
                         if (max_old_rows > counter)
                         {
-                            int compare = await Compare_rows(rows, Old_list[counter], ID, Accessors, P_types);
+                            int compare = await Compare_rows(
+                                rows, 
+                                Old_list[counter], 
+                                ID, 
+                                Accessors,
+                                P_types);
                             while (compare == 1)
                             {
                                 _operDEl.Add(Old_list[counter]);
                                 counter++;
                                 if (max_old_rows <= counter) { break; }
-                                compare = await Compare_rows(rows, Old_list[counter], ID, Accessors, P_types);                               
+                                compare = await Compare_rows(
+                                    rows, 
+                                    Old_list[counter], 
+                                    ID, 
+                                    Accessors, 
+                                    P_types);                               
                             }
                             if (max_old_rows > counter)
                             {                               
@@ -560,7 +653,14 @@ namespace DB_Conect
                         Delete = _operDEl,
                         Update = _operMOD
                     };
-                    Loger.Log(string.Format("Found modfications in Task {0}: INSERT {1}, DELETE {2}, UPDATE {3}", Task_name, _operINS.Count(), _operDEl.Count(), _operMOD.Count()));
+                    Loger.Log(
+                        string.Format(
+                            "Found modfications in Task {0}: INSERT {1}, DELETE {2}, UPDATE {3}",
+                            Task_name,
+                            _operINS.Count(),
+                            _operDEl.Count(),
+                            _operMOD.Count())
+                        );
                     modyfications = dataset;
                     return modyfications;
                 }
@@ -568,7 +668,12 @@ namespace DB_Conect
             }
             catch (Exception e)
             {
-                Loger.Log(String.Format("Error in compare procedure for Task {1} : {0}", e, Task_name));
+                Loger.Log(
+                    String.Format(
+                        "Error in compare procedure for Task {1} : {0}",
+                        e,
+                        Task_name)
+                    );
                 Steps_executor.Step_error(Task_name);                
                 return modyfications;
             }
@@ -578,7 +683,10 @@ namespace DB_Conect
         /// </summary>
         /// <param name="Table_name"></param>
         /// <returns></returns>
-        public async Task<List<Npgsql_Schema_fields>> Get_shema(string Table_name, Dictionary<string, int> P_columns, CancellationToken cancellationToken)
+        public async Task<List<Npgsql_Schema_fields>> Get_shema(
+            string Table_name,
+            Dictionary<string, int> P_columns,
+            CancellationToken cancellationToken)
         {
             List<Npgsql_Schema_fields> schema = new List<Npgsql_Schema_fields>();
             if (!cancellationToken.IsCancellationRequested)
@@ -594,15 +702,36 @@ namespace DB_Conect
                             //Loger.Log(string.Format("CHecking Schema for {2} => Field Name {1} => Field Type {0}  => type field exist in Postgres_helpers.PostegresTyp {3}", row["data_type"].ToString(), row["column_name"].ToString(), Table_name, Postgres_helpers.PostegresTyp.Keys.Contains(row["data_type"].ToString())));
                             if (!Postgres_helpers.PostegresTyp.Keys.Contains(row["data_type"].ToString()))
                             {
-                                Loger.Log(string.Format("Error Please contact width developer  => Schema for {0} , Field Name {1} =>  Field Type dont exist in system dictionary Postgres_helpers.PostegresTyp  => {2}", Table_name, row["column_name"].ToString(), row["data_type"].ToString()));
+                                Loger.Log(
+                                    string.Format(
+                                        "Error Please contact width developer  => Schema for {0} , Field Name {1} =>  Field Type dont exist in system dictionary Postgres_helpers.PostegresTyp  => {2}", 
+                                        Table_name, 
+                                        row["column_name"].ToString(), 
+                                        row["data_type"].ToString())
+                                    );
                             }
                             Npgsql_Schema_fields rw = new Npgsql_Schema_fields
                             {
                                 Field_name = row["column_name"].ToString(),
                                 DB_Col_number = Convert.ToInt32(row["ordinal_position"]) - 1,
-                                Field_type = Postgres_helpers.PostegresTyp.Keys.Contains(row["data_type"].ToString()) ? Postgres_helpers.PostegresTyp[row["data_type"].ToString()]: NpgsqlTypes.NpgsqlDbType.Varchar,
-                                Dtst_col = P_columns.ContainsKey(row["column_name"].ToString().ToLower()) ? P_columns[row["column_name"].ToString().ToLower()] : 10000,
-                                Char_max_len = row["character_maximum_length"].GetType() == typeof(int) ? (int)row["character_maximum_length"] : 0
+                                Field_type = 
+                                    Postgres_helpers.PostegresTyp.Keys.Contains(row["data_type"].ToString()) 
+                                    ? 
+                                    Postgres_helpers.PostegresTyp[row["data_type"].ToString()]
+                                    : 
+                                    NpgsqlTypes.NpgsqlDbType.Varchar,
+                                Dtst_col = 
+                                    P_columns.ContainsKey(row["column_name"].ToString().ToLower()) 
+                                    ? 
+                                    P_columns[row["column_name"].ToString().ToLower()] 
+                                    : 
+                                    10000,
+                                Char_max_len = 
+                                    row["character_maximum_length"].GetType() == typeof(int) 
+                                    ? 
+                                    (int)row["character_maximum_length"] 
+                                    : 
+                                    0
                             };
                             schema.Add(rw);
                         }
@@ -623,7 +752,14 @@ namespace DB_Conect
         /// <param name="name_table"></param>
         /// <param name="guid_col"></param>
         /// <returns></returns>
-        public async Task<int> PSTRG_Changes_to_dataTable(Changes_List<T> _list, string name_table, string[] guid_col, string[] query_before, string[] query_after, string Task_name, CancellationToken cancellationToken)
+        public async Task<int> PSTRG_Changes_to_dataTable(
+            Changes_List<T> _list,
+            string name_table,
+            string[] guid_col,
+            string[] query_before,
+            string[] query_after,
+            string Task_name,
+            CancellationToken cancellationToken)
         {
             bool dblogon = false;
             try

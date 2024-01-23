@@ -77,7 +77,11 @@ namespace Confirm_server_by_Contracts
                     {
                         Inventory_part inventory_616 = new Inventory_part("^616.*", false, part_616.limit_part_no);
                         part_616 = null;
-                        oracle = await inventory_616.Limit_in_and_create_Except(part_no_tup, part_no_zero_tup, oracle, false);
+                        oracle = await inventory_616.Limit_in_and_create_Except(
+                            part_no_tup,
+                            part_no_zero_tup,
+                            oracle,
+                            false);
                         Parallel.Invoke(
                         async () =>
                         {
@@ -100,7 +104,12 @@ namespace Confirm_server_by_Contracts
                         {
                             Steps_executor.Register_step("Main_loop 616 ");
                             Main_loop main_Loop = new Main_loop();
-                            int result = await main_Loop.Update_Main_Tables("^616.*", "Main_loop 616 ", only_616, oracle, active_token);
+                            int result = await main_Loop.Update_Main_Tables(
+                                "^616.*",
+                                "Main_loop 616 ",
+                                only_616,
+                                oracle,
+                                active_token);
                             if (Steps_executor.Wait_for(new string[] { string.Format("{0}:{1}", "Main_loop 616 ", "Fill_executor") }, "Main_loop 616 ", active_token))
                             {
                                 main_Loop.Get_thre_workers("Main_loop 616 Executor", active_token);
@@ -135,7 +144,11 @@ namespace Confirm_server_by_Contracts
                     async () =>
                     {
                         Steps_executor.Register_step("Demands except 616 ");
-                        no_616 = await part_except_616.Get_source_list("^(5|6[^1]|61[^6]).+", false, "Demands except 616 ", active_token);
+                        no_616 = await part_except_616.Get_source_list(
+                            "^(5|6[^1]|61[^6]).+",
+                            false,
+                            "Demands except 616 ",
+                            active_token);
                         Steps_executor.End_step("Demands except 616 ");
                         part_except_616 = null;
                     },
@@ -168,7 +181,12 @@ namespace Confirm_server_by_Contracts
                     {
                         Steps_executor.Register_step("Main_loop except 616 ");
                         Main_loop main_Loop = new Main_loop();
-                        int result = await main_Loop.Update_Main_Tables("^(5|6[^1]|61[^6]).+", "Main_loop except 616 ", no_616, oracle, active_token);
+                        int result = await main_Loop.Update_Main_Tables(
+                            "^(5|6[^1]|61[^6]).+",
+                            "Main_loop except 616 ",
+                            no_616,
+                            oracle,
+                            active_token);
                         if (Steps_executor.Wait_for(new string[] { string.Format("{0}:{1}", "Main_loop except 616 ", "Fill_executor") }, "Main_loop except 616 ", active_token))
                         {
                             Parallel.Invoke(
@@ -210,7 +228,9 @@ namespace Confirm_server_by_Contracts
                 async () => {
                     await query.Execute_in_Postgres(new[] {
                     "REFRESH MATERIALIZED VIEW bilans_val",
-                    "UPDATE public.datatbles SET last_modify=current_timestamp, in_progress=false,updt_errors=false WHERE table_name='bil_val'"}, "Refresh bilans_val", active_token);
+                    "UPDATE public.datatbles SET last_modify=current_timestamp, in_progress=false,updt_errors=false WHERE table_name='bil_val'"},
+                    "Refresh bilans_val",
+                    active_token);
                 }
                 ,
                 async () => {
@@ -306,7 +326,9 @@ namespace Confirm_server_by_Contracts
                     ) as up 
                     where demands.id=up.id;",
                     "UPDATE public.datatbles SET last_modify=current_timestamp, in_progress=false,updt_errors=false WHERE table_name='ord_dem'"
-                    }, "Refresh Demand and Order_demands", active_token);
+                    },
+                    "Refresh Demand and Order_demands",
+                    active_token);
                 });
                 Steps_executor.Register_step("Validate demands");
                 if (Steps_executor.Wait_for(new string[] { "Refresh bilans_val", "Refresh Demand and Order_demands" }, "Validate demands", active_token))
@@ -359,7 +381,9 @@ namespace Confirm_server_by_Contracts
                                  group by c.indeks, c.umiejsc,c.opis,c.data_dost,c.bilans,c.mag,c.sum_dost,c.sum_potrz,b.ma) a 
                             where  supp not between -0.001 and 0.001 or dmd not between -0.001 and 0.001 group by indeks,umiejsc,mn,ma)
                         ) a
-                        group by a.part_no, a.contract;", "Check_order_demands", active_token);
+                        group by a.part_no, a.contract;",
+                        "Check_order_demands",
+                        active_token);
                     List<Small_upd_demands> list1 = new List<Small_upd_demands>();
                     List<Small_upd_demands> list2 = new List<Small_upd_demands>();
                     List<Small_upd_demands> list3 = new List<Small_upd_demands>();
@@ -452,8 +476,12 @@ namespace Confirm_server_by_Contracts
                 if (Steps_executor.Wait_for(new string[] { "All_lacks", "Lack_report", "Lack_report1", "Lack_report2", "Update To_Mail", "Lack_bil", "Calculate_cust_order" }, "Mail", active_token))
                 {
                     Steps_executor.End_step("Validate demands");
-                    await query.Execute_in_Postgres(new string[] { "UPDATE public.datatbles SET start_update=current_timestamp, in_progress=true WHERE substring(table_name,1,7)='cal_ord'" }, "Start_update mail", active_token);
-                    int result = await query.Execute_in_Postgres(new string[] {"" +
+                    await query.Execute_in_Postgres(
+                        new string[] { "UPDATE public.datatbles SET start_update=current_timestamp, in_progress=true WHERE substring(table_name,1,7)='cal_ord'" },
+                        "Start_update mail",
+                        active_token);
+                    int result = await query.Execute_in_Postgres(
+                        new string[] {"" +
                         @"INSERT INTO public.mail
                         (ordid,dop, koor, order_no, line_no, rel_no, part_no, descr, country, prom_date, prom_week, load_id, ship_date, date_entered, cust_id, 
                         prod, prod_week, planner_buyer, indeks, opis, typ_zdarzenia, status_informacji, zest, info_handlo, logistyka, seria0, data0, cust_line_stat,
@@ -562,7 +590,9 @@ namespace Confirm_server_by_Contracts
                         ,
                         "DELETE FROM public.mail WHERE cust_id in (select a.cust_id from mail a left join to_mail b on b.cust_id=a.cust_id where b.cust_id is null and (is_for_mail(a.status_informacji)=false or a.status_informacji='POPRAWIĆ'))",
                         "UPDATE public.datatbles SET last_modify=current_timestamp, in_progress=false,updt_errors=false WHERE substring(table_name,1,7)='cal_ord'"
-                        }, "Mail", active_token);
+                        }, 
+                        "Mail", 
+                        active_token);
 
                 }
             }                
@@ -615,10 +645,10 @@ namespace Confirm_server_by_Contracts
     }
     public class Small_upd_demands: IComparable<Small_upd_demands>, IEquatable<Small_upd_demands>
     {
-        public string part_no { get; set; }
-        public string  contract {  get; set; }
-        public DateTime min_d { get; set; }
-        public DateTime max_d { get; set;}
+        public string Part_no { get; set; }
+        public string  Contract {  get; set; }
+        public DateTime Min_d { get; set; }
+        public DateTime Max_d { get; set;}
 
         public int CompareTo(Small_upd_demands other)
         {
@@ -626,18 +656,18 @@ namespace Confirm_server_by_Contracts
             {
                 return 1;
             }
-            int var1 = this.part_no.CompareTo(other.part_no);
+            int var1 = this.Part_no.CompareTo(other.Part_no);
             if (var1  != 0)
             {
                 return  var1;
             }
-            return this.contract.CompareTo(other.contract);
+            return this.Contract.CompareTo(other.Contract);
         }
 
         public bool Equals(Small_upd_demands other)
         {
             if (other == null) return false;
-            return this.part_no.Equals(other.part_no) && this.contract.Equals(other.contract);
+            return this.Part_no.Equals(other.Part_no) && this.Contract.Equals(other.Contract);
         }
     }
 }

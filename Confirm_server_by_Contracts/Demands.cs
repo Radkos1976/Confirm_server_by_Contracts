@@ -21,101 +21,113 @@ namespace Confirm_server_by_Contracts
             rw = new Update_pstgr_from_Ora<Simple_demands_row>("MAIN");
         }
 
-        public async Task<List<Simple_demands_row>> Get_source_list(string regex, 
-            bool create_tuple_off, string transaction_name, 
+        public async Task<List<Simple_demands_row>> Get_source_list(
+            string regex, 
+            bool create_tuple_off,
+            string transaction_name, 
             CancellationToken cancellationToken) 
-            => await Add_field_Next_day(await rw.Get_Ora("" +
-            string.Format(@"SELECT 
-                PART_NO,
-                contract,
-                To_Date(DATE_REQUIRED) DATE_REQUIRED,
-                round(Sum(QTY_SUPPLY),10) QTY_SUPPLY,
-                round(Sum(QTY_DEMAND),10) QTY_DEMAND,
-                Nvl(round(Sum(QTY_DEMAND_ZAM),10),0) DEMAND_ZAM,
-                Nvl(round(Sum(QTY_DEMAND_DOP),10),0) QTY_DEMAND_DOP,                
-                Sum(chksum) chk_sum 
-            FROM 
-                (SELECT 
-                    PART_NO,
-                    contract,
-                    DATE_REQUIRED,
-                    0 QTY_SUPPLY,
-                    QTY_DEMAND,
-                    0 QTY_DEMAND_DOP,
-                    0 QTY_DEMAND_ZAM,
-                    owa_opt_lock.checksum(a.ROWID) chksum 
-                FROM 
-                    ifsapp.shop_material_alloc_demand a 
-                WHERE regexp_like(part_no, '{0}')   
-                UNION ALL  
-                SELECT 
-                    PART_NO,
-                    contract,
-                    DATE_REQUIRED,
-                    0 QTY_SUPPLY,
-                    QTY_DEMAND,
-                    QTY_DEMAND QTY_DEMAND_DOP,
-                    0 QTY_DEMAND_ZAM,
-                    owa_opt_lock.checksum(order_no||QTY_DEMAND||DATE_REQUIRED||ORDER_NO||LINE_NO||INFO) chksum
-                FROM 
-                    ifsapp.dop_order_demand_ext 
-                WHERE regexp_like(part_no, '{0}') 
-                UNION ALL 
-                SELECT 
-                    PART_NO,
-                    contract,
-                    DATE_REQUIRED,
-                    0 QTY_SUPPLY,
-                    QTY_DEMAND,
-                    0 QTY_DEMAND_DOP,
-                    QTY_DEMAND QTY_DEMAND_ZAM,
-                    owa_opt_lock.checksum(ROW_ID||QTY_DEMAND||DATE_REQUIRED||QTY_PEGGED||QTY_RESERVED) chksum 
-                FROM 
-                    ifsapp.customer_order_line_demand_oe 
-                WHERE regexp_like(part_no, '{0}') 
-                UNION ALL
-                SELECT
-                    PART_NO,
-                    contract,
-                    DATE_REQUIRED,
-                    0 QTY_SUPPLY,
-                    QTY_DEMAND,
-                    0 QTY_DEMAND_DOP,
-                    0 QTY_DEMAND_ZAM,
-                    owa_opt_lock.checksum(ROWID||QTY_DEMAND||DATE_REQUIRED||STATUS_CODE) chksum 
-                FROM 
-                    ifsapp.material_requis_line_demand_oe 
-                WHERE regexp_like(part_no, '{0}') 
-                UNION ALL  
-                SELECT
-                    PART_NO,
-                    contract,
-                    sysdate DATE_REQUIRED,
-                    QTY_SUPPLY,
-                    0 QTY_DEMAND,
-                    0 QTY_DEMAND_DOP,
-                    0 QTY_DEMAND_ZAM,
-                    owa_opt_lock.checksum(ROWID||QTY_SUPPLY||DATE_REQUIRED||STATUS_CODE) chksum 
-                FROM 
-                    ifsapp.ARRIVED_PUR_ORDER_EXT  
-                WHERE regexp_like(part_no, '{0}')  
-                UNION ALL  
-                SELECT 
-                    PART_NO, 
-                    contract,
-                    DATE_REQUIRED,
-                    QTY_SUPPLY,
-                    0 QTY_DEMAND,
-                    0 QTY_DEMAND_DOP,
-                    0 QTY_DEMAND_ZAM,
-                    owa_opt_lock.checksum(ROWID||QTY_SUPPLY||DATE_REQUIRED) chksum 
-                FROM 
-                    ifsapp.purchase_order_line_supply  
-                WHERE regexp_like(part_no, '{0}')
-                )
-            GROUP BY PART_NO,contract,To_Date(DATE_REQUIRED)", regex), transaction_name, cancellationToken), create_tuple_off, cancellationToken);
+            => await Add_field_Next_day(
+                await rw.Get_Ora("" +
+                    string.Format(@"SELECT 
+                        PART_NO,
+                        contract,
+                        To_Date(DATE_REQUIRED) DATE_REQUIRED,
+                        round(Sum(QTY_SUPPLY),10) QTY_SUPPLY,
+                        round(Sum(QTY_DEMAND),10) QTY_DEMAND,
+                        Nvl(round(Sum(QTY_DEMAND_ZAM),10),0) DEMAND_ZAM,
+                        Nvl(round(Sum(QTY_DEMAND_DOP),10),0) QTY_DEMAND_DOP,                
+                        Sum(chksum) chk_sum 
+                    FROM 
+                        (SELECT 
+                            PART_NO,
+                            contract,
+                            DATE_REQUIRED,
+                            0 QTY_SUPPLY,
+                            QTY_DEMAND,
+                            0 QTY_DEMAND_DOP,
+                            0 QTY_DEMAND_ZAM,
+                            owa_opt_lock.checksum(a.ROWID) chksum 
+                        FROM 
+                            ifsapp.shop_material_alloc_demand a 
+                        WHERE regexp_like(part_no, '{0}')   
+                        UNION ALL  
+                        SELECT 
+                            PART_NO,
+                            contract,
+                            DATE_REQUIRED,
+                            0 QTY_SUPPLY,
+                            QTY_DEMAND,
+                            QTY_DEMAND QTY_DEMAND_DOP,
+                            0 QTY_DEMAND_ZAM,
+                            owa_opt_lock.checksum(order_no||QTY_DEMAND||DATE_REQUIRED||ORDER_NO||LINE_NO||INFO) chksum
+                        FROM 
+                            ifsapp.dop_order_demand_ext 
+                        WHERE regexp_like(part_no, '{0}') 
+                        UNION ALL 
+                        SELECT 
+                            PART_NO,
+                            contract,
+                            DATE_REQUIRED,
+                            0 QTY_SUPPLY,
+                            QTY_DEMAND,
+                            0 QTY_DEMAND_DOP,
+                            QTY_DEMAND QTY_DEMAND_ZAM,
+                            owa_opt_lock.checksum(ROW_ID||QTY_DEMAND||DATE_REQUIRED||QTY_PEGGED||QTY_RESERVED) chksum 
+                        FROM 
+                            ifsapp.customer_order_line_demand_oe 
+                        WHERE regexp_like(part_no, '{0}') 
+                        UNION ALL
+                        SELECT
+                            PART_NO,
+                            contract,
+                            DATE_REQUIRED,
+                            0 QTY_SUPPLY,
+                            QTY_DEMAND,
+                            0 QTY_DEMAND_DOP,
+                            0 QTY_DEMAND_ZAM,
+                            owa_opt_lock.checksum(ROWID||QTY_DEMAND||DATE_REQUIRED||STATUS_CODE) chksum 
+                        FROM 
+                            ifsapp.material_requis_line_demand_oe 
+                        WHERE regexp_like(part_no, '{0}') 
+                        UNION ALL  
+                        SELECT
+                            PART_NO,
+                            contract,
+                            sysdate DATE_REQUIRED,
+                            QTY_SUPPLY,
+                            0 QTY_DEMAND,
+                            0 QTY_DEMAND_DOP,
+                            0 QTY_DEMAND_ZAM,
+                            owa_opt_lock.checksum(ROWID||QTY_SUPPLY||DATE_REQUIRED||STATUS_CODE) chksum 
+                        FROM 
+                            ifsapp.ARRIVED_PUR_ORDER_EXT  
+                        WHERE regexp_like(part_no, '{0}')  
+                        UNION ALL  
+                        SELECT 
+                            PART_NO, 
+                            contract,
+                            DATE_REQUIRED,
+                            QTY_SUPPLY,
+                            0 QTY_DEMAND,
+                            0 QTY_DEMAND_DOP,
+                            0 QTY_DEMAND_ZAM,
+                            owa_opt_lock.checksum(ROWID||QTY_SUPPLY||DATE_REQUIRED) chksum 
+                        FROM 
+                            ifsapp.purchase_order_line_supply  
+                        WHERE regexp_like(part_no, '{0}')
+                        )
+                    GROUP BY PART_NO,contract,To_Date(DATE_REQUIRED)",
+                        regex),
+                    transaction_name,
+                    cancellationToken),
+                create_tuple_off,
+                cancellationToken);
 
-        public Task<List<Simple_demands_row>> Add_field_Next_day(List<Simple_demands_row> source, bool create_tuple_off, CancellationToken cancellationToken, bool Fill_Next_Day=false)
+        public Task<List<Simple_demands_row>> Add_field_Next_day(
+            List<Simple_demands_row> source,
+            bool create_tuple_off,
+            CancellationToken cancellationToken,
+            bool Fill_Next_Day=false)
         {
             if (create_tuple_off)
             {
@@ -259,7 +271,16 @@ namespace Confirm_server_by_Contracts
                     (string part_no, string contract, Tuple<DateTime?, DateTime?> dates) = Dataset_executor.Run_next();
                     if ((part_no, contract) != ("", ""))
                     {
-                        result += await Update_dataset(part_no, contract, dates, string.Format("{0}:{1}:{2}", Task_name, part_no, contract), cancellationToken).ConfigureAwait(false);
+                        result += await Update_dataset(
+                            part_no,
+                            contract,
+                            dates,
+                            string.Format(
+                                "{0}:{1}:{2}",
+                                Task_name,
+                                part_no,
+                                contract),
+                            cancellationToken).ConfigureAwait(false);
                         Dataset_executor.Report_end(part_no, contract);
                     }
                 } 
@@ -273,7 +294,10 @@ namespace Confirm_server_by_Contracts
             return result;
         }
 
-        public async Task<int> Update_from_executor_from_list(string Task_name, List<Small_upd_demands> dataset, CancellationToken cancellationToken)
+        public async Task<int> Update_from_executor_from_list(
+            string Task_name,
+            List<Small_upd_demands> dataset,
+            CancellationToken cancellationToken)
         {
             int result = 0;
             Steps_executor.Register_step(Task_name);
@@ -283,11 +307,16 @@ namespace Confirm_server_by_Contracts
                 {
                     if (cancellationToken.IsCancellationRequested) { break; }
                     result += await Update_dataset(
-                        item.part_no, 
-                        item.contract,
-                        new Tuple<DateTime?, DateTime?>( item.min_d, item.max_d ), 
-                        string.Format("{0}:{1}:{2}", Task_name, item.part_no, item.contract), cancellationToken).ConfigureAwait(false);
-                    Dataset_executor.Report_end(item.part_no, item.contract);
+                        item.Part_no, 
+                        item.Contract,
+                        new Tuple<DateTime?, DateTime?>( item.Min_d, item.Max_d ), 
+                        string.Format(
+                            "{0}:{1}:{2}",
+                            Task_name,
+                            item.Part_no,
+                            item.Contract),
+                        cancellationToken).ConfigureAwait(false);
+                    Dataset_executor.Report_end(item.Part_no, item.Contract);
                 }
                 catch (Exception ex)
                 {
@@ -308,8 +337,12 @@ namespace Confirm_server_by_Contracts
         /// <param name="Task_name"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        private async Task<int> Update_dataset(string part_no, string contract,
-            Tuple<DateTime?, DateTime?> dates, string Task_name, CancellationToken cancellationToken)
+        private async Task<int> Update_dataset(
+            string part_no,
+            string contract,
+            Tuple<DateTime?, DateTime?> dates,
+            string Task_name,
+            CancellationToken cancellationToken)
         {
             
             List<Order_Demands_row> Old = new List<Order_Demands_row>();
@@ -317,20 +350,39 @@ namespace Confirm_server_by_Contracts
             Parallel.Invoke(
                     async() => 
                     {
-                        Old = await Get_postgres(part_no, contract, dates, Task_name, cancellationToken);
+                        Old = await Get_postgres(
+                            part_no,
+                            contract,
+                            dates,
+                            Task_name,
+                            cancellationToken);
                     },
                     async () =>
                     {
-                        New = await Check_length(await Get_oracle(part_no, contract, dates, Task_name, cancellationToken));
+                        New = await Check_length(
+                            await Get_oracle(
+                                part_no,
+                                contract,
+                                dates,
+                                Task_name,
+                                cancellationToken)
+                            );
                     });
-            Changes_List<Order_Demands_row> Ch_dataset = await Changes(Old, New, 
+            Changes_List<Order_Demands_row> Ch_dataset = await Changes(
+                Old,
+                New, 
                 new[] {"dop", "dop_lin", "int_ord", "line_no", "rel_no"}, 
                 new[] { "dop", "dop_lin", "int_ord", "line_no", "rel_no", "id" }, 
                 new[] {"id"},
-                Task_name, cancellationToken);
-            int result = await rw.PSTRG_Changes_to_dataTable(Ch_dataset, "ord_demands",
-                        new[] { "id" }, null, null,
-                        Task_name, cancellationToken).ConfigureAwait(false);            
+                Task_name,
+                cancellationToken);
+            int result = await rw.PSTRG_Changes_to_dataTable(
+                Ch_dataset,
+                "ord_demands",new[] { "id" },
+                null,
+                null,
+                Task_name, 
+                cancellationToken).ConfigureAwait(false);            
             return result;
         }
         /// <summary>
@@ -342,13 +394,22 @@ namespace Confirm_server_by_Contracts
         /// <param name="Task_name"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        private async Task<List<Order_Demands_row>> Get_postgres(string part_no, string contract,
-            Tuple<DateTime?, DateTime?> dates, string Task_name, CancellationToken cancellationToken) => await rw.Get_PSTGR("" +
+        private async Task<List<Order_Demands_row>> Get_postgres(
+            string part_no,
+            string contract,
+            Tuple<DateTime?, DateTime?> dates,
+            string Task_name,
+            CancellationToken cancellationToken) 
+            => await rw.Get_PSTGR("" +
                 string.Format("select * " +
                     "from public.ord_demands " +
                     "where part_no = '{0}' AND CONTRACT = '{1}' AND DATE_REQUIRED between '{2}' and '{3}';", 
-                    part_no, contract, dates.Item1.ToString(), dates.Item2.ToString()),
-                Task_name, cancellationToken);
+                    part_no, 
+                    contract,
+                    dates.Item1.ToString(),
+                    dates.Item2.ToString()),
+                Task_name,
+                cancellationToken);
         
         /// <summary>
         /// Get Data from Oracle by part_no,contract and date range's
@@ -359,8 +420,13 @@ namespace Confirm_server_by_Contracts
         /// <param name="Task_name"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        private async Task<List<Order_Demands_row>> Get_oracle(string part_no, string contract,
-            Tuple<DateTime?, DateTime?> dates, string Task_name, CancellationToken cancellationToken) => await rw.Get_Ora("" +
+        private async Task<List<Order_Demands_row>> Get_oracle(
+            string part_no,
+            string contract,
+            Tuple<DateTime?, DateTime?> dates,
+            string Task_name,
+            CancellationToken cancellationToken) 
+            => await rw.Get_Ora("" +
                 string.Format(@"SELECT  
                     a.DOP,
                     Nvl(a.LINE_ITEM_NO,a.DOP_LIN) DOP_LIN,

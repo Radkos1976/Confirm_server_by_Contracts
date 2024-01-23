@@ -98,12 +98,29 @@ namespace Confirm_server_by_Contracts
                                 list_pstgr = await Get_PSTGR_List(Postegresql_conn.Contracts_kalendar[contract], cancellationToken);
                             }
                         );
-                        Changes_List<Calendar_row> tmp = await rw.Changes(list_pstgr, list_ora, new[] { "work_day", "calendar_id" }, new[] { "work_day", "calendar_id" }, null, string.Format("Calendar: {0}", contract), cancellationToken);
+                        Changes_List<Calendar_row> tmp = await rw.Changes(
+                            list_pstgr, 
+                            list_ora, 
+                            new[] { "work_day", "calendar_id" }, 
+                            new[] { "work_day", "calendar_id" }, 
+                            null, 
+                            string.Format("Calendar: {0}", contract),
+                            cancellationToken
+                        );
                         list_ora = null;
                         list_pstgr = null;
-                        returned += await PSTRG_Changes_to_dataTable(tmp, "work_cal", new[] { "work_day", "calendar_id" }, null, new[] {
-                        String.Format(@"Delete from public.work_cal
-                          where calendar_id not in ({0})", String.Join(", ", Postegresql_conn.Contracts_kalendar.Select(x => (String.Format("'{0}'",x.Value))).ToArray())) }, "Calendar", cancellationToken);
+                        returned += await PSTRG_Changes_to_dataTable(
+                            tmp,
+                            "work_cal",
+                            new[] { "work_day", "calendar_id" },
+                            null,
+                            new[] {
+                                String.Format(@"Delete from public.work_cal where calendar_id not in ({0})",
+                                    String.Join(", ", Postegresql_conn.Contracts_kalendar.Select(x => (String.Format("'{0}'",x.Value))).ToArray())
+                                ) },
+                            "Calendar",
+                            cancellationToken
+                        );
                         tmp = null;
                     }                   
                 }
@@ -121,14 +138,24 @@ namespace Confirm_server_by_Contracts
         /// </summary>
         /// <param name="rw"></param>
         /// <returns></returns>
-        public async Task<List<Calendar_row>> Get_PSTGR_List(string calendar_id, CancellationToken cancellationToken) => await rw.Get_PSTGR(String.Format("Select * from work_cal {0}", calendar_id == "ALL"?"":String.Format("WHERE CALENDAR_ID='{0}'", calendar_id)), "Calendar", cancellationToken);
+        public async Task<List<Calendar_row>> Get_PSTGR_List(string calendar_id, CancellationToken cancellationToken) 
+            => await rw.Get_PSTGR(
+                String.Format("Select * from work_cal {0}", calendar_id == "ALL"
+                    ?
+                    "":
+                    String.Format("WHERE CALENDAR_ID='{0}'", calendar_id)
+                 ), "Calendar",
+                cancellationToken
+            );
 
         /// <summary>
         /// Get calendars from ERP
         /// </summary>
         /// <returns></returns>
-        public async Task<List<Calendar_row>> Get_Ora_list(string calendar_id, CancellationToken cancellationToken) => await Check_length(await rw.Get_Ora("" +
-            String.Format(@"SELECT
+        public async Task<List<Calendar_row>> Get_Ora_list(string calendar_id, CancellationToken cancellationToken) 
+            => await Check_length(
+                await rw.Get_Ora("" +
+                    String.Format(@"SELECT
                                 calendar_id,
                                 counter,
                                 to_date(work_day) work_day,
@@ -138,7 +165,10 @@ namespace Confirm_server_by_Contracts
                                 objversion 
                             FROM 
                                 ifsapp.work_time_counter 
-                            WHERE CALENDAR_ID='{0}'", calendar_id), "Calendar", cancellationToken));
+                            WHERE CALENDAR_ID='{0}'", calendar_id), 
+                    "Calendar",
+                    cancellationToken)
+                );
 
         public class Calendar_row : IEquatable<Calendar_row>, IComparable<Calendar_row>
         {  
