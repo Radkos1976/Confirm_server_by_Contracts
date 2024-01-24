@@ -150,7 +150,7 @@ namespace Confirm_server_by_Contracts
                         {
                             comm.CommandText = anonymous_block;
                             comm.Parameters.Add(":DP_ID", OracleDbType.Varchar2).Value = dop_id.ToString();
-                            comm.Parameters.Add(":move_date", OracleDbType.Varchar2).Value = mod_date;
+                            comm.Parameters.Add(":move_date", OracleDbType.Date).Value = mod_date;
                             comm.Prepare();
                             comm.ExecuteNonQuery();
                         }
