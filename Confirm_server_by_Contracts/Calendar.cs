@@ -90,14 +90,9 @@ namespace Confirm_server_by_Contracts
                         checked_calendar.Add(Postegresql_conn.Contracts_kalendar[contract]);
                         List<Calendar_row> list_ora = new List<Calendar_row>();
                         List<Calendar_row> list_pstgr = new List<Calendar_row>();
-                        Parallel.Invoke(
-                            async () => {
-                                list_ora = await Get_Ora_list(Postegresql_conn.Contracts_kalendar[contract], cancellationToken);
-                            },
-                            async () => {
-                                list_pstgr = await Get_PSTGR_List(Postegresql_conn.Contracts_kalendar[contract], cancellationToken);
-                            }
-                        );
+                        list_ora = await Get_Ora_list(Postegresql_conn.Contracts_kalendar[contract], cancellationToken);
+                        list_pstgr = await Get_PSTGR_List(Postegresql_conn.Contracts_kalendar[contract], cancellationToken);
+                        
                         Changes_List<Calendar_row> tmp = await rw.Changes(
                             list_pstgr, 
                             list_ora, 

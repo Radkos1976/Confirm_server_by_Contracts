@@ -261,44 +261,40 @@ namespace Confirm_server_by_Contracts
             Dictionary<string, DateTime, int> poz_dmd = new Dictionary<string, DateTime, int>();
             int counter = 0;
             int cnt = 0;
-            Parallel.Invoke(
-                () =>
-                {
-                    foreach (Order_lack_row mat in mat_ord)
-                    {
-                        if (cancellationToken.IsCancellationRequested) { break; }
-                        if (mat.Zest != null)
-                        {
-                            if (!zest.ContainsKey(mat.Zest))
-                            {
-                                zest.Add(mat.Zest, new List<int> { counter });
-                            }
-                            else
-                            {
-                                zest[mat.Zest].Add(counter);
-                            }
 
-                        }
-                        if (!ordid.ContainsKey(mat.Ordid))
-                        {
-                            ordid.Add(mat.Ordid, new List<int> { counter });
-                        }
-                        else
-                        {
-                            ordid[mat.Ordid].Add(counter);
-                        }
-                        counter++;
-                    }
-                },
-                () =>
+            foreach (Order_lack_row mat in mat_ord)
+            {
+                if (cancellationToken.IsCancellationRequested) { break; }
+                if (mat.Zest != null)
                 {
-                    foreach (Balance_materials_row dmd in mat_dmd)
+                    if (!zest.ContainsKey(mat.Zest))
                     {
-                        if (cancellationToken.IsCancellationRequested) { break; }
-                        poz_dmd.Add(dmd.Indeks, dmd.Data_dost, cnt);
-                        cnt++;
+                        zest.Add(mat.Zest, new List<int> { counter });
                     }
-                });
+                    else
+                    {
+                        zest[mat.Zest].Add(counter);
+                    }
+
+                }
+                if (!ordid.ContainsKey(mat.Ordid))
+                {
+                    ordid.Add(mat.Ordid, new List<int> { counter });
+                }
+                else
+                {
+                    ordid[mat.Ordid].Add(counter);
+                }
+                counter++;
+            }
+
+            foreach (Balance_materials_row dmd in mat_dmd)
+            {
+                if (cancellationToken.IsCancellationRequested) { break; }
+                poz_dmd.Add(dmd.Indeks, dmd.Data_dost, cnt);
+                cnt++;
+            }
+
 
             (string, DateTime) get_key_pair(int item)
             {

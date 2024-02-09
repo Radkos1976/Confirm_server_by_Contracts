@@ -438,6 +438,7 @@ namespace Confirm_server_by_Contracts
                     Steps_executor.End_step("Check_order_demands");
                     if (Steps_executor.Wait_for(new string[] { "Check_order_demands", "Check_order_demands1", "Check_order_demands2", "Check_order_demands3", "Check_order_demands4" }, "Validate demands", active_token))
                     {
+                        System.Threading.Thread.Sleep(200);
                         Parallel.Invoke(
                         () =>
                         {
@@ -464,7 +465,6 @@ namespace Confirm_server_by_Contracts
                             }
                             Calculate_cust_ord calculate_Cust_Ord = new Calculate_cust_ord(active_token);
                             calculate_Cust_Ord = null;
-
                         });
                     }
 
