@@ -773,7 +773,7 @@ namespace Confirm_server_by_Contracts
                     Credentials = new System.Net.NetworkCredential(Mail_conn.UserName, Mail_conn.Password)
                 };
                 //MailAddress bcc = new MailAddress("radek.kosobucki@sits.pl");
-                MailMessage mm = new MailMessage("radkomat@sits.pl", mailto, StrTableStart, strTableBody)
+                MailMessage mm = new MailMessage(Mail_conn.UserName, mailto, StrTableStart, strTableBody)
                 {
                     BodyTransferEncoding = System.Net.Mime.TransferEncoding.Base64,
                     SubjectEncoding = System.Text.Encoding.UTF8,
