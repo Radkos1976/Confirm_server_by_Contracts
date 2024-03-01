@@ -110,6 +110,7 @@ namespace Confirm_server_by_Contracts
                 case when a.dop=0 then 'O '||a.order_no else 'D'||to_char(a.dop,'9999999999') end ordID,
                 f.l_ordid ,
                 c.indeks,
+                c.indeks || '_'|| c.umiejsc key_pair,
                 c.umiejsc,
                 c.opis,
                 c.planner_buyer,
@@ -208,6 +209,7 @@ namespace Confirm_server_by_Contracts
                 c.indeks,
                 c.umiejsc,
                 c.mag,
+                c.indeks || '_' || c.umiejsc key_pair,
                 count(case when order_supp_dmd!='Zam. zakupu' then a.part_no end) il,
                 case when c.typ_zdarzenia='Braki w gwarantowanej dacie' then c.data_gwarancji else c.data_dost end data_dost,
                 c.wlk_dost,
@@ -291,14 +293,14 @@ namespace Confirm_server_by_Contracts
             foreach (Balance_materials_row dmd in mat_dmd)
             {
                 if (cancellationToken.IsCancellationRequested) { break; }
-                poz_dmd.Add(dmd.Indeks, dmd.Data_dost, cnt);
+                poz_dmd.Add(dmd.key_pair, dmd.Data_dost, cnt);
                 cnt++;
             }
 
 
             (string, DateTime) get_key_pair(int item)
             {
-                return mat_ord[item].Typ_zdarzenia == "Braki w gwarantowanej dacie" ? (mat_ord[item].Indeks, mat_ord[item].Data_gwarancji) : (mat_ord[item].Indeks, mat_ord[item].Data_dost);
+                return mat_ord[item].Typ_zdarzenia == "Braki w gwarantowanej dacie" ? (mat_ord[item].key_pair, mat_ord[item].Data_gwarancji) : (mat_ord[item].key_pair, mat_ord[item].Data_dost);
             }
 
             double get_bil(List<int> range, double prev_bil, bool check_state = false)
@@ -348,12 +350,12 @@ namespace Confirm_server_by_Contracts
             {
                 if (cancellationToken.IsCancellationRequested) { break; }
                 counter++;
-                if ((part_no, contract) != (rw.Indeks, rw.Umiejsc))
+                if ((part_no, contract) != (rw.key_pair, rw.Umiejsc))
                 {
                     cnt++;
                     qt = mat_dmd[cnt].Bil_chk;
                     bil = mat_dmd[cnt].Qty;
-                    (part_no, contract) = (rw.Indeks, rw.Umiejsc);
+                    (part_no, contract) = (rw.key_pair, rw.Umiejsc);
                 }
                 if ( bil > qt )
                 {
@@ -381,6 +383,7 @@ namespace Confirm_server_by_Contracts
             public string Ordid { get; set; }
             public long L_ordid { get; set; }
             public string Indeks { get; set; }
+            public string key_pair { get; set; }
             public string Umiejsc { get; set; }
             public string Opis { get; set; }
             public string Planner_buyer { get; set; }
@@ -480,6 +483,7 @@ namespace Confirm_server_by_Contracts
             public string Indeks { get; set; }
             public string Umiejsc {  get; set; }
             public double Mag {  get; set; }
+            public string key_pair { get; set; }   
             public long Il { get; set; }
             public DateTime Data_dost {  get; set; }
             public double Wlk_dost { get; set; }
