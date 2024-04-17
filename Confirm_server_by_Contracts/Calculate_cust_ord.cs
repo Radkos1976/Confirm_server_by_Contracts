@@ -250,7 +250,7 @@ namespace Confirm_server_by_Contracts
             where c.bilans<0 and a.part_no=c.indeks and a.contract=c.umiejsc and e.indeks=c.indeks 
             and e.umiejsc=c.umiejsc and ((c.typ_zdarzenia='Brakujące ilości' and a.date_required<c.data_dost) or 
             (c.typ_zdarzenia!='Brakujące ilości' and a.date_required<=c.data_dost) or a.date_required<=current_date) 
-            and e.data_dost=c.data_dost group by c.indeks,c.umiejsc,c.mag,c.data_gwarancji,c.data_dost,c.wlk_dost,c.sum_dost,c.bilans,c.typ_zdarzenia,e.max_prod_date",
+            and e.data_dost=c.data_dost group by c.indeks,c.umiejsc,c.mag,case when c.typ_zdarzenia='Braki w gwarantowanej dacie' then c.data_gwarancji else c.data_dost end,c.wlk_dost,c.sum_dost,c.bilans,c.typ_zdarzenia,e.max_prod_date",
             "Calculate_cust_ord",
              cancellationToken);
 

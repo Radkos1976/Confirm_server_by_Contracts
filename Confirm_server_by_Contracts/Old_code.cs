@@ -1577,7 +1577,7 @@ namespace Confirm_server_by_Contracts
                             "case when typ!='NIE POTWIERDZAĆ' then status_informacji end tp " +
                             "from send_mail " +
                             "where last_mail is null and ((cast(created as date)<current_date and typ='NIE POTWIERDZAĆ') or (created + interval '1 hour' < current_timestamp and typ!='NIE POTWIERDZAĆ')) " +
-                            "group by mail,is_confirm(status_informacji) ,is_alter(status_informacji) , is_dontpurch(status_informacji),typ,case when typ!='NIE POTWIERDZAĆ' then status_informacji end", conA))
+                            "group by mail,is_confirm(status_informacji) ,is_alter(status_informacji), is_dontpurch(status_informacji),typ,case when typ!='NIE POTWIERDZAĆ' then status_informacji end", conA))
                             {
                                 using (NpgsqlDataReader re = cmd.ExecuteReader())
                                 {
