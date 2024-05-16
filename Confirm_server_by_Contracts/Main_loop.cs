@@ -574,6 +574,9 @@ namespace Confirm_server_by_Contracts
                     if (counter < max - 1)
                     {
                         NEXT_row = DMND_ORA[counter + 1];
+                    } else
+                    {
+                        NEXT_row = DMND_ORA[0];
                     }
                     bilans = STAN_mag + SUM_QTY_SUPPLY - SUM_QTY_DEMAND - QTY_SUPPLY;
                     DemandSet.Add(new Demands_row
