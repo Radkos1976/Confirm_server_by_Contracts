@@ -630,8 +630,8 @@ namespace Confirm_server_by_Contracts
                         }
                     }
                     if (TmpDataSet.Count > 0)
-                    {
-                        if (Date_reQ > DATNOW || (Part_no, Contract) != (NEXT_row.Part_no, NEXT_row.Contract))
+                    {                        
+                        if (Date_reQ > DATNOW || !(Part_no.Equals(NEXT_row.Part_no) && Contract.Equals(NEXT_row.Contract)))
                         {
                             if (dta_rap == nullDAT)
                             {
@@ -717,7 +717,7 @@ namespace Confirm_server_by_Contracts
                     {
                         if (bilans < 0)
                         {
-                            if ((Part_no, Contract) != (NEXT_row.Part_no, NEXT_row.Contract) || (Date_reQ <= gwar_DT && NEXT_row.Date_required > gwar_DT))
+                            if (!(Part_no.Equals(NEXT_row.Part_no) && Contract.Equals(NEXT_row.Contract)) || (Date_reQ <= gwar_DT && NEXT_row.Date_required > gwar_DT))
                             {
                                 string state = Date_reQ <= gwar_DT ? "Braki w gwarantowanej dacie" : "Brak zamówień zakupu";
                                 if (Date_reQ <= gwar_DT)
@@ -759,7 +759,7 @@ namespace Confirm_server_by_Contracts
                     {
                         Data_Braku = nullDAT;
                     }
-                    if ((Part_no, Contract) != (NEXT_row.Part_no, NEXT_row.Contract))
+                    if (!(Part_no.Equals(NEXT_row.Part_no) && Contract.Equals(NEXT_row.Contract)))
                     {
                         max_dates.Add(Part_no, Contract, dta_rap>rpt_short? dta_rap: rpt_short);
                     }

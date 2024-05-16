@@ -350,12 +350,13 @@ namespace Confirm_server_by_Contracts
             {
                 if (cancellationToken.IsCancellationRequested) { break; }
                 counter++;
-                if ((part_no, contract) != (rw.key_pair, rw.Umiejsc))
+                if (!(part_no.Equals(rw.key_pair) && contract.Equals(rw.Umiejsc)))
                 {
                     cnt++;
                     qt = mat_dmd[cnt].Bil_chk;
                     bil = mat_dmd[cnt].Qty;
-                    (part_no, contract) = (rw.key_pair, rw.Umiejsc);
+                    part_no = rw.key_pair;
+                    contract = rw.Umiejsc;
                 }
                 if ( bil > qt )
                 {
