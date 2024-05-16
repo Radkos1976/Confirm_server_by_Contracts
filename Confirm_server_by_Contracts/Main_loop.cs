@@ -674,8 +674,8 @@ namespace Confirm_server_by_Contracts
                                     Id = System.Guid.NewGuid()
                                 });
                             }
-                        }
-                        TmpDataSet.Clear();
+                            TmpDataSet.Clear();
+                        }                        
                     }
                     if (QTY_SUPPLY > 0)
                     {
