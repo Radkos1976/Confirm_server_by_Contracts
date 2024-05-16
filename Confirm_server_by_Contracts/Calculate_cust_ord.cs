@@ -293,14 +293,14 @@ namespace Confirm_server_by_Contracts
             foreach (Balance_materials_row dmd in mat_dmd)
             {
                 if (cancellationToken.IsCancellationRequested) { break; }
-                poz_dmd.Add(dmd.key_pair, dmd.Data_dost, cnt);
+                poz_dmd.Add(dmd.Key_pair, dmd.Data_dost, cnt);
                 cnt++;
             }
 
 
             (string, DateTime) get_key_pair(int item)
             {
-                return mat_ord[item].Typ_zdarzenia == "Braki w gwarantowanej dacie" ? (mat_ord[item].key_pair, mat_ord[item].Data_gwarancji) : (mat_ord[item].key_pair, mat_ord[item].Data_dost);
+                return mat_ord[item].Typ_zdarzenia == "Braki w gwarantowanej dacie" ? (mat_ord[item].Key_pair, mat_ord[item].Data_gwarancji) : (mat_ord[item].Key_pair, mat_ord[item].Data_dost);
             }
 
             double get_bil(List<int> range, double prev_bil, bool check_state = false)
@@ -350,12 +350,12 @@ namespace Confirm_server_by_Contracts
             {
                 if (cancellationToken.IsCancellationRequested) { break; }
                 counter++;
-                if (!(part_no.Equals(rw.key_pair) && contract.Equals(rw.Umiejsc)))
+                if (!(part_no.Equals(rw.Key_pair) && contract.Equals(rw.Umiejsc)))
                 {
                     cnt++;
                     qt = mat_dmd[cnt].Bil_chk;
                     bil = mat_dmd[cnt].Qty;
-                    part_no = rw.key_pair;
+                    part_no = rw.Key_pair;
                     contract = rw.Umiejsc;
                 }
                 if ( bil > qt )
@@ -384,7 +384,7 @@ namespace Confirm_server_by_Contracts
             public string Ordid { get; set; }
             public long L_ordid { get; set; }
             public string Indeks { get; set; }
-            public string key_pair { get; set; }
+            public string Key_pair { get; set; }
             public string Umiejsc { get; set; }
             public string Opis { get; set; }
             public string Planner_buyer { get; set; }
@@ -484,7 +484,7 @@ namespace Confirm_server_by_Contracts
             public string Indeks { get; set; }
             public string Umiejsc {  get; set; }
             public double Mag {  get; set; }
-            public string key_pair { get; set; }   
+            public string Key_pair { get; set; }   
             public long Il { get; set; }
             public DateTime Data_dost {  get; set; }
             public double Wlk_dost { get; set; }
