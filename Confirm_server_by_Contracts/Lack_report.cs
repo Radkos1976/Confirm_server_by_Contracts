@@ -1,14 +1,9 @@
 ﻿using DB_Conect;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
-using System.Diagnostics.Metrics;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using static Confirm_server_by_Contracts.Lack_report;
-using static Confirm_server_by_Contracts.Order_Demands;
 
 namespace Confirm_server_by_Contracts
 {
@@ -19,9 +14,10 @@ namespace Confirm_server_by_Contracts
         {
             rw = new Update_pstgr_from_Ora<Lack_report_row>("MAIN");
             Parallel.Invoke(
-            async () => {
+            async () =>
+            {
                 Steps_executor.Register_step("Lack_report");
-                int res  = await Update_Lack_reports(cancellationToken);
+                int res = await Update_Lack_reports(cancellationToken);
                 if (Steps_executor.Wait_for(new string[] { "Lack_report" }, "Validate demands", cancellationToken))
                 {
                     Run_query query = new Run_query();
@@ -32,13 +28,13 @@ namespace Confirm_server_by_Contracts
                         "REFRESH MATERIALIZED VIEW braki_poreal; "
                     }, "Lack_report2", cancellationToken);
                     query = null;
-                }                
+                }
             });
         }
         public async Task<int> Update_Lack_reports(CancellationToken cancellationToken)
         {
 
-            int result =  await rw.PSTRG_Changes_to_dataTable(
+            int result = await rw.PSTRG_Changes_to_dataTable(
                 await rw.Changes(
                     await Old_data(cancellationToken),
                     await New_data(cancellationToken),
@@ -61,8 +57,8 @@ namespace Confirm_server_by_Contracts
         private async Task<List<Lack_report_row>> Old_data(CancellationToken cancellationToken) => await rw.Get_PSTGR("SELECT * FROM day_qty", "Lack_report", cancellationToken);
         private Task<List<Lack_report_row>> New_data(CancellationToken cancellationToken)
         {
-            List<Lack_report_row> Returned = new List<Lack_report_row>() ;
-            List<Lack_report_row> list_from_Ora = new List<Lack_report_row>() ;
+            List<Lack_report_row> Returned = new List<Lack_report_row>();
+            List<Lack_report_row> list_from_Ora = new List<Lack_report_row>();
             Parallel.Invoke(
                 async () =>
                 {
@@ -141,12 +137,12 @@ namespace Confirm_server_by_Contracts
                             ORDER BY work_day,typ,WRKC,NEXT_WRKC) a",
                         "Lack_report",
                         cancellationToken);
-                });          
+                });
             int max_rows = Returned.Count;
             int counter = 0;
-            foreach (Lack_report_row item in  list_from_Ora)
+            foreach (Lack_report_row item in list_from_Ora)
             {
-                if ( counter < max_rows )
+                if (counter < max_rows)
                 {
                     int cmp = item.CompareTo(Returned[counter]);
                     while (cmp == 1 && counter + 1 < max_rows)
@@ -157,20 +153,20 @@ namespace Confirm_server_by_Contracts
                     if (cmp == 0)
                     {
                         item.Brak = Returned[counter].Qty_all;
-                    }                    
+                    }
                 }
-            }            
+            }
             return Task.FromResult(list_from_Ora);
         }
         public class Lack_report_row : IEquatable<Lack_report_row>, IComparable<Lack_report_row>
-        {           
-           public DateTime Work_day { get; set; }
-           public string Contract { get; set; }
-           public string Typ {  get; set; }
-           public string Wrkc { get; set; }
-           public string Next_wrkc { get; set; }
-           public double Qty_all { get; set; }
-           public double Brak { get; set; }
+        {
+            public DateTime Work_day { get; set; }
+            public string Contract { get; set; }
+            public string Typ { get; set; }
+            public string Wrkc { get; set; }
+            public string Next_wrkc { get; set; }
+            public double Qty_all { get; set; }
+            public double Brak { get; set; }
 
             public int CompareTo(Lack_report_row other)
             {
@@ -207,12 +203,12 @@ namespace Confirm_server_by_Contracts
             public bool Equals(Lack_report_row other)
             {
                 if (other == null) return false;
-                return 
+                return
                     (
-                    this.Work_day.Equals(other.Work_day) && 
-                    this.Contract.Equals(other.Contract) && 
-                    this.Typ.Equals(other.Typ) && 
-                    this.Wrkc.Equals(other.Wrkc) && 
+                    this.Work_day.Equals(other.Work_day) &&
+                    this.Contract.Equals(other.Contract) &&
+                    this.Typ.Equals(other.Typ) &&
+                    this.Wrkc.Equals(other.Wrkc) &&
                     this.Next_wrkc.Equals(other.Next_wrkc)
                     );
             }

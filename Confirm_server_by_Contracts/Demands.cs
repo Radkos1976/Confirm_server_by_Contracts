@@ -1,10 +1,7 @@
 ﻿using DB_Conect;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
 using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
-using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using static Confirm_server_by_Contracts.Order_Demands;
@@ -22,10 +19,10 @@ namespace Confirm_server_by_Contracts
         }
 
         public async Task<List<Simple_demands_row>> Get_source_list(
-            string regex, 
+            string regex,
             bool create_tuple_off,
-            string transaction_name, 
-            CancellationToken cancellationToken) 
+            string transaction_name,
+            CancellationToken cancellationToken)
             => await Add_field_Next_day(
                 await rw.Get_Ora("" +
                     string.Format(@"SELECT 
@@ -127,7 +124,7 @@ namespace Confirm_server_by_Contracts
             List<Simple_demands_row> source,
             bool create_tuple_off,
             CancellationToken cancellationToken,
-            bool Fill_Next_Day=false)
+            bool Fill_Next_Day = false)
         {
             if (create_tuple_off)
             {
@@ -155,22 +152,22 @@ namespace Confirm_server_by_Contracts
                     }
                 }
             }
-            
+
             return Task.FromResult(source);
-        }       
-                            
+        }
+
         public class Simple_demands_row : IEquatable<Simple_demands_row>, IComparable<Simple_demands_row>
-        {           
+        {
             public string Part_no { get; set; }
-            public string Contract {  get; set; }
-            public DateTime Date_required {  get; set; }
+            public string Contract { get; set; }
+            public DateTime Date_required { get; set; }
             public double Qty_supply { get; set; }
             public double QTY_DEMAND { get; set; }
             public double DEMAND_ZAM { get; set; }
             public double QTY_DEMAND_DOP { get; set; }
             public DateTime Next_day { get; set; } = DateTime.Now;
             public int Chk_sum { get; set; }
-            
+
             public int CompareTo(Simple_demands_row other)
             {
                 if (other == null)
@@ -178,7 +175,7 @@ namespace Confirm_server_by_Contracts
                     return 1;
                 }
                 else
-                {  
+                {
                     int res = this.Part_no.CompareTo(other.Part_no);
                     if (res != 0) { return res; }
                     int nex_res = this.Contract.CompareTo(other.Contract);
@@ -194,9 +191,9 @@ namespace Confirm_server_by_Contracts
             public bool Equals(Simple_demands_row other)
             {
                 if (other == null) return false;
-                return 
-                    this.Part_no.Equals(other.Part_no) && 
-                    this.Contract.Equals(other.Contract) && 
+                return
+                    this.Part_no.Equals(other.Part_no) &&
+                    this.Contract.Equals(other.Contract) &&
                     this.Date_required.Equals(other.Date_required);
             }
         }
@@ -239,14 +236,14 @@ namespace Confirm_server_by_Contracts
             public bool Equals(Demands_row other)
             {
                 if (other == null) return false;
-                return 
-                    this.Part_no.Equals(other.Part_no) && 
-                    this.Contract.Equals(other.Contract) && 
+                return
+                    this.Part_no.Equals(other.Part_no) &&
+                    this.Contract.Equals(other.Contract) &&
                     this.Work_day.Equals(other.Work_day);
             }
         }
     }
-    public class Order_Demands: Update_pstgr_from_Ora<Order_Demands_row>
+    public class Order_Demands : Update_pstgr_from_Ora<Order_Demands_row>
     {
         private readonly Update_pstgr_from_Ora<Order_Demands_row> rw;
         public Order_Demands()
@@ -259,7 +256,7 @@ namespace Confirm_server_by_Contracts
         /// <param name="Task_name"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public async Task<int> Update_from_executor(string  Task_name, CancellationToken cancellationToken)
+        public async Task<int> Update_from_executor(string Task_name, CancellationToken cancellationToken)
         {
             int result = 0;
             Steps_executor.Register_step(Task_name);
@@ -283,12 +280,12 @@ namespace Confirm_server_by_Contracts
                             cancellationToken).ConfigureAwait(false);
                         Dataset_executor.Report_end(part_no, contract);
                     }
-                } 
+                }
                 catch (Exception ex)
                 {
-                    Loger.Log(string.Format("Err => {0}", ex.Message)); 
+                    Loger.Log(string.Format("Err => {0}", ex.Message));
                 }
-                             
+
             }
             Steps_executor.End_step(Task_name);
             return result;
@@ -301,15 +298,15 @@ namespace Confirm_server_by_Contracts
         {
             int result = 0;
             Steps_executor.Register_step(Task_name);
-            foreach(Small_upd_demands item  in  dataset)
+            foreach (Small_upd_demands item in dataset)
             {
                 try
                 {
                     if (cancellationToken.IsCancellationRequested) { break; }
                     result += await Update_dataset(
-                        item.Part_no, 
+                        item.Part_no,
                         item.Contract,
-                        new Tuple<DateTime?, DateTime?>( item.Min_d, item.Max_d ), 
+                        new Tuple<DateTime?, DateTime?>(item.Min_d, item.Max_d),
                         string.Format(
                             "{0}:{1}:{2}",
                             Task_name,
@@ -344,11 +341,11 @@ namespace Confirm_server_by_Contracts
             string Task_name,
             CancellationToken cancellationToken)
         {
-            
+
             List<Order_Demands_row> Old = new List<Order_Demands_row>();
             List<Order_Demands_row> New = new List<Order_Demands_row>();
             Parallel.Invoke(
-                    async() => 
+                    async () =>
                     {
                         Old = await Get_postgres(
                             part_no,
@@ -370,19 +367,19 @@ namespace Confirm_server_by_Contracts
                     });
             Changes_List<Order_Demands_row> Ch_dataset = await Changes(
                 Old,
-                New, 
-                new[] {"dop", "dop_lin", "int_ord", "line_no", "rel_no"}, 
-                new[] { "dop", "dop_lin", "int_ord", "line_no", "rel_no", "id" }, 
-                new[] {"id"},
+                New,
+                new[] { "dop", "dop_lin", "int_ord", "line_no", "rel_no" },
+                new[] { "dop", "dop_lin", "int_ord", "line_no", "rel_no", "id" },
+                new[] { "id" },
                 Task_name,
                 cancellationToken);
             int result = await rw.PSTRG_Changes_to_dataTable(
                 Ch_dataset,
-                "ord_demands",new[] { "id" },
+                "ord_demands", new[] { "id" },
                 null,
                 null,
-                Task_name, 
-                cancellationToken).ConfigureAwait(false);            
+                Task_name,
+                cancellationToken).ConfigureAwait(false);
             return result;
         }
         /// <summary>
@@ -399,18 +396,18 @@ namespace Confirm_server_by_Contracts
             string contract,
             Tuple<DateTime?, DateTime?> dates,
             string Task_name,
-            CancellationToken cancellationToken) 
+            CancellationToken cancellationToken)
             => await rw.Get_PSTGR("" +
                 string.Format("select * " +
                     "from public.ord_demands " +
-                    "where part_no = '{0}' AND CONTRACT = '{1}' AND DATE_REQUIRED between '{2}' and '{3}';", 
-                    part_no, 
+                    "where part_no = '{0}' AND CONTRACT = '{1}' AND DATE_REQUIRED between '{2}' and '{3}';",
+                    part_no,
                     contract,
                     dates.Item1.ToString(),
                     dates.Item2.ToString()),
                 Task_name,
                 cancellationToken);
-        
+
         /// <summary>
         /// Get Data from Oracle by part_no,contract and date range's
         /// </summary>
@@ -425,7 +422,7 @@ namespace Confirm_server_by_Contracts
             string contract,
             Tuple<DateTime?, DateTime?> dates,
             string Task_name,
-            CancellationToken cancellationToken) 
+            CancellationToken cancellationToken)
             => await rw.Get_Ora("" +
                 string.Format(@"SELECT  
                     a.DOP,
@@ -614,9 +611,9 @@ namespace Confirm_server_by_Contracts
                         FROM 
                             ifsapp.ARRIVED_PUR_ORDER_EXT 
                         WHERE part_no = '{0}' AND CONTRACT = '{1}' AND DATE_REQUIRED between '{2}' and '{3}' ) a",
-                    part_no, 
-                    contract, 
-                    dates.Item1.Value.ToString("yyyy-MM-dd"), 
+                    part_no,
+                    contract,
+                    dates.Item1.Value.ToString("yyyy-MM-dd"),
                     dates.Item2.Value.ToString("yyyy-MM-dd")
                     ),
                 Task_name, cancellationToken);
@@ -676,37 +673,37 @@ namespace Confirm_server_by_Contracts
                     return 1;
                 }
                 int res = this.Dop.CompareTo(other.Dop);
-                if (res != 0) 
-                { 
-                    return res; 
+                if (res != 0)
+                {
+                    return res;
                 }
                 int nex_res = this.Dop_lin.CompareTo(other.Dop_lin);
-                if (nex_res != 0) 
+                if (nex_res != 0)
                 {
-                    return nex_res; 
+                    return nex_res;
                 }
                 int second = this.Int_ord.CompareTo(other.Int_ord);
-                if (second != 0) 
-                { 
-                    return second; 
+                if (second != 0)
+                {
+                    return second;
                 }
                 int second_nxt = this.Line_no.CompareTo(other.Line_no);
-                if (second_nxt !=  0) 
-                { 
-                    return second_nxt; 
+                if (second_nxt != 0)
+                {
+                    return second_nxt;
                 }
-                return 
+                return
                     this.Rel_no.CompareTo(other.Rel_no);
             }
 
             public virtual bool Equals(Order_Demands_row other)
             {
                 if (other == null) return false;
-                return 
-                    this.Dop.Equals(other.Dop) && 
-                    this.Dop_lin.Equals(other.Dop_lin) && 
-                    this.Int_ord.Equals(other.Int_ord) && 
-                    this.Line_no.Equals(other.Line_no) && 
+                return
+                    this.Dop.Equals(other.Dop) &&
+                    this.Dop_lin.Equals(other.Dop_lin) &&
+                    this.Int_ord.Equals(other.Int_ord) &&
+                    this.Line_no.Equals(other.Line_no) &&
                     this.Rel_no.Equals(other.Rel_no);
             }
         }

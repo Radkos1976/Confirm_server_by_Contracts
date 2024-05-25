@@ -1,7 +1,6 @@
 ﻿using DB_Conect;
 using Npgsql;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -21,7 +20,7 @@ namespace Confirm_server_by_Contracts
             rw = new Update_pstgr_from_Ora<Order_lack_row>("MAIN");
             bal_r = new Update_pstgr_from_Ora<Balance_materials_row>("MAIN");
             Parallel.Invoke(
-            async () => 
+            async () =>
             {
                 await Update(cancellationToken).ConfigureAwait(false);
             });
@@ -34,7 +33,7 @@ namespace Confirm_server_by_Contracts
                     await query.Execute_in_Postgres(new[] { "" +
                         "REFRESH MATERIALIZED VIEW to_mail" }, "Update To_Mail", cancellationToken).ConfigureAwait(false);
                     Steps_executor.End_step("Update To_Mail");
-                });   
+                });
             }
 
 
@@ -69,7 +68,7 @@ namespace Confirm_server_by_Contracts
                     New,
                     new[] { "ordid", "indeks", "data_dost" },
                     new[] { "id" },
-                    new[] {"id"},
+                    new[] { "id" },
                     "Calculate_cust_order",
                     cancellationToken
                     ),
@@ -103,7 +102,7 @@ namespace Confirm_server_by_Contracts
         }
 
         private async Task<List<Order_lack_row>> Old_data(CancellationToken cancellationToken) => await rw.Get_PSTGR("" +
-            "Select * FROM braki;", "Calculate_cust_order", cancellationToken );
+            "Select * FROM braki;", "Calculate_cust_order", cancellationToken);
 
         private async Task<List<Order_lack_row>> New_Data(CancellationToken cancellationToken) => await rw.Get_PSTGR("" +
             @"select 
@@ -333,7 +332,7 @@ namespace Confirm_server_by_Contracts
                             {
                                 mat_dmd[poz_dmd[ind, dat]].Qty -= mat_ord[item].Qty_demand;
                                 mat_ord[item].Ord_assinged = mat_ord[item].Qty_demand;
-                            }                                                   
+                            }
                         }
                     }
                 }
@@ -358,17 +357,17 @@ namespace Confirm_server_by_Contracts
                     part_no = rw.Key_pair;
                     contract = rw.Umiejsc;
                 }
-                if ( bil > qt )
+                if (bil > qt)
                 {
                     if (rw.Ord_state != "Rozpoczęte" && rw.Ord_assinged == 0)
-                    {                        
+                    {
                         if (rw.Zest != null && zest.ContainsKey(rw.Zest))
                         {
                             bil = get_bil(zest[rw.Zest], bil, true);
                         }
                         else if (ordid.ContainsKey(rw.Ordid))
-                        {                           
-                            bil = get_bil(ordid[rw.Ordid], bil);  
+                        {
+                            bil = get_bil(ordid[rw.Ordid], bil);
                         }
                         bil -= rw.Qty_demand;
                         rw.Ord_assinged = rw.Qty_demand;
@@ -378,8 +377,8 @@ namespace Confirm_server_by_Contracts
             }
             return (List<Order_lack_row>)mat_ord.Where(x => x.Ord_assinged > 0).ToList();
         }
-        
-        public class Order_lack_row : IEquatable<Order_lack_row> , IComparable<Order_lack_row>
+
+        public class Order_lack_row : IEquatable<Order_lack_row>, IComparable<Order_lack_row>
         {
             public string Ordid { get; set; }
             public long L_ordid { get; set; }
@@ -479,21 +478,21 @@ namespace Confirm_server_by_Contracts
             }
         }
 
-        public class Balance_materials_row : IEquatable <Balance_materials_row>, IComparable<Balance_materials_row>
-        { 
+        public class Balance_materials_row : IEquatable<Balance_materials_row>, IComparable<Balance_materials_row>
+        {
             public string Indeks { get; set; }
-            public string Umiejsc {  get; set; }
-            public double Mag {  get; set; }
-            public string Key_pair { get; set; }   
+            public string Umiejsc { get; set; }
+            public double Mag { get; set; }
+            public string Key_pair { get; set; }
             public long Il { get; set; }
-            public DateTime Data_dost {  get; set; }
+            public DateTime Data_dost { get; set; }
             public double Wlk_dost { get; set; }
             public double Sum_dost { get; set; }
-            public double Bilans {  get; set; }
-            public double Bil_chk {  get; set; }    
+            public double Bilans { get; set; }
+            public double Bil_chk { get; set; }
             public string Typ_zdarzenia { get; set; }
             public DateTime Max_prod_date { get; set; }
-            public double Dost {  get; set; }
+            public double Dost { get; set; }
             public double Potrz { get; set; }
             public double Qty { get; set; }
 

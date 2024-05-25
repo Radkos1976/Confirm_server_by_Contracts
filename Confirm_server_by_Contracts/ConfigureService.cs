@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System;
+﻿using System;
 using System.IO;
 using Topshelf;
 
@@ -20,28 +19,29 @@ namespace Purch_Confirm_server
                 {
                     service.ConstructUsing(s => new Conf_serv());
                     service.WhenStarted(s => s.Start());
-                    service.WhenStopped(s => s.Stop());                    
+                    service.WhenStopped(s => s.Stop());
                 });
                 //Setup Account that window service use to run.  
                 configure.RunAsLocalSystem();
-                configure.OnException(ex => {
+                configure.OnException(ex =>
+                {
                     using (StreamWriter outputFile = new StreamWriter("C:\\serv\\serv_errors.txt", true))
                     {
                         outputFile.WriteLine("Found Errors");
                         outputFile.WriteLine(log(ex.Message));
                         outputFile.WriteLine(log(ex.StackTrace));
                         outputFile.WriteLine(log(ex.HelpLink));
-                    }                      
-                                               
-                    
+                    }
+
+
                 });
                 configure.EnableServiceRecovery(r => { r.RestartService(1); });
                 configure.SetServiceName("Confirm_serv");
                 configure.SetDisplayName("Confirm_serv");
                 configure.SetDescription("Braki materiałowe i potwierdzenia dla klientów");
             });
-        }       
-        
+        }
+
     }
-    
+
 }

@@ -1,14 +1,9 @@
-﻿using Confirm_server_by_Contracts;
-using DB_Conect;
+﻿using DB_Conect;
 using Npgsql;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using static Confirm_server_by_Contracts.Inventory_part;
 
 namespace Confirm_server_by_Contracts
 {
@@ -72,7 +67,7 @@ namespace Confirm_server_by_Contracts
                         inventory_616_in_PSTGR = null;
                         pstgr_presets = null;
                     });
-                    
+
                     if (Steps_executor.Wait_for(new string[] { "Demands 616 ",  "Inventory part 616 presets " }, "Inventory part 616 ", active_token))
                     {
                         Inventory_part inventory_616 = new Inventory_part("^616.*", false, part_616.limit_part_no);
@@ -99,7 +94,7 @@ namespace Confirm_server_by_Contracts
                                 active_token);
                             Steps_executor.End_step("Inventory part 616 ");
                         });
-                        inventory_616 = null;                        
+                        inventory_616 = null;
                         if (Steps_executor.Wait_for(new string[] { "Demands 616 ", "Inventory part 616 " }, "Main_loop 616 ", active_token))
                         {
                             Steps_executor.Register_step("Main_loop 616 ");
@@ -176,7 +171,7 @@ namespace Confirm_server_by_Contracts
                         inventory_except_616 = null;
                         pstgr = null;
                     });
-                    
+
                     if (Steps_executor.Wait_for(new string[] { "Demands except 616 ", "Inventory part except 616 " }, "Main_loop except 616 ", active_token))
                     {
                         Steps_executor.Register_step("Main_loop except 616 ");
@@ -225,7 +220,8 @@ namespace Confirm_server_by_Contracts
                     "UPDATE public.datatbles SET start_update=current_timestamp, in_progress=true WHERE table_name='ord_dem'"
                 }, "Wait point Demand and Order_demands", active_token);
                 Parallel.Invoke(
-                async () => {
+                async () =>
+                {
                     await query.Execute_in_Postgres(new[] {
                     "REFRESH MATERIALIZED VIEW bilans_val",
                     "UPDATE public.datatbles SET last_modify=current_timestamp, in_progress=false,updt_errors=false WHERE table_name='bil_val'"},
@@ -233,7 +229,8 @@ namespace Confirm_server_by_Contracts
                     active_token);
                 }
                 ,
-                async () => {
+                async () =>
+                {
                     await query.Execute_in_Postgres(new[] {
                     @"update public.cust_ord a
                     SET zest = case when a.dop_connection_db = 'AUT' then
@@ -590,12 +587,12 @@ namespace Confirm_server_by_Contracts
                         ,
                         "DELETE FROM public.mail WHERE cust_id in (select a.cust_id from mail a left join to_mail b on b.cust_id=a.cust_id where b.cust_id is null and (is_for_mail(a.status_informacji)=false or a.status_informacji='POPRAWIĆ'))",
                         "UPDATE public.datatbles SET last_modify=current_timestamp, in_progress=false,updt_errors=false WHERE substring(table_name,1,7)='cal_ord'"
-                        }, 
-                        "Mail", 
+                        },
+                        "Mail",
                         active_token);
 
                 }
-            }                
+            }
             if (Steps_executor.Wait_for(new string[] { "Mail", }, "Send_mail", active_token))
             {
                 using (NpgsqlConnection conA = new NpgsqlConnection(Postegresql_conn.Connection_pool["MAIN"].ToString()))
@@ -618,12 +615,12 @@ namespace Confirm_server_by_Contracts
                 Old_code old_Code = new Old_code();
                 await old_Code.Modify_prod_date(active_token);
                 old_Code = null;
-            } 
+            }
             if (Steps_executor.Wait_for(new string[] { "Modify_prod_date", "send_mail" }, "Wait for last steps", active_token))
             {
                 using (NpgsqlConnection conA = new NpgsqlConnection(Postegresql_conn.Connection_pool["MAIN"].ToString()))
                 {
-                    conA.Open();    
+                    conA.Open();
                     using (NpgsqlCommand cmd = new NpgsqlCommand("" +
                         "select cast(count(table_name) as integer) busy " +
                         "from public.datatbles " +
@@ -643,12 +640,12 @@ namespace Confirm_server_by_Contracts
             //Steps_executor.cts.Dispose();
         }
     }
-    public class Small_upd_demands: IComparable<Small_upd_demands>, IEquatable<Small_upd_demands>
+    public class Small_upd_demands : IComparable<Small_upd_demands>, IEquatable<Small_upd_demands>
     {
         public string Part_no { get; set; }
-        public string  Contract {  get; set; }
+        public string Contract { get; set; }
         public DateTime Min_d { get; set; }
-        public DateTime Max_d { get; set;}
+        public DateTime Max_d { get; set; }
 
         public int CompareTo(Small_upd_demands other)
         {
@@ -657,9 +654,9 @@ namespace Confirm_server_by_Contracts
                 return 1;
             }
             int var1 = this.Part_no.CompareTo(other.Part_no);
-            if (var1  != 0)
+            if (var1 != 0)
             {
-                return  var1;
+                return var1;
             }
             return this.Contract.CompareTo(other.Contract);
         }

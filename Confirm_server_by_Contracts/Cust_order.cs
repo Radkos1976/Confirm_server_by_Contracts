@@ -74,7 +74,7 @@ namespace Confirm_server_by_Contracts
         /// Update customer order table
         /// </summary>
         /// <returns></returns>
-        public async Task<int> Update_cust(CancellationToken  cancellationToken)
+        public async Task<int> Update_cust(CancellationToken cancellationToken)
         {
             try
             {
@@ -84,7 +84,7 @@ namespace Confirm_server_by_Contracts
                 Parallel.Invoke(
                     async () =>
                     {
-                        list_ora =  await Get_Ora_list(cancellationToken); Orders_list = list_ora;
+                        list_ora = await Get_Ora_list(cancellationToken); Orders_list = list_ora;
                     },
                     async () =>
                     {
@@ -105,9 +105,9 @@ namespace Confirm_server_by_Contracts
                     tmp,
                     "cust_ord",
                     new[] { "id" },
-                    null, 
-                    new[] {                    
-                    
+                    null,
+                    new[] {
+
                     @"Delete from public.late_ord
                       where cust_id in (SELECT a.cust_id
                       FROM 
@@ -124,9 +124,9 @@ namespace Confirm_server_by_Contracts
                             left join
                             public.cust_ord b
                             on a.id=b.id
-                            where b.id is null)"}, 
+                            where b.id is null)"},
                     "cust_ord",
-                    cancellationToken);                
+                    cancellationToken);
             }
             catch (Exception e)
             {
@@ -140,7 +140,7 @@ namespace Confirm_server_by_Contracts
         /// </summary>
         /// <param name="rw"></param>
         /// <returns></returns>
-        private async Task<List<Orders_row>> Get_PSTGR_List(CancellationToken cancellationToken) 
+        private async Task<List<Orders_row>> Get_PSTGR_List(CancellationToken cancellationToken)
             => await rw.Get_PSTGR(
                 "Select * from cust_ord",
                 "cust_ord",
@@ -150,7 +150,7 @@ namespace Confirm_server_by_Contracts
         /// Get present list of customer orders stored in ERP
         /// </summary>
         /// <returns>Present list of orders</returns>
-        private async Task<List<Orders_row>> Get_Ora_list(CancellationToken cancellationToken) 
+        private async Task<List<Orders_row>> Get_Ora_list(CancellationToken cancellationToken)
             => await Check_length(
                 await rw.Get_Ora("" +
                @"SELECT 
@@ -242,7 +242,7 @@ namespace Confirm_server_by_Contracts
         {
             Dictionary<string, int> cust_ord_len = Get_limit_of_fields.cust_ord_len;
             foreach (Orders_row row in source)
-            {                
+            {
                 row.Koor = row.Koor.LimitDictLen("koor", cust_ord_len);
                 row.Order_no = row.Order_no.LimitDictLen("order_no", cust_ord_len);
                 row.Line_no = row.Line_no.LimitDictLen("line_no", cust_ord_len);

@@ -2,13 +2,8 @@
 using Npgsql;
 using Oracle.ManagedDataAccess.Client;
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Data;
-using System.Diagnostics.SymbolStore;
-using System.Linq;
 using System.Net.Mail;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -67,7 +62,7 @@ namespace Confirm_server_by_Contracts
     internal class Old_code
     {
         readonly string npC = Postegresql_conn.Connection_pool["MAIN"].ToString();
-        readonly string Str_oracle_conn = Oracle_conn.Connection_string;        
+        readonly string Str_oracle_conn = Oracle_conn.Connection_string;
         static readonly TaskScheduler main_cal = TaskScheduler.Default;
         private readonly ParallelOptions srv_op = new ParallelOptions
         {
@@ -169,7 +164,7 @@ namespace Confirm_server_by_Contracts
         public async Task<int> Modify_prod_date(CancellationToken cancellationToken)
         {
             try
-            {                
+            {
                 int ra = await Send_mail_lack(cancellationToken);
                 Loger.Log("Start modyfing prod date in ORD_DOP");
                 if (Oracle_conn.Set_Planned_Manuf_Date)
@@ -200,7 +195,7 @@ namespace Confirm_server_by_Contracts
                             {
                                 col.ReadOnly = false;
                             }
-                                
+
                         }
                         using (OracleConnection conO = new OracleConnection(Str_oracle_conn))
                         {
@@ -276,8 +271,8 @@ namespace Confirm_server_by_Contracts
                                                 comm.ExecuteNonQuery();
                                                 if (!(bool)rek["info_handlo"])
                                                 {
-                                                    
-                                                    rek.BeginEdit();       
+
+                                                    rek.BeginEdit();
                                                     rek["ordid"] = "";
                                                     rek.EndEdit();
                                                 }
@@ -405,7 +400,7 @@ namespace Confirm_server_by_Contracts
         private async Task<int> Confirm_ORd(CancellationToken cancellationToken)
         {
             try
-            {                
+            {
                 if (Steps_executor.Wait_for(new string[] { "TR_sendm" }, "Confirm_ORd", cancellationToken))
                 {
                     if (Oracle_conn.Email_Order_Report)
@@ -504,7 +499,7 @@ namespace Confirm_server_by_Contracts
                                             cmd.Prepare();
                                             foreach (DataRow rw in nullmail)
                                             {
-                                                if (cancellationToken.IsCancellationRequested) 
+                                                if (cancellationToken.IsCancellationRequested)
                                                 {
                                                     break;
                                                 }
@@ -559,14 +554,14 @@ namespace Confirm_server_by_Contracts
                                                                         cm.Prepare();
                                                                         cm.ExecuteNonQuery();
                                                                     }
-                                                                    cob.Close ();
+                                                                    cob.Close();
                                                                 }
                                                             }
                                                         }
 
                                                     }
                                                 }
-                                            }                                            
+                                            }
                                         }
                                         using (DataTable mail_list = new DataTable())
                                         {
@@ -620,7 +615,7 @@ namespace Confirm_server_by_Contracts
                                                         where a.country=ANY(string_to_array(b.country_coor::text, ','::text)) and b.mail=@mail ", conA))
                                                     {
                                                         cmd.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar);
-                                                       
+
                                                         foreach (DataRow rek in mail_list.Rows)
                                                         {
                                                             cmd.Parameters[0].Value = rek[0];
@@ -694,8 +689,8 @@ namespace Confirm_server_by_Contracts
                             }
                         }
                     }
-                }                
-                return 0;            
+                }
+                return 0;
             }
             catch (Exception e)
             {
@@ -804,7 +799,7 @@ namespace Confirm_server_by_Contracts
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
                     conA.Open();
-                    
+
                     using (NpgsqlCommand pot = new NpgsqlCommand("" +
                         "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,PROM_WEEK,PROD_WEEK,PROD_DATE,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,how_many(dop) CONF_COUNT,CREATED " +
                         "from send_mail", conA))
@@ -882,7 +877,7 @@ namespace Confirm_server_by_Contracts
                         }
                         prep_potw.Commit();
                         Steps_executor.End_step("Prep_potw");
-                    } 
+                    }
                 }
             }
             return 0;
@@ -895,7 +890,7 @@ namespace Confirm_server_by_Contracts
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
                     conA.Open();
-                    
+
                     using (NpgsqlCommand pot = new NpgsqlCommand("" +
                         "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,PROM_WEEK,PROD_WEEK,PROD_DATE,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,how_many(dop) CONF_COUNT,CREATED " +
                         "from send_mail", conA))
@@ -911,7 +906,7 @@ namespace Confirm_server_by_Contracts
                             }
                         }
                     }
-                    
+
                     conA.Close();
                 }
                 DataRow rw = kol.NewRow();
@@ -972,7 +967,7 @@ namespace Confirm_server_by_Contracts
                                         }
                                     }
                                 }
-                            }                            
+                            }
                         }
                         using (NpgsqlCommand cmd = new NpgsqlCommand("" +
                             "UPDATE public.datatbles " +
@@ -983,7 +978,7 @@ namespace Confirm_server_by_Contracts
                         }
                         prep_fr.Commit();
                         Steps_executor.End_step("Prep_FR");
-                    }                    
+                    }
                 }
             }
             return 0;
@@ -996,7 +991,7 @@ namespace Confirm_server_by_Contracts
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
                     conA.Open();
-                    
+
                     using (NpgsqlCommand pot = new NpgsqlCommand("" +
                         "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,PROM_WEEK,PROD_WEEK,PROD_DATE,TYP_ZDARZENIA,STATUS_INFORMACJI,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,CREATED " +
                         "from send_mail", conA))
@@ -1012,7 +1007,7 @@ namespace Confirm_server_by_Contracts
                             }
                         }
                     }
-                    
+
                     conA.Close();
                 }
                 DataRow rw = kol.NewRow();
@@ -1083,7 +1078,7 @@ namespace Confirm_server_by_Contracts
                         }
                         prep_zero.Commit();
                         Steps_executor.End_step("Prep_seriaz");
-                    }                    
+                    }
                 }
             }
             return 0;
@@ -1095,7 +1090,7 @@ namespace Confirm_server_by_Contracts
             {
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
-                    conA.Open();                    
+                    conA.Open();
                     using (NpgsqlCommand pot = new NpgsqlCommand("" +
                         "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,PROM_WEEK,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,how_many(dop) CONF_COUNT,CREATED " +
                         "from send_mail", conA))
@@ -1111,7 +1106,7 @@ namespace Confirm_server_by_Contracts
                             }
                         }
                     }
-                    
+
                     conA.Close();
                 }
                 DataRow rw = kol.NewRow();
@@ -1125,7 +1120,7 @@ namespace Confirm_server_by_Contracts
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
                     conA.Open();
-                    using (NpgsqlTransaction prep_nie= conA.BeginTransaction())
+                    using (NpgsqlTransaction prep_nie = conA.BeginTransaction())
                     {
                         using (NpgsqlCommand cmd = new NpgsqlCommand("" +
                         "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,PROM_WEEK,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,how_many(dop) CONF_COUNT,CREATED,info " +
@@ -1175,7 +1170,7 @@ namespace Confirm_server_by_Contracts
                         }
                         prep_nie.Commit();
                         Steps_executor.End_step("Prep_NIEzam");
-                    } 
+                    }
                 }
             }
             return 0;
@@ -1187,7 +1182,7 @@ namespace Confirm_server_by_Contracts
             {
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
-                    conA.Open();                    
+                    conA.Open();
                     using (NpgsqlCommand pot = new NpgsqlCommand("" +
                     "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,PROM_WEEK,PROD_WEEK,TYP_ZDARZENIA,STATUS_INFORMACJI,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,CREATED " +
                     "from send_mail", conA))
@@ -1203,7 +1198,7 @@ namespace Confirm_server_by_Contracts
                             }
                         }
                     }
-                    
+
                     conA.Close();
                 }
                 DataRow rw = kol.NewRow();
@@ -1264,7 +1259,7 @@ namespace Confirm_server_by_Contracts
                         }
                         prep_niepotw.Commit();
                         Steps_executor.End_step("Prep_NIEpotw");
-                    }  
+                    }
                 }
             }
             return 0;
@@ -1276,7 +1271,7 @@ namespace Confirm_server_by_Contracts
             {
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
-                    conA.Open();                    
+                    conA.Open();
                     using (NpgsqlCommand pot = new NpgsqlCommand("" +
                         "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,LOAD_ID,SHIP_DATE,PROM_WEEK,PROD_WEEK,PROD_DATE as NEW_SHIP_DATE,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,how_many(dop) CONF_COUNT,CREATED " +
                         "from send_mail", conA))
@@ -1292,7 +1287,7 @@ namespace Confirm_server_by_Contracts
                             }
                         }
                     }
-                    
+
                     conA.Close();
                 }
                 DataRow rw = kol.NewRow();
@@ -1357,7 +1352,7 @@ namespace Confirm_server_by_Contracts
                         }
                         logist.Commit();
                         Steps_executor.End_step("Send_logist");
-                    } 
+                    }
                 }
             }
             return 0;
@@ -1369,7 +1364,7 @@ namespace Confirm_server_by_Contracts
             {
                 using (NpgsqlConnection conA = new NpgsqlConnection(npC))
                 {
-                    conA.Open();                   
+                    conA.Open();
                     using (NpgsqlCommand pot = new NpgsqlCommand("" +
                         "select CORR,CUST_ORD,C_LIN,C_REL,CATALOG_DESC,C_RY,PROM_WEEK,PART_BUYER,SHORTAGE_PART,SHORT_NAM,DOP,how_many(dop) CONF_COUNT,CREATED " +
                         "from send_mail", conA))
@@ -1385,7 +1380,7 @@ namespace Confirm_server_by_Contracts
                             }
                         }
                     }
-                    
+
                     conA.Close();
                 }
                 DataRow rw = kol.NewRow();
@@ -1607,7 +1602,7 @@ namespace Confirm_server_by_Contracts
                             async () => log = await Send_logist(adres_list.Select("typ = 'MAIL LOG'"), cancellationToken),
                             async () => popr = await Popraw(adres_list.Select("typ = 'MAIL' and tp='POPRAWIĆ'"), cancellationToken)
                         );
-                    }                 
+                    }
                     if (Steps_executor.Wait_for(new string[] { "Prep_potw", "Prep_FR", "Prep_seriaz", "Prep_NIEzam", "Prep_NIEpotw", "Prep_seriaz", "Send_logist", "Popraw" }, "send_mail", cancellationToken))
                     {
                         using (NpgsqlConnection conA = new NpgsqlConnection(npC))
@@ -1627,7 +1622,7 @@ namespace Confirm_server_by_Contracts
                     }
                     //Parallel.Invoke(async () => R_pot = await Prep_potw(adres_list.Select("confirm = true")), async () => R_alter = await Prep_FR(adres_list.Select("alt = true")), async () => R_dontpurch = await Prep_NIEzam(adres_list.Select("niezam = true")), async () => seria_z = await Prep_seriaz(adres_list.Select("typ = 'Seria Zero'")), async () => log = await Send_logist(adres_list.Select("typ = 'MAIL LOG'")), async () => popr = await Popraw(adres_list.Select("typ = 'MAIL' and tp='POPRAWIĆ'")), async () => conirm = await Confirm_ORd());
                 }
-                return Convert.ToInt32(Steps_executor.Wait_for(new string[] { "send_mail" } ,"WAIT", cancellationToken));
+                return Convert.ToInt32(Steps_executor.Wait_for(new string[] { "send_mail" }, "WAIT", cancellationToken));
 
             }
             catch (Exception e)

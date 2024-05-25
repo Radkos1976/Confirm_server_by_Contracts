@@ -1,16 +1,13 @@
-﻿using System;
-using System.Linq;
-using System.Xml.Linq;
+﻿using Common;
 using Npgsql;
-using Common;
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
-using System.Threading;
 using System.Diagnostics;
-using System.Collections;
-using System.Collections.Concurrent;
-using System.Threading.Tasks;
-using Confirm_server_by_Contracts;
+using System.Linq;
+using System.Threading;
+using System.Xml.Linq;
 
 namespace DB_Conect
 {
@@ -143,7 +140,7 @@ namespace DB_Conect
                 }
             }
         }
-        private static readonly Dictionary<string, DateTime, DateTime> Calendar_next_day= new Dictionary<string, DateTime, DateTime>();
+        private static readonly Dictionary<string, DateTime, DateTime> Calendar_next_day = new Dictionary<string, DateTime, DateTime>();
         public static DateTime Get_next_day(string Contract, DateTime Base_Day)
         {
             if (Calendar_next_day.ContainsKey(Contract, Base_Day))
@@ -190,13 +187,13 @@ namespace DB_Conect
             return source;
         }
     }
-   
+
     /// <summary>
     /// Class for limited fields in DB
     /// All tables for update must be saved in dictionaries(by method Set_postgres_limit)
     /// </summary>
     public static class Get_limit_of_fields
-    { 
+    {
         /// <summary>
         /// Schema for cust_ord
         /// </summary>
@@ -216,7 +213,7 @@ namespace DB_Conect
         /// <summary>
         /// Schema for order_demands 
         /// </summary>
-        public static Dictionary <string, int> order_demands_len = new Dictionary<string, int>();
+        public static Dictionary<string, int> order_demands_len = new Dictionary<string, int>();
         static Get_limit_of_fields()
         {
             order_demands_len = new Dictionary<string, int>().Set_postgres_limit("MAIN", "ord_demands");
@@ -240,11 +237,11 @@ namespace DB_Conect
                 var Tmp = conO.GetSchema("Columns", new string[] { null, null, Table_name });
                 foreach (DataRow row in Tmp.Rows)
                 {
-                    dict.Add(row["column_name"].ToString(), (int)(row["character_maximum_length"].GetType()==typeof(System.DBNull) ? 0: row["character_maximum_length"]));
+                    dict.Add(row["column_name"].ToString(), (int)(row["character_maximum_length"].GetType() == typeof(System.DBNull) ? 0 : row["character_maximum_length"]));
                 }
             }
             return dict;
-        }        
+        }
     }
 
     public static class Mail_conn
@@ -286,7 +283,7 @@ namespace DB_Conect
                     Port = res.XPort;
                     Timeout = res.XTimeout;
                     UseDefaultCredentials = res.XUseDefaultCredentials;
-                    EnableSsl = res.XEnableSsl; 
+                    EnableSsl = res.XEnableSsl;
                 }
             }
             catch (Exception e)
@@ -320,7 +317,7 @@ namespace DB_Conect
                     .Select(x => new
                     {
                         XConnection_string = (string)x.Element("ConnectionString"),
-                        XLimit_oracle_conn =  (int)x.Element("Limit_oracle_conn"),
+                        XLimit_oracle_conn = (int)x.Element("Limit_oracle_conn"),
                         XEmail_Order_Report = (bool)x.Element("Customer_order_conf"),
                         XSet_Planned_Manuf_Date = (bool)x.Element("Set_Planned_Manuf_Date")
                     });
@@ -346,10 +343,10 @@ namespace DB_Conect
     public static class Postegresql_conn
     {
         private static NpgsqlConnectionStringBuilder Conn_set { get; set; } = new NpgsqlConnectionStringBuilder();
-        public static Dictionary<string, NpgsqlConnectionStringBuilder> Connection_pool {get; set;} = new Dictionary<string, NpgsqlConnectionStringBuilder>();
-        public static string[] Contract_lst {  get; set; }
+        public static Dictionary<string, NpgsqlConnectionStringBuilder> Connection_pool { get; set; } = new Dictionary<string, NpgsqlConnectionStringBuilder>();
+        public static string[] Contract_lst { get; set; }
         public static Dictionary<string, string> Contracts_kalendar { get; set; } = new Dictionary<string, string>();
-        public static Dictionary<string, string> Kalendar_eunm { get; set; } = new Dictionary< string, string>();
+        public static Dictionary<string, string> Kalendar_eunm { get; set; } = new Dictionary<string, string>();
         public static string App_name { get; set; }
         private static string Host { get; set; }
         private static int Port { get; set; }
@@ -360,7 +357,7 @@ namespace DB_Conect
         private static string Password { get; set; }
         private static string Database { get; set; }
         private static string Contracts { get; set; }
-        private static string Kalendar_name { get; set; }        
+        private static string Kalendar_name { get; set; }
 
 
         /// <summary>
@@ -371,13 +368,14 @@ namespace DB_Conect
             try
             {
                 (Conn_set, Contracts) = Get_values("POSTEGRESQL_MAIN");
-                Connection_pool.Add("MAIN",Conn_set);
-                if (Contracts.Length > 0 )
+                Connection_pool.Add("MAIN", Conn_set);
+                if (Contracts.Length > 0)
                 {
-                    Contract_lst =  new string[] { "" };
+                    Contract_lst = new string[] { "" };
                     Contract_lst = Contracts.Split(',');
-                    foreach ( string str in Contract_lst) {
-                        (Connection_pool[str], Contracts) = Get_values(String.Format("POSTEGRESQL_{0}", str));                        
+                    foreach (string str in Contract_lst)
+                    {
+                        (Connection_pool[str], Contracts) = Get_values(String.Format("POSTEGRESQL_{0}", str));
                     }
                 }
             }
@@ -389,7 +387,7 @@ namespace DB_Conect
         public static string Contract_decode(string field)
         {
             return string.Format("DECODE({0},{1})", field, string.Join(",", Kalendar_eunm.Select(x => string.Format("'{0}','{1}'", x.Key, x.Value).ToArray())));
-        } 
+        }
 
         /// <summary>
         /// Get values from XML file
@@ -440,13 +438,13 @@ namespace DB_Conect
                     Database = Database,
                     IncludeErrorDetail = true
                 };
-                
+
             }
             catch
             {
                 Conn_set = new NpgsqlConnectionStringBuilder();
             }
-            finally 
+            finally
             {
                 if (!decendant.Contains("MAIN"))
                 {
@@ -464,7 +462,7 @@ namespace DB_Conect
                     {
                         Kalendar_eunm.Add(Kalendar_name, Convert.ToString(Kalendar_eunm.Count() + 1));
                     }
-                } 
+                }
                 else
                 {
                     NpgsqlConnectionStringBuilder Windows_service = new NpgsqlConnectionStringBuilder();
@@ -483,7 +481,7 @@ namespace DB_Conect
                     Connection_pool.Add("CONFIRM_SERVICE", Windows_service);
                     App_name = ApplicationName;
                 }
-            }         
+            }
             return (Conn_set, Contracts);
         }
     }
@@ -504,9 +502,9 @@ namespace DB_Conect
             catch
             {
                 Loger.Log("Err Key exist");
-            }            
+            }
         }
-        public static (string, string, Tuple<DateTime?, DateTime?>) Run_next ()
+        public static (string, string, Tuple<DateTime?, DateTime?>) Run_next()
         {
             while (0 != Interlocked.Exchange(ref use_resource, 1))
             {
@@ -571,7 +569,7 @@ namespace DB_Conect
         {
             return wait_task.Count;
         }
-        public static void Report_end (string part_no, string contract)
+        public static void Report_end(string part_no, string contract)
         {
             try
             {
@@ -594,8 +592,8 @@ namespace DB_Conect
         private readonly static ConcurrentDictionary<string, DateTime> Reccent_steps = new ConcurrentDictionary<string, DateTime>();
         private readonly static ConcurrentDictionary<string, DateTime> Steps_with_error = new ConcurrentDictionary<string, DateTime>();
 
-        static Steps_executor() 
-        {             
+        static Steps_executor()
+        {
             cts = new CancellationTokenSource();
         }
 
@@ -732,7 +730,7 @@ namespace DB_Conect
                         try_ = false;
                     }
 
-                } 
+                }
                 else
                 {
                     try_ = true;
@@ -761,7 +759,7 @@ namespace DB_Conect
         /// </summary>
         public static void Wait_for_Oracle(CancellationToken cancellationToken)
         {
-            while (0!=Interlocked.Exchange(ref use_resource, 1))
+            while (0 != Interlocked.Exchange(ref use_resource, 1))
             {
                 System.Threading.Thread.Sleep(50);
             }
@@ -781,7 +779,7 @@ namespace DB_Conect
         }
 
     }
-        
+
 
     /// <summary>
     /// Simple logger class
@@ -828,11 +826,11 @@ namespace DB_Conect
                     conA.Close();
                 }
             }
-            catch 
+            catch
             {
                 Loger.Log("Error Srv_start");
             }
-           
+
         }
         public static void Srv_stop()
         {
@@ -858,11 +856,11 @@ namespace DB_Conect
                     Save_stat_refr();
                     Log_rek = "";
                     Steps_executor.Reset_diary_of_steps();
-                }                
+                }
                 System.Threading.Thread.Sleep(20000);
 
             }
-            catch { Loger.Log("Error Srv_stop"); }            
+            catch { Loger.Log("Error Srv_stop"); }
         }
         private static void Save_stat_refr()
         {

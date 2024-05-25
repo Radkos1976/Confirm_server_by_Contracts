@@ -84,7 +84,7 @@ namespace Confirm_server_by_Contracts
                 int returned = 0;
                 foreach (string contract in Postegresql_conn.Contracts_kalendar.Keys)
                 {
-                    if (!checked_calendar.Contains(Postegresql_conn.Contracts_kalendar[contract]) && returned == 0) 
+                    if (!checked_calendar.Contains(Postegresql_conn.Contracts_kalendar[contract]) && returned == 0)
                     {
                         //rw = new Update_pstgr_from_Ora<Orders_row>();
                         checked_calendar.Add(Postegresql_conn.Contracts_kalendar[contract]);
@@ -92,13 +92,13 @@ namespace Confirm_server_by_Contracts
                         List<Calendar_row> list_pstgr = new List<Calendar_row>();
                         list_ora = await Get_Ora_list(Postegresql_conn.Contracts_kalendar[contract], cancellationToken);
                         list_pstgr = await Get_PSTGR_List(Postegresql_conn.Contracts_kalendar[contract], cancellationToken);
-                        
+
                         Changes_List<Calendar_row> tmp = await rw.Changes(
-                            list_pstgr, 
-                            list_ora, 
-                            new[] { "work_day", "calendar_id" }, 
-                            new[] { "work_day", "calendar_id" }, 
-                            null, 
+                            list_pstgr,
+                            list_ora,
+                            new[] { "work_day", "calendar_id" },
+                            new[] { "work_day", "calendar_id" },
+                            null,
                             string.Format("Calendar: {0}", contract),
                             cancellationToken
                         );
@@ -117,12 +117,12 @@ namespace Confirm_server_by_Contracts
                             cancellationToken
                         );
                         tmp = null;
-                    }                   
+                    }
                 }
                 return returned;
             }
             catch (Exception e)
-            {                
+            {
                 Loger.Log("Error in import Calendar object:" + e);
                 Steps_executor.Step_error("calendar_updt");
                 return 1;
@@ -133,11 +133,11 @@ namespace Confirm_server_by_Contracts
         /// </summary>
         /// <param name="rw"></param>
         /// <returns></returns>
-        public async Task<List<Calendar_row>> Get_PSTGR_List(string calendar_id, CancellationToken cancellationToken) 
+        public async Task<List<Calendar_row>> Get_PSTGR_List(string calendar_id, CancellationToken cancellationToken)
             => await rw.Get_PSTGR(
                 String.Format("Select * from work_cal {0}", calendar_id == "ALL"
                     ?
-                    "":
+                    "" :
                     String.Format("WHERE CALENDAR_ID='{0}'", calendar_id)
                  ), "Calendar",
                 cancellationToken
@@ -147,7 +147,7 @@ namespace Confirm_server_by_Contracts
         /// Get calendars from ERP
         /// </summary>
         /// <returns></returns>
-        public async Task<List<Calendar_row>> Get_Ora_list(string calendar_id, CancellationToken cancellationToken) 
+        public async Task<List<Calendar_row>> Get_Ora_list(string calendar_id, CancellationToken cancellationToken)
             => await Check_length(
                 await rw.Get_Ora("" +
                     String.Format(@"SELECT
@@ -160,21 +160,21 @@ namespace Confirm_server_by_Contracts
                                 objversion 
                             FROM 
                                 ifsapp.work_time_counter 
-                            WHERE CALENDAR_ID='{0}'", calendar_id), 
+                            WHERE CALENDAR_ID='{0}'", calendar_id),
                     "Calendar",
                     cancellationToken)
                 );
 
         public class Calendar_row : IEquatable<Calendar_row>, IComparable<Calendar_row>
-        {  
+        {
             public string Calendar_id { get; set; }
             public int Counter { get; set; }
             public DateTime Work_day { get; set; }
             public string Day_type { get; set; }
             public double Working_time { get; set; }
-            public int Working_periods { get; set; }            
-            public string Objersion { get; set; }        
-            
+            public int Working_periods { get; set; }
+            public string Objersion { get; set; }
+
             public int CompareTo(Calendar_row other)
             {
                 if (other == null)
@@ -188,7 +188,7 @@ namespace Confirm_server_by_Contracts
                     return this.Calendar_id.CompareTo(other.Calendar_id);
                 }
             }
-           
+
             public bool Equals(Calendar_row other)
             {
                 if (other == null) return false;
@@ -201,8 +201,8 @@ namespace Confirm_server_by_Contracts
             foreach (Calendar_row row in source)
             {
                 row.Calendar_id = row.Calendar_id.LimitDictLen("calendar_id", calendar_len);
-                row.Day_type = row.Day_type.LimitDictLen("day_type", calendar_len);                
-                row.Objersion = row.Objersion.LimitDictLen("objersion", calendar_len);               
+                row.Day_type = row.Day_type.LimitDictLen("day_type", calendar_len);
+                row.Objersion = row.Objersion.LimitDictLen("objersion", calendar_len);
             }
             return Task.FromResult(source);
         }

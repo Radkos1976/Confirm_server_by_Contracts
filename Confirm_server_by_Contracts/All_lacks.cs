@@ -20,34 +20,36 @@ namespace Confirm_server_by_Contracts
             rw = new Update_pstgr_from_Ora<Order_Demands_row>("MAIN");
             lacks = new Update_pstgr_from_Ora<Orders_lacks>("MAIN");
             Parallel.Invoke(
-            async () => {
+            async () =>
+            {
                 Steps_executor.Register_step("All_lacks");
-                int result = await Update_All_lacks(cancellationToken);                
+                int result = await Update_All_lacks(cancellationToken);
                 if (Steps_executor.Wait_for(new string[] { "All_lacks" }, "Validate demands", cancellationToken))
                 {
                     Run_query query = new Run_query();
                     result += await query.Execute_in_Postgres(new[] { "REFRESH MATERIALIZED VIEW formatka; " }, "All_lacks => REFRESH MATERIALIZED VIEW formatka", cancellationToken);
                     query = null;
-                }                
+                }
             },
-            async () => {
+            async () =>
+            {
                 Steps_executor.Register_step("Lack_bil");
-                int result = await Update_Lack_bil(cancellationToken);                
+                int result = await Update_Lack_bil(cancellationToken);
                 if (Steps_executor.Wait_for(new string[] { "Lack_bil" }, "Validate demands", cancellationToken))
                 {
                     Run_query query = new Run_query();
                     result = await query.Execute_in_Postgres(new[] { "REFRESH MATERIALIZED VIEW formatka_bil; " }, "Lack_bil", cancellationToken);
                     query = null;
-                }                
+                }
             });
         }
-            
+
 
         public async Task<int> Update_All_lacks(CancellationToken cancellationToken)
         {
             List<Order_Demands_row> source = await Get_source_for_calc(cancellationToken);
             List<Order_Demands_row> sourceNEW = await New_data_for_calc(cancellationToken);
-            Changes_List < Order_Demands_row >  changes_List = await rw.Changes(
+            Changes_List<Order_Demands_row> changes_List = await rw.Changes(
                     source,
                     sourceNEW,
                     new[] { "dop", "dop_lin", "int_ord", "line_no", "rel_no" },
@@ -57,18 +59,18 @@ namespace Confirm_server_by_Contracts
                     cancellationToken
                     );
             int result = await rw.PSTRG_Changes_to_dataTable(
-                changes_List ,
+                changes_List,
                 "ord_lack",
-                new[] { "id" }, 
-                null, 
-                null, 
-                "All_lacks", 
-                cancellationToken 
+                new[] { "id" },
+                null,
+                null,
+                "All_lacks",
+                cancellationToken
                 );
             if (result == 0)
             {
                 Steps_executor.End_step("All_lacks");
-            }            
+            }
             return result;
         }
         public async Task<int> Update_Lack_bil(CancellationToken cancellationToken)
@@ -96,7 +98,7 @@ namespace Confirm_server_by_Contracts
             if (result == 0)
             {
                 Steps_executor.End_step("Lack_bil");
-            }            
+            }
             return result;
         }
         private Task<List<Order_Demands_row>> Rows_on_lack(List<Orders_lacks> _lacks, CancellationToken cancellationToken)
@@ -246,7 +248,7 @@ namespace Confirm_server_by_Contracts
         }
         private async Task<List<Order_Demands_row>> Get_source_for_calc(CancellationToken cancellationToken) => await rw.Get_PSTGR("Select * from ord_lack", "All_lacks", cancellationToken);
         private async Task<List<Order_Demands_row>> New_data_for_calc(CancellationToken cancellationToken)
-        {          
+        {
             List<Order_Demands_row> part_lack = await Rows_on_lack(
                     await lacks.Get_PSTGR("" +
                         @"select 
@@ -331,12 +333,12 @@ namespace Confirm_server_by_Contracts
                         ) a,
                         ord_demands b 
                         where b.part_no=a.part_no and b.contract=a.contract and b.date_required=a.work_day order by part_no,date_required,int_ord desc"
-                        , "All_lacks", cancellationToken);                
+                        , "All_lacks", cancellationToken);
             all_lack.AddRange(part_lack);
             all_lack.Sort();
             return all_lack;
         }
-        
+
         public class Orders_lacks : Order_Demands_row
         {
             public double Bal_stock { get; set; }
@@ -357,7 +359,7 @@ namespace Confirm_server_by_Contracts
                 {
                     return second;
                 }
-                return this.Int_ord.CompareTo(other.Int_ord) * -1;                
+                return this.Int_ord.CompareTo(other.Int_ord) * -1;
             }
 
             public override bool Equals(Order_Demands_row other)
@@ -367,8 +369,8 @@ namespace Confirm_server_by_Contracts
                     this.Contract.Equals(other.Contract) &&
                     this.Date_required.Equals(other.Date_required) &&
                     this.Int_ord.Equals(other.Int_ord);
-                    
+
             }
         }
-    } 
+    }
 }

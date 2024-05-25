@@ -2,7 +2,6 @@
 using Npgsql;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -39,7 +38,7 @@ namespace Confirm_server_by_Contracts
                             Range_Dat = DateTime.Now.AddDays(16);
                         }
                     }
-                }                
+                }
             }
         }
         /// <summary>
@@ -49,7 +48,7 @@ namespace Confirm_server_by_Contracts
         /// <returns></returns>
         private void Fill_executor(Changes_List<Demands_row> changes_List, string Task_name, CancellationToken cancellationToken)
         {
-            Dictionary<string, string, Tuple<DateTime, DateTime>> range_dates = 
+            Dictionary<string, string, Tuple<DateTime, DateTime>> range_dates =
                 new Dictionary<string, string, Tuple<DateTime, DateTime>>();
             Loger.Log(
                 string.Format(
@@ -61,7 +60,7 @@ namespace Confirm_server_by_Contracts
                 foreach (Demands_row demand in changes)
                 {
                     if (cancellationToken.IsCancellationRequested) { break; }
-  
+
                     if (max_dates.ContainsKey(demand.Part_no, demand.Contract))
                     {
                         if (demand.Work_day <= max_dates[demand.Part_no, demand.Contract])
@@ -92,10 +91,10 @@ namespace Confirm_server_by_Contracts
                                     new Tuple<DateTime, DateTime>(demand.Work_day, demand.Work_day));
                             }
                         }
-                    }                                       
-                }                
+                    }
+                }
             }
-            if (changes_List.Insert!=null)
+            if (changes_List.Insert != null)
             {
                 min_max(changes_List.Insert);
             }
@@ -107,8 +106,8 @@ namespace Confirm_server_by_Contracts
             {
                 min_max(changes_List.Update);
             }
-            
-            foreach(Tuple<string, string> set in range_dates.Keys)
+
+            foreach (Tuple<string, string> set in range_dates.Keys)
             {
                 if (cancellationToken.IsCancellationRequested) { break; }
                 (DateTime min_d, DateTime max_d) =
@@ -233,7 +232,7 @@ namespace Confirm_server_by_Contracts
                             Task_name,
                             "Update Demands")
                         );
-                    Changes = null;                    
+                    Changes = null;
                 },
                 async () =>
                 {
@@ -251,7 +250,7 @@ namespace Confirm_server_by_Contracts
                                 Task_name) },
                         string.Format(
                             "Start {0}",
-                            Task_name), 
+                            Task_name),
                         cancellationToken);
 
                     SourceDataSet = await Limit_length(
@@ -270,10 +269,10 @@ namespace Confirm_server_by_Contracts
                         SourceDataSet,
                         await Limit_length(DataSet),
                         new[] { "indeks", "umiejsc", "data_dost" },
-                        new[] { "indeks", "umiejsc", "data_dost", "status_informacji", "informacja", "id", "widoczny_od_dnia" , "refr_date" },
+                        new[] { "indeks", "umiejsc", "data_dost", "status_informacji", "informacja", "id", "widoczny_od_dnia", "refr_date" },
                         new[] { "id", "widoczny_od_dnia", "informacja" },
                         string.Format(
-                            "{0}:{1}", 
+                            "{0}:{1}",
                             Task_name,
                             "Buyer_info"),
                         cancellationToken);
@@ -410,32 +409,35 @@ namespace Confirm_server_by_Contracts
                         );
                 });
             }
-            if(Steps_executor.Wait_for(new string[] { string.Format("{0}:{1}", Task_name, "Buyer_info"), string.Format("{0}:{1}", Task_name, "Update Demands"), string.Format("{0}:{1}", Task_name, "Fill_executor") }, string.Format("{0}:{1}", Task_name, "Parallel Calc"), cancellationToken))
+            if (Steps_executor.Wait_for(new string[] { string.Format("{0}:{1}", Task_name, "Buyer_info"), string.Format("{0}:{1}", Task_name, "Update Demands"), string.Format("{0}:{1}", Task_name, "Fill_executor") }, string.Format("{0}:{1}", Task_name, "Parallel Calc"), cancellationToken))
             {
                 Steps_executor.End_step(
                     string.Format(
                         "{0}:{1}",
-                        Task_name, 
+                        Task_name,
                         "Parallel Calc")
                     );
                 Steps_executor.End_step(Task_name);
-            }            
+            }
             return returned;
         }
         public void Get_thre_workers(String Main_task, CancellationToken cancellationToken)
         {
             Parallel.Invoke(
-            async () => {
+            async () =>
+            {
                 Order_Demands order_Demands_except1 = new Order_Demands();
                 await order_Demands_except1.Update_from_executor(string.Format("{0}1", Main_task), cancellationToken);
                 order_Demands_except1 = null;
             },
-            async () => {
+            async () =>
+            {
                 Order_Demands order_Demands_except2 = new Order_Demands();
                 await order_Demands_except2.Update_from_executor(string.Format("{0}2", Main_task), cancellationToken);
                 order_Demands_except2 = null;
             },
-            async () => {
+            async () =>
+            {
                 Order_Demands order_Demands_except3 = new Order_Demands();
                 await order_Demands_except3.Update_from_executor(string.Format("{0}3", Main_task), cancellationToken);
                 order_Demands_except3 = null;
@@ -447,21 +449,21 @@ namespace Confirm_server_by_Contracts
         /// <param name="DMND_ORA"></param>
         /// <param name="StMag"></param>
         /// <returns></returns>
-        public Task<(List<Buyer_info_row>, List<Demands_row>)> Calculate (
-            List<Simple_demands_row> DMND_ORA, 
-            List<Inventory_part_row> StMag, 
+        public Task<(List<Buyer_info_row>, List<Demands_row>)> Calculate(
+            List<Simple_demands_row> DMND_ORA,
+            List<Inventory_part_row> StMag,
             CancellationToken cancellationToken)
         {
-            DateTime nullDAT = Loger.Serw_run.AddDays(10);            
+            DateTime nullDAT = Loger.Serw_run.AddDays(10);
 
             List<Buyer_info_row> DataSet = new List<Buyer_info_row>();
             List<Buyer_info_row> TmpDataSet = new List<Buyer_info_row>();
-            List<Demands_row> DemandSet = new List<Demands_row>();            
+            List<Demands_row> DemandSet = new List<Demands_row>();
 
             string Part_no = "";
             string Contract = "";
             int ind_mag = 0;
-            
+
             DateTime Date_reQ;
             byte TYP_dmd = 0;
             byte b_DOP = byte.Parse("2");
@@ -478,10 +480,10 @@ namespace Confirm_server_by_Contracts
             double DEMAND_ZAM;
             double QTY_DEMAND_DOP;
             double STAN_mag = 0;
-            double Chk_Sum ;
+            double Chk_Sum;
             double bilans;
             double balance;
-            double Balane_mag ;
+            double Balane_mag;
             double dmnNext;
             int chksumD;
             double leadtime = 0;
@@ -494,9 +496,9 @@ namespace Confirm_server_by_Contracts
             DateTime Data_Braku = nullDAT;
             int par = Convert.ToInt32(DateTime.Now.Date.ToOADate());
             if (par % 2 == 0) { par = 1; } else { par = 0; }
-            DateTime DATNOW = DateTime.Now.Date;            
+            DateTime DATNOW = DateTime.Now.Date;
             Simple_demands_row NEXT_row = DMND_ORA[0];
-            
+
             DateTime rpt_short = nullDAT;
             DateTime dta_rap = nullDAT;
             try
@@ -574,7 +576,8 @@ namespace Confirm_server_by_Contracts
                     if (counter < max - 1)
                     {
                         NEXT_row = DMND_ORA[counter + 1];
-                    } else
+                    }
+                    else
                     {
                         NEXT_row = DMND_ORA[0];
                     }
@@ -633,7 +636,7 @@ namespace Confirm_server_by_Contracts
                         }
                     }
                     if (TmpDataSet.Count > 0)
-                    {                        
+                    {
                         if (Date_reQ > DATNOW || !(Part_no.Equals(NEXT_row.Part_no) && Contract.Equals(NEXT_row.Contract)))
                         {
                             if (dta_rap == nullDAT)
@@ -675,7 +678,7 @@ namespace Confirm_server_by_Contracts
                                 });
                             }
                             TmpDataSet.Clear();
-                        }                        
+                        }
                     }
                     if (QTY_SUPPLY > 0)
                     {
@@ -764,10 +767,10 @@ namespace Confirm_server_by_Contracts
                     }
                     if (!(Part_no.Equals(NEXT_row.Part_no) && Contract.Equals(NEXT_row.Contract)))
                     {
-                        max_dates.Add(Part_no, Contract, dta_rap>rpt_short? dta_rap: rpt_short);
+                        max_dates.Add(Part_no, Contract, dta_rap > rpt_short ? dta_rap : rpt_short);
                     }
-                }          
-            
+                }
+
             }
             catch (Exception ex)
             {
@@ -855,13 +858,13 @@ namespace Confirm_server_by_Contracts
                 return this.Part_no.Equals(other.Part_no) && this.Dat.Equals(other.Dat);
             }
         }
-        public Task<List<Buyer_info_row>> Limit_length (List<Buyer_info_row> dataset)
+        public Task<List<Buyer_info_row>> Limit_length(List<Buyer_info_row> dataset)
         {
             Dictionary<string, int> calendar_len = Get_limit_of_fields.buyer_info_len;
             foreach (Buyer_info_row row in dataset)
             {
                 row.Indeks = row.Indeks.LimitDictLen("indeks", calendar_len);
-                row.Umiejsc = row.Umiejsc.LimitDictLen("umiejsc", calendar_len); 
+                row.Umiejsc = row.Umiejsc.LimitDictLen("umiejsc", calendar_len);
                 row.Opis = row.Opis.LimitDictLen("opis", calendar_len);
                 row.Kolekcja = row.Kolekcja.LimitDictLen("kolekcja", calendar_len);
                 row.Planner_buyer = row.Planner_buyer.LimitDictLen("planner_buyer", calendar_len);
@@ -929,7 +932,7 @@ namespace Confirm_server_by_Contracts
                 if (other == null) return false;
                 return (this.Indeks.Equals(other.Indeks) && this.Data_dost.Equals(other.Data_dost) && this.Umiejsc.Equals(other.Umiejsc));
             }
-        }      
-       
+        }
+
     }
 }

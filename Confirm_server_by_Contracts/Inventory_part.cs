@@ -18,7 +18,7 @@ namespace Confirm_server_by_Contracts
         public bool Updated_on_init;
         public List<Inventory_part_row> Inventory_part_list;
         private readonly Update_pstgr_from_Ora<Inventory_part_row> rw;
-        private readonly string regex_part_no  = "";
+        private readonly string regex_part_no = "";
         private readonly bool limit_not_zero_stock = false;
         public List<Tuple<string, string>> limit_part_no = new List<Tuple<string, string>>();
         public List<Tuple<string, string>> except_part_no = new List<Tuple<string, string>>();
@@ -33,23 +33,23 @@ namespace Confirm_server_by_Contracts
             {
                 limit_part_no = part_no_values;
             }
-           
+
         }
-        public async Task<int> Update_dataset(List<Inventory_part_row> pstgrdtset, List<Inventory_part_row> oradtset,string Task_name, CancellationToken cancellationToken)
+        public async Task<int> Update_dataset(List<Inventory_part_row> pstgrdtset, List<Inventory_part_row> oradtset, string Task_name, CancellationToken cancellationToken)
         {
             Changes_List<Inventory_part_row> tmp = await rw.Changes(pstgrdtset, oradtset, new[] { "indeks", "contract" }, new[] { "indeks", "contract", "data_gwarancji" }, null, Task_name, cancellationToken);
             int result = await PSTRG_Changes_to_dataTable(tmp, "mag", new[] { "indeks", "contract" }, null, null, Task_name, cancellationToken);
             return result;
         }
-            
+
         /// <summary>
         /// Get inventory_part stored in PSTGR
         /// </summary>
         /// <param name="rw"></param>
         /// <returns></returns>
-        public async Task<List<Inventory_part_row>> Get_PSTGR_List(string Task_name, CancellationToken cancellationToken) => await rw.Get_PSTGR("" + 
+        public async Task<List<Inventory_part_row>> Get_PSTGR_List(string Task_name, CancellationToken cancellationToken) => await rw.Get_PSTGR("" +
             String.Format(@"Select * from mag {0}", regex_part_no != "^(5|6).*" ?
-                String.Format("WHERE regexp_like(indeks, '{0}')", regex_part_no): ""), Task_name, cancellationToken);
+                String.Format("WHERE regexp_like(indeks, '{0}')", regex_part_no) : ""), Task_name, cancellationToken);
 
         /// <summary>
         /// Get present list of inventory_part stored in ERP
@@ -83,32 +83,32 @@ namespace Confirm_server_by_Contracts
                         FROM 
                         ifsapp.inventory_part_pub 
                         WHERE REGEXP_LIKE(part_no,'{1}') {0} {2} AND TYPE_CODE_DB='4') a
-                ", limit_not_zero_stock ? 
-                        String.Format("AND {0} (part_no, contract) in (select part_no, contract from ifsapp.inventory_part_in_stock where REGEXP_LIKE(part_no,'{2}') and QTY_ONHAND>0 or QTY_IN_TRANSIT>0) {1}", 
-                            limit_part_no.Count > 0 ? 
-                            String.Format("((part_no , contract) IN ({0}) OR {1}" 
-                                ,string.Join(",", limit_part_no.Select(t => string.Format("( '{0}', '{1}')", t.Item1, t.Item2)))
-                                ,except_part_no.Count > 0 ?
-                                    string.Format("((part_no , contract) NOT IN ({0}) AND ", string.Join(",", except_part_no.Select(t => string.Format("( '{0}', '{1}')", t.Item1, t.Item2)))) : 
+                ", limit_not_zero_stock ?
+                        String.Format("AND {0} (part_no, contract) in (select part_no, contract from ifsapp.inventory_part_in_stock where REGEXP_LIKE(part_no,'{2}') and QTY_ONHAND>0 or QTY_IN_TRANSIT>0) {1}",
+                            limit_part_no.Count > 0 ?
+                            String.Format("((part_no , contract) IN ({0}) OR {1}"
+                                , string.Join(",", limit_part_no.Select(t => string.Format("( '{0}', '{1}')", t.Item1, t.Item2)))
+                                , except_part_no.Count > 0 ?
+                                    string.Format("((part_no , contract) NOT IN ({0}) AND ", string.Join(",", except_part_no.Select(t => string.Format("( '{0}', '{1}')", t.Item1, t.Item2)))) :
                                     ""
-                            ):
+                            ) :
                             ""
-                            ,limit_part_no.Count > 0 ? 
-                                string.Format("){0}", except_part_no.Count > 0 ? ")": ""):
+                            , limit_part_no.Count > 0 ?
+                                string.Format("){0}", except_part_no.Count > 0 ? ")" : "") :
                                 string.Format("{0}", except_part_no.Count > 0 ? ")" : "")
-                            ,regex_part_no
-                            ):
+                            , regex_part_no
+                            ) :
                    ""
                    , regex_part_no
                    , limit_part_no.Count > 0 && !limit_not_zero_stock ?
-                        string.Format("AND (part_no , contract) IN ({0})", 
-                            string.Join(",", limit_part_no.Select(t => string.Format("( '{0}', '{1}')", t.Item1, t.Item2)))) : 
+                        string.Format("AND (part_no , contract) IN ({0})",
+                            string.Join(",", limit_part_no.Select(t => string.Format("( '{0}', '{1}')", t.Item1, t.Item2)))) :
                         ""
                    ), Task_name, cancellationToken), cancellationToken);
 
 
         public class Inventory_part_row : IEquatable<Inventory_part_row>, IComparable<Inventory_part_row>
-        {           
+        {
             public string Indeks { get; set; }
             public string Contract { get; set; }
             public string Opis { get; set; }
@@ -124,7 +124,7 @@ namespace Confirm_server_by_Contracts
             public string Part_product_family { get; set; }
             public long Note_id { get; set; }
 
-            
+
             /// <summary>
             /// default Comparer by Custid field
             /// </summary>
@@ -153,7 +153,7 @@ namespace Confirm_server_by_Contracts
 
         public Task<List<Inventory_part_row>> Limit_in_and_create_Except(List<Tuple<string, string>> In_tuple, List<Tuple<string, string>> Zero_stock, List<Inventory_part_row> Rows_to_convert, bool with_except_dtset)
         {
-            List<Inventory_part_row> out_ = new List<Inventory_part_row>(); 
+            List<Inventory_part_row> out_ = new List<Inventory_part_row>();
             except_part_no.Clear();
             List<Tuple<string, string>> for_remove = new List<Tuple<string, string>>();
             foreach (Tuple<string, string> item in limit_part_no)
@@ -165,7 +165,7 @@ namespace Confirm_server_by_Contracts
                         if (with_except_dtset)
                         {
                             except_part_no.Add(item);
-                        }                        
+                        }
                         for_remove.Add(item);
                     }
                     else
@@ -189,12 +189,12 @@ namespace Confirm_server_by_Contracts
                     }
                 }
             }
-          
+
             if (Rows_to_convert != null)
             {
                 foreach (Inventory_part_row item_rw in Rows_to_convert)
                 {
-                    Tuple<string, string> tpl = new Tuple<string, string> ( item_rw.Indeks, item_rw.Contract );
+                    Tuple<string, string> tpl = new Tuple<string, string>(item_rw.Indeks, item_rw.Contract);
                     if (In_tuple.Contains(tpl))
                     {
                         out_.Add(item_rw);
@@ -203,14 +203,14 @@ namespace Confirm_server_by_Contracts
             }
             return Task.FromResult(out_);
         }
-        public Task<List<Inventory_part_row>> Return_rows_not_in (List<Tuple<string, string>> In_tuple, List<Inventory_part_row> Rows_to_convert)
+        public Task<List<Inventory_part_row>> Return_rows_not_in(List<Tuple<string, string>> In_tuple, List<Inventory_part_row> Rows_to_convert)
         {
             List<Inventory_part_row> out_ = new List<Inventory_part_row>();
             if (Rows_to_convert != null)
             {
                 foreach (Inventory_part_row item_rw in Rows_to_convert)
                 {
-                    if (!In_tuple.Contains(new Tuple<string, string> (item_rw.Indeks, item_rw.Contract )))
+                    if (!In_tuple.Contains(new Tuple<string, string>(item_rw.Indeks, item_rw.Contract)))
                     {
                         out_.Add(item_rw);
                     }
@@ -247,7 +247,7 @@ namespace Confirm_server_by_Contracts
                 row.Opis = row.Opis.LimitDictLen("opis", inventory_part_len);
                 row.Kolekcja = row.Kolekcja.LimitDictLen("kolekcja", inventory_part_len);
                 row.Planner_buyer = row.Planner_buyer.LimitDictLen("planner_buyer", inventory_part_len);
-                row.Rodzaj = row.Rodzaj.LimitDictLen("state_conf", inventory_part_len);                
+                row.Rodzaj = row.Rodzaj.LimitDictLen("state_conf", inventory_part_len);
             }
             return Task.FromResult(source);
         }

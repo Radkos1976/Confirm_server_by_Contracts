@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 
 namespace Common
@@ -20,7 +16,7 @@ namespace Common
         void Srv_stop();
         DateTime Serw_run { get; }
     }
-    
+
     public interface IRunnable
     {
         void Run();

@@ -1,16 +1,16 @@
-﻿using System;
-using System.Timers;
-using Confirm_server_by_Contracts;
+﻿using Confirm_server_by_Contracts;
 using DB_Conect;
 using Npgsql;
+using System;
+using System.Timers;
 
 namespace Purch_Confirm_server
 {
     public class Conf_serv
     {
-        readonly Timer _timer;        
+        readonly Timer _timer;
         public Conf_serv()
-        {            
+        {
             _timer = new Timer(10000) { AutoReset = true };
             _timer.Elapsed += (sender, eventArgs) =>
             {
@@ -59,11 +59,11 @@ namespace Purch_Confirm_server
                     if (ser_run > 0)
                     {
                         _timer.Stop();
-                        Serv_instance srv = new Serv_instance();                        
+                        Serv_instance srv = new Serv_instance();
                         srv.Start_calc();
                         Steps_executor.Reset_diary_of_steps();
                         srv = null;
-                        _timer.Start();                        
+                        _timer.Start();
                     }
                 }
                 catch (Exception e)
@@ -100,10 +100,10 @@ namespace Purch_Confirm_server
                     }
                 }
             }
-            finally 
-            { 
-                _timer.Stop(); 
-            } 
+            finally
+            {
+                _timer.Stop();
+            }
         }
 
     }
