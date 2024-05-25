@@ -424,23 +424,23 @@ namespace Confirm_server_by_Contracts
                                 }
 
                                 using (NpgsqlCommand cmd = new NpgsqlCommand("" +
-                                    "DELETE FROM public.conf_mail_null " +
-                                    "WHERE order_no not in (SELECT a.order_no  " +
-                                        "FROM ( SELECT a_1.*,get_refer(a_1.addr1) AS reference,CASE WHEN a_1.dop_connection_db::text = 'AUT'::text AND a_1.dop_state IS NULL THEN 1 ELSE 0 END AS gotowe " +
-                                            "FROM cust_ord a_1 " +
-                                            "LEFT JOIN " +
-                                            "( SELECT cust_ord.order_no " +
-                                                "FROM cust_ord " +
-                                                "WHERE cust_ord.state_conf::text = 'Wydrukow.'::text AND cust_ord.last_mail_conf IS NOT NULL " +
-                                                "GROUP BY cust_ord.order_no) c " +
-                                            "ON c.order_no::text = a_1.order_no::text " +
-                                            "WHERE (a_1.state_conf::text = 'Nie wydruk.'::text OR a_1.last_mail_conf IS NULL) " +
-                                                "AND is_refer(a_1.addr1) = true AND substring(a_1.order_no::text, 1, 1) = 'S'::text " +
-                                                "AND (a_1.cust_order_state::text <> ALL (ARRAY['Częściowo dostarczone'::character varying::text, 'Zaplanowane'::character varying::text])) " +
-                                                "AND (substring(a_1.part_no::text, 1, 3) <> ALL (ARRAY['633'::text, '628'::text, '1K1'::text, '1U2'::text, '632'::text])) " +
-                                                "AND (c.order_no IS NOT NULL AND a_1.dop_connection_db::text <> 'MAN'::text OR c.order_no IS NULL)) a " +
-                                            "GROUP BY a.order_no, a.cust_no, a.reference, a.addr1, a.country " +
-                                            "HAVING sum(a.gotowe) = 0 AND max(a.objversion) < (now() - '02:00:00'::interval))", conA))
+                                    @"DELETE FROM public.conf_mail_null
+                                    WHERE order_no not in (SELECT a.order_no 
+                                        FROM ( SELECT a_1.*,get_refer(a_1.addr1) AS reference,CASE WHEN a_1.dop_connection_db::text = 'AUT'::text AND a_1.dop_state IS NULL THEN 1 ELSE 0 END AS gotowe 
+                                            FROM cust_ord a_1 
+                                            LEFT JOIN 
+                                            ( SELECT cust_ord.order_no 
+                                                FROM cust_ord 
+                                                WHERE cust_ord.state_conf::text = 'Wydrukow.'::text AND cust_ord.last_mail_conf IS NOT NULL 
+                                                GROUP BY cust_ord.order_no) c 
+                                            ON c.order_no::text = a_1.order_no::text 
+                                            WHERE (a_1.state_conf::text = 'Nie wydruk.'::text OR a_1.last_mail_conf IS NULL) 
+                                                AND is_refer(a_1.addr1) = true AND substring(a_1.order_no::text, 1, 1) =  ANY (ARRAY['S'::text, 'G'::text]) 
+                                                AND (a_1.cust_order_state::text <> ALL (ARRAY['Częściowo dostarczone'::character varying::text, 'Zaplanowane'::character varying::text])) 
+                                                AND (substring(a_1.part_no::text, 1, 3) <> ALL (ARRAY['633'::text, '628'::text, '1K1'::text, '1U2'::text, '632'::text])) 
+                                                AND (c.order_no IS NOT NULL AND a_1.dop_connection_db::text <> 'MAN'::text OR c.order_no IS NULL)) a 
+                                            GROUP BY a.order_no, a.cust_no, a.reference, a.addr1, a.country 
+                                            HAVING sum(a.gotowe) = 0 AND max(a.objversion) < (now() - '02:00:00'::interval))", conA))
                                 {
                                     cmd.ExecuteNonQuery();
                                 }
@@ -708,10 +708,10 @@ namespace Confirm_server_by_Contracts
                 string firstbod = "<?xml version=" + (Char)34 + "1.0" + (Char)34 + " encoding =" + (Char)34 + "utf-8" + (Char)34 + " ?> <!DOCTYPE html PUBLIC " + (Char)34 + "-//W3C//DTD XHTML 1.0 Transitional//EN" + (Char)34 + " " + (Char)34 + "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd" + (Char)34 + "> <html xmlns=" + (Char)34 + "http://www.w3.org/1999/xhtml" + (Char)34 + "> <head> <meta http-equiv=" + (Char)34 + "Content-Type" + (Char)34 + " content =" + (Char)34 + "text/html charset=UTF-8" + (Char)34 + " />  <meta name=" + (Char)34 + "viewport" + (Char)34 + " content=" + (Char)34 + "width=device-width,initial-scale=1.0" + (Char)34 + "/>  <title>" + HTMLEncode(StrTableStart) + "</title>  <style type=" + (Char)34 + "text/css" + (Char)34 + ">  body,table{font-family:verdana,arial,sans-serif;font-size:12px;border-collapse:collapse;}  td,th{margin:3px;border:1px solid #BBB;} </style> </head> <body>";
                 string Shortcut = " <p> <a href=" + (Char)34 + "http://sitsifsapp.sits.local:59080/client/runtime/Ifs.Fnd.Explorer.application?url=ifsapf%3AtbwOverviewCustOrdLine%3Faction%3Dget";
                 string StrTableStart1 = " <h5>WITAM<br />" + StrTableStart + "</h5> ";
-                string strTableBeg = "<table>";
+                const string strTableBeg = "<table>";
                 string strTableEnd = "</table><i>" + tblfoot + "</i><h5>Pozdrawiam<br />Serwis potwierdzeń</h5>";
                 string strTableHeader = "<tr bgcolor=" + (Char)34 + "lightblue" + (Char)34 + "> ";
-                string lastbod = "</body></html>";
+                const string lastbod = "</body></html>";
                 foreach (DataColumn cl in spec_kol.Table.Columns)
                 {
                     strTableHeader = strTableHeader + "<th>" + HTMLEncode(cl.ColumnName) + "</th>";
