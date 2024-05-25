@@ -571,14 +571,14 @@ namespace Confirm_server_by_Contracts
                                         using (DataTable mail_list = new DataTable())
                                         {
                                             using (NpgsqlCommand cmd = new NpgsqlCommand("" +
-                                                "select b.mail " +
-                                                "from " +
-                                                    "(select * from " +
-                                                    "conf_mail_null " +
-                                                    "where date_add is null) a," +
-                                                    "kontakty b " +
-                                                "where b.country_coor=a.country " +
-                                                "group by b.mail", conA))
+                                                @"select b.mail 
+                                                from 
+                                                    (select * from 
+                                                    conf_mail_null
+                                                    where date_add is null) a,
+                                                    kontakty b 
+                                                where a.country=ANY(string_to_array(b.country_coor::text, ','::text)) 
+                                                group by b.mail", conA))
                                             {
                                                 using (NpgsqlDataReader po = cmd.ExecuteReader())
                                                 {
@@ -613,11 +613,11 @@ namespace Confirm_server_by_Contracts
                                                     rw["reference"] = 1;
                                                     kol.Rows.Add(rw);
                                                     using (NpgsqlCommand cmd = new NpgsqlCommand("" +
-                                                        "select a.order_no as cust_ord,a.cust_no,a.reference,a.country,' ' info " +
-                                                        "from " +
-                                                        "(select * from conf_mail_null where date_add is null) a," +
-                                                        "kontakty b " +
-                                                        "where b.country_coor=a.country and b.mail=@mail ", conA))
+                                                        @"select a.order_no as cust_ord,a.cust_no,a.reference,a.country,' ' info 
+                                                        from 
+                                                        (select * from conf_mail_null where date_add is null) a,
+                                                        kontakty b 
+                                                        where a.country=ANY(string_to_array(b.country_coor::text, ','::text)) and b.mail=@mail ", conA))
                                                     {
                                                         cmd.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar);
                                                        
