@@ -4,6 +4,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -244,7 +245,7 @@ namespace DB_Conect
             }
             catch (Exception e)
             {
-                Loger.Log("Error on GET_ORA :" + Task_name + e);
+                Loger.Log("Error on GET_ORA :" + Task_name + e + " => " + e.Message);
                 Steps_executor.Step_error(Task_name);
                 return Rows;
             }
