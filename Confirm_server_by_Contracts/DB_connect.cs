@@ -470,7 +470,6 @@ namespace DB_Conect
             }
             return Task.FromResult(result);
         }
-
         /// <summary>
         /// Find changes beetwen List's <typeparamref name="T"/>
         /// </summary>
@@ -648,7 +647,13 @@ namespace DB_Conect
                             add_Record = false;
                         }
                     }
-                    var dataset = new Changes_List<T>
+                    while (max_old_rows > counter)
+                    {
+                        _operDEl.Add(Old_list[counter]);
+                        counter++;
+                    }
+
+                    Changes_List<T> dataset = new Changes_List<T>
                     {
                         Insert = _operINS,
                         Delete = _operDEl,
