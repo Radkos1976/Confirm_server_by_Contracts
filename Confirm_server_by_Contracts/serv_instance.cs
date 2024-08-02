@@ -351,32 +351,67 @@ namespace Confirm_server_by_Contracts
                     // check order_demands for duplicated data amt wrong balances
                     Update_pstgr_from_Ora<Small_upd_demands> upd_dem = new Update_pstgr_from_Ora<Small_upd_demands>("MAIN");
                     List<Small_upd_demands> not_corr_dem = await upd_dem.Get_PSTGR("" +
-                        @"select a.part_no, a.contract, min(a.min_d), max(a.max_d) from (
+                        @"select a.part_no, a.contract, min(a.min_d), max(a.max_d) 
+                        from 
+                        (
 	                        (select b.part_no,b.contract,b.date_required min_d, b.date_required max_d
-                        from 
-                            (select dop,dop_lin,int_ord,part_no,contract,line_no,rel_no,count(order_supp_dmd) as il 
-                                from ord_demands 
-                                group by dop,dop_lin,int_ord,part_no,contract,line_no,rel_no) a,
-                            (select part_no,contract,date_required,dop,dop_lin,int_ord,line_no,rel_no from ord_demands) b 
-                         where a.il >1 and (a.dop=b.dop and a.dop_lin=b.dop_lin and a.int_ord=b.int_ord and a.part_no=b.part_no and a.contract=b.contract
-                            and a.line_no=b.line_no and a.rel_no=b.rel_no) 
-                         group by b.part_no,b.contract,b.date_required order by part_no) 
-                         union ALL
-                         (select indeks part_no,umiejsc contract,mn min_d,max(data_dost) max_d
-                        from 
-                            (select c.indeks,c.umiejsc,c.data_dost,c.mag,c.sum_dost-sum(a.qty_supply) supp,c.sum_potrz-sum(a.qty_demand) dmd,min(a.date_required) mn,b.ma 
+                            from 
+                                (select dop,dop_lin,int_ord,part_no,contract,line_no,rel_no,count(order_supp_dmd) as il 
+                                    from ord_demands 
+                                    group by dop,dop_lin,int_ord,part_no,contract,line_no,rel_no) a,
+                                (select part_no,contract,date_required,dop,dop_lin,int_ord,line_no,rel_no from ord_demands) b 
+                            where a.il >1 and (a.dop=b.dop and a.dop_lin=b.dop_lin and a.int_ord=b.int_ord and a.part_no=b.part_no and a.contract=b.contract
+                                and a.line_no=b.line_no and a.rel_no=b.rel_no) 
+                             group by b.part_no,b.contract,b.date_required order by part_no) 
+                            union ALL
+                                (select indeks part_no,umiejsc contract,mn min_d,max(data_dost) max_d
                                 from 
-                                    (select * 
-                                        from public.data 
-                                        where typ_zdarzenia not in ('Brak zamówień zakupu','Dostawa na dzisiejsze ilości','Opóźniona dostawa') 
-                                        and planner_buyer!='LUCPRZ')c,
-                                    ord_demands a,
-                                    (select part_no,contract,min(work_day) ma 
-                                        from demands group by part_no, contract) b 
-                                 where c.bilans<0 and b.part_no=c.indeks and a.part_no=c.indeks 
-                                 and (a.date_required<=c.data_dost or a.date_required<=current_date) 
-                                 group by c.indeks, c.umiejsc,c.opis,c.data_dost,c.bilans,c.mag,c.sum_dost,c.sum_potrz,b.ma) a 
-                            where  supp not between -0.001 and 0.001 or dmd not between -0.001 and 0.001 group by indeks,umiejsc,mn,ma)
+                                (select c.indeks,c.umiejsc,c.data_dost,c.mag,c.sum_dost-sum(a.qty_supply) supp,c.sum_potrz-sum(a.qty_demand) dmd,min(a.date_required) mn,b.ma 
+                                    from 
+                                        (select * 
+                                            from public.data 
+                                            where typ_zdarzenia not in ('Brak zamówień zakupu','Dostawa na dzisiejsze ilości','Opóźniona dostawa') 
+                                            and planner_buyer!='LUCPRZ')c,
+                                        ord_demands a,
+                                        (select part_no,contract,min(work_day) ma 
+                                            from demands group by part_no, contract) b 
+                                     where c.bilans<0 and b.part_no=c.indeks and a.part_no=c.indeks 
+                                     and (a.date_required<=c.data_dost or a.date_required<=current_date) 
+                                     group by c.indeks, c.umiejsc,c.opis,c.data_dost,c.bilans,c.mag,c.sum_dost,c.sum_potrz,b.ma) a 
+                                where  supp not between -0.001 and 0.001 or dmd not between -0.001 and 0.001 group by indeks,umiejsc,mn,ma)
+                            union All
+                                (Select a.part_no, a.contract, a.work_day min_d,a.work_day as max_d 
+                                from
+                                    demands a
+                                    left Join                                    
+                                    (
+                                        select 
+                                            part_no,
+                                            contract,
+                                            date_required,
+                                            sum(qty_supply) sup,
+                                            sum(qty_demand) dem
+                                        from 
+                                            ord_demands 
+                                        group by part_no,contract,date_required
+                                    ) b                                    
+                                    on b.part_no=a.part_no and b.contract=a.contract and b.date_required=a.work_day
+                                    left join
+                                    (
+                                        select 
+                                            indeks,
+                                            umiejsc,
+                                            max(data_dost) dost,
+                                            max(data_braku) brak
+                                         from public.data 
+                                         where typ_zdarzenia not in ('Brak zamówień zakupu','Dostawa na dzisiejsze ilości','Opóźniona dostawa') 
+                                         and planner_buyer!='LUCPRZ'
+                                        group by indeks, umiejsc
+                                    )c
+                                    on c.indeks=a.part_no and c.umiejsc=a.contract and c.dost=a.work_day
+                                where (b.sup != a.purch_qty or b.dem != a.qty_demand) and (a.work_day <= date_fromnow(16) or a.work_day <= date_fromnow(a.expected_leadtime) or a.work_day <= c.dost or a.work_day <= c.brak)
+                                )
+
                         ) a
                         group by a.part_no, a.contract;",
                         "Check_order_demands",
