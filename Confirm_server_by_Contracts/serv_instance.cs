@@ -409,9 +409,8 @@ namespace Confirm_server_by_Contracts
                                         group by indeks, umiejsc
                                     )c
                                     on c.indeks=a.part_no and c.umiejsc=a.contract and c.dost=a.work_day
-                                where (b.sup != a.purch_qty or b.dem != a.qty_demand) and (a.work_day <= date_fromnow(16) or a.work_day <= date_fromnow(a.expected_leadtime) or a.work_day <= c.dost or a.work_day <= c.brak)
+                                where a.koor!='LUCPRZ' and (b.sup != a.purch_qty or b.dem != a.qty_demand) and (a.work_day <= date_fromnow(16) or a.work_day <= date_fromnow(a.expected_leadtime) or a.work_day <= c.dost or a.work_day <= c.brak)
                                 )
-
                         ) a
                         group by a.part_no, a.contract;",
                         "Check_order_demands",
