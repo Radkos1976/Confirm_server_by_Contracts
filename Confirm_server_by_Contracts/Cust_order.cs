@@ -124,7 +124,7 @@ namespace Confirm_server_by_Contracts
                             left join
                             public.cust_ord b
                             on a.id=b.id
-                            where b.id is null)"},
+                            where b.id is null and a.date_add <current_timestamp - interval '365 day')"},
                     "cust_ord",
                     cancellationToken);
             }
