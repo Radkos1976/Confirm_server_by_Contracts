@@ -577,9 +577,9 @@ namespace Confirm_server_by_Contracts
                             on c.id=a.cust_id 
                             where b.cust_id is null and is_for_mail(a.status_informacji)=true and c.data_dop>=a.prod and cast(c.prom_week as integer)>=a.prod_week and (c.ship_date is null or c.ship_date>a.prod)
                         )",
-                        "delete from braki_hist where objversion<current_timestamp - interval '7 day'"
+                        "delete from braki_hist where objversion<current_timestamp - interval '30 day'"
                         ,
-                        "delete from mail_hist where date_addd<current_timestamp - interval '7 day'"
+                        "delete from mail_hist where date_addd<current_timestamp - interval '30 day'"
                         ,
                         "delete from mail where status_informacji='NOT IMPLEMENT' or cust_line_stat!='Aktywowana'"
                         ,
