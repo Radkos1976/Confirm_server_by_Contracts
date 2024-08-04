@@ -330,8 +330,11 @@ namespace Confirm_server_by_Contracts
                             }
                             else
                             {
-                                mat_dmd[poz_dmd[ind, dat]].Qty -= mat_ord[item].Qty_demand;
-                                mat_ord[item].Ord_assinged = mat_ord[item].Qty_demand;
+                                if (mat_dmd[poz_dmd[ind, dat]].Qty > mat_dmd[poz_dmd[ind, dat]].Bil_chk)
+                                {
+                                    mat_dmd[poz_dmd[ind, dat]].Qty -= mat_ord[item].Qty_demand;
+                                    mat_ord[item].Ord_assinged = mat_ord[item].Qty_demand;
+                                }                               
                             }
                         }
                     }

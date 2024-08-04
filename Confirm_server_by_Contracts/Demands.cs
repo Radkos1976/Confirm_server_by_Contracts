@@ -477,7 +477,7 @@ namespace Confirm_server_by_Contracts
                             0 QTY_SUPPLY,
                             QTY_DEMAND,
                             ifsapp.shop_ord_api.Get_Date_Entered(order_no, line_no, rel_no) creat_date,
-                            owa_opt_lock.checksum(ROWID||QTY_DEMAND||QTY_PEGGED||QTY_RESERVED||To_Char(ifsapp.shop_order_operation_api.Get_Op_Start_Date(order_no,line_no,rel_no,ifsapp.shop_order_operation_list_api.Get_Prev_Non_Parallel_Op (order_no,line_no,rel_no,2,0)),'YYYYMMDDHH24miss')) chksum  
+                            owa_opt_lock.checksum(ROWID) chksum  
                         FROM 
                                 ifsapp.shop_material_alloc_demand 
                         WHERE part_no = '{0}' AND CONTRACT = '{1}' AND DATE_REQUIRED between '{2}' and '{3}' 
@@ -554,7 +554,7 @@ namespace Confirm_server_by_Contracts
                             0 QTY_SUPPLY,
                             a.QTY_DEMAND,
                             b.DATE_ENTERED creat_date,
-                            owa_opt_lock.checksum(a.ROWID||QTY_DEMAND||DATE_REQUIRED||a.STATUS_CODE) chksum  
+                            owa_opt_lock.checksum(a.ROWID||a.QTY_DEMAND||a.DATE_REQUIRED||a.STATUS_CODE) chksum  
                         FROM 
                             ifsapp.material_requis_line_demand_oe a, 
                             ifsapp.material_requis_line b 
