@@ -692,8 +692,18 @@ namespace Confirm_server_by_Contracts
                 {
                     return second_nxt;
                 }
+                int rel_no = this.Rel_no.CompareTo(other.Rel_no);
+                if (rel_no != 0)
+                {
+                    return rel_no;
+                }
+                int order_no = this.Order_no.CompareTo(other.Order_no);
+                if (order_no != 0)
+                {
+                    return order_no;
+                }
                 return
-                    this.Rel_no.CompareTo(other.Rel_no);
+                    this.Id.CompareTo(other.Id);
             }
 
             public virtual bool Equals(Order_Demands_row other)
@@ -704,7 +714,9 @@ namespace Confirm_server_by_Contracts
                     this.Dop_lin.Equals(other.Dop_lin) &&
                     this.Int_ord.Equals(other.Int_ord) &&
                     this.Line_no.Equals(other.Line_no) &&
-                    this.Rel_no.Equals(other.Rel_no);
+                    this.Rel_no.Equals(other.Rel_no) &&
+                    this.Order_no.Equals(other.Order_no) &&
+                    this.Id.Equals(other.Id);
             }
         }
     }

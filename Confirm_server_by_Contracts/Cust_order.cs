@@ -192,7 +192,7 @@ namespace Confirm_server_by_Contracts
                             Decode(Nvl(LENGTH(TRIM(TRANSLATE(SubStr(ifsapp.dop_head_api.get_C_Trolley_Id(b.dop_id),
                         instr(ifsapp.dop_head_api.get_C_Trolley_Id(b.dop_id), '-') + 1), ' +-.0123456789', ' '))), 1000), 1000, b.PEGGED_QTY, 0)), b.QTY_DELIVERED),5) DOP_MADE,
                     Nvl(b.CREATE_DATE, decode(a.DOP_CONNECTION_DB, NULL, a.DATE_ENTERED)) DATE_ENTERED,
-                    owa_opt_lock.checksum(a.OBJVERSION || b.OBJVERSION || nvl(b.dop_id, a.Pre_Accounting_Id) || ifsapp.customer_order_api.Get_Authorize_Code(a.ORDER_NO) || c.dat ||
+                    owa_opt_lock.checksum(nvl(b.dop_id, a.Pre_Accounting_Id) || ifsapp.customer_order_api.Get_Authorize_Code(a.ORDER_NO) || c.dat ||
                         ifsapp.customer_order_api.Get_Order_Conf(a.ORDER_NO) || ifsapp.customer_order_api.Get_State(a.ORDER_NO) || ifsapp.customer_order_address_api.Get_Zip_Code(a.ORDER_NO) ||
                         ifsapp.customer_order_address_api.Get_Addr_1(a.ORDER_NO) || Decode(Nvl(ifsapp.customer_order_api.Get_Cust_Ref(a.ORDER_NO), ''), '', '', '<<' ||
                         ifsapp.customer_order_api.Get_Cust_Ref(a.ORDER_NO) || '>>') || load_id || ifsapp.CUST_ORDER_LOAD_LIST_API.Get_Ship_Date(LOAD_ID) || ifsapp.dop_head_api.Get_Objstate__(b.dop_id) ||
