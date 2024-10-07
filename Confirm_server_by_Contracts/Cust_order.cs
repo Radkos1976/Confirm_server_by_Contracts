@@ -95,10 +95,11 @@ namespace Confirm_server_by_Contracts
                     list_pstgr,
                     list_ora,
                     new[] { "custid" },
-                    new[] { "id", "zest", "objversion" },
+                    new[] { "id", "zest", "objversion",  "chksum" },
                     new[] { "id" },
                     "cust_ord",
-                    cancellationToken);
+                    cancellationToken,
+                    true);
                 list_ora = null;
                 list_pstgr = null;
                 return await PSTRG_Changes_to_dataTable(

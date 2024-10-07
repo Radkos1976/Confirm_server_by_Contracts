@@ -486,7 +486,9 @@ namespace DB_Conect
             string[] not_compare,
             string[] guid_col,
             string Task_name,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            bool print_changes_in_fields = false
+            )
         {
             Changes_List<T> modyfications = new Changes_List<T>();
             try
@@ -567,12 +569,14 @@ namespace DB_Conect
                                 if (compare == 0)
                                 {
                                     bool changed = false;
+                                    int col_changed = 0;
                                     int col = 0;
+                                    var _old = new object();
+                                    var _new = new object();
                                     foreach (var rw in Accessors)
                                     {
                                         if (!ID.Contains(col) && !dont_check.Contains(col))
                                         {
-
                                             Type pt = P_types[col];
                                             var val1 = rw.GetValue(rows) == null ? null : Convert.ChangeType(rw.GetValue(rows), Nullable.GetUnderlyingType(pt) ?? pt, null);
                                             var val2 = rw.GetValue(Old_list[counter]) == null ? null : Convert.ChangeType(rw.GetValue(Old_list[counter]), Nullable.GetUnderlyingType(pt) ?? pt, null);
@@ -581,6 +585,12 @@ namespace DB_Conect
                                                 if (val2 != null)
                                                 {
                                                     changed = true;
+                                                    if (print_changes_in_fields)
+                                                    {
+                                                        _old = val2;
+                                                        _new = val1;
+                                                        col_changed = col;
+                                                    }
                                                     break;
                                                 }
                                             }
@@ -591,6 +601,12 @@ namespace DB_Conect
                                                     if (val1 != null)
                                                     {
                                                         changed = true;
+                                                        if (print_changes_in_fields)
+                                                        {
+                                                            _old = val2;
+                                                            _new = val1;
+                                                            col_changed = col;
+                                                        }
                                                         break;
                                                     }
                                                 }
@@ -599,10 +615,16 @@ namespace DB_Conect
                                                     if (!val1.Equals(val2))
                                                     {
                                                         changed = true;
+                                                        if (print_changes_in_fields)
+                                                        {
+                                                            _old = val2;
+                                                            _new = val1;
+                                                            col_changed = col;
+                                                        }
                                                         break;
                                                     }
                                                 }
-                                            }
+                                            }                                            
                                         }
                                         col++;
                                     }
@@ -610,10 +632,15 @@ namespace DB_Conect
                                     {
                                         Row = new T();
                                         col = 0;
+                                        string _guid_col = "";
                                         foreach (var p in Accessors)
                                         {
                                             if (guid_id.Contains(col) && Accessors[col].GetValue(Old_list[counter]) != null)
                                             {
+                                                if (print_changes_in_fields)
+                                                {
+                                                    _guid_col = Accessors[col].GetValue(Old_list[counter]).ToString();
+                                                }
                                                 p.SetValue(Row, Accessors[col].GetValue(Old_list[counter]));
                                             }
                                             else
@@ -622,6 +649,10 @@ namespace DB_Conect
                                             }
                                             col++;
                                         }
+                                        if (print_changes_in_fields)
+                                        {
+                                            Loger.Log(String.Format("Row changed {0}  => Column_number {1}, Old_val '{2}', New_val '{3}'", _guid_col, col_changed.ToString(), _old != null ? _old.ToString(): "Null", _new != null ? _new.ToString() : "Null"));
+                                        }                                            
                                         _operMOD.Add(Row);
                                     }
                                     counter++;
