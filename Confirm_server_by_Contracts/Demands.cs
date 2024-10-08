@@ -303,10 +303,11 @@ namespace Confirm_server_by_Contracts
                 try
                 {
                     if (cancellationToken.IsCancellationRequested) { break; }
+                    Tuple<DateTime?, DateTime?> dates = new Tuple<DateTime?, DateTime?>(item.Min_d, item.Max_d);
                     result += await Update_dataset(
                         item.Part_no,
                         item.Contract,
-                        new Tuple<DateTime?, DateTime?>(item.Min_d, item.Max_d),
+                        dates,
                         string.Format(
                             "{0}:{1}:{2}",
                             Task_name,

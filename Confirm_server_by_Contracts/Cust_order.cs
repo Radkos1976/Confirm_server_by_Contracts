@@ -98,8 +98,7 @@ namespace Confirm_server_by_Contracts
                     new[] { "id", "zest", "objversion",  "chksum" },
                     new[] { "id" },
                     "cust_ord",
-                    cancellationToken,
-                    true);
+                    cancellationToken);
                 list_ora = null;
                 list_pstgr = null;
                 return await PSTRG_Changes_to_dataTable(
@@ -171,7 +170,7 @@ namespace Confirm_server_by_Contracts
                     ifsapp.customer_order_api.Get_Customer_No(a.ORDER_NO) CUST_no,
                     ifsapp.customer_order_address_api.Get_Zip_Code(a.ORDER_NO) ZIP_CODE,
                     ifsapp.customer_order_address_api.Get_Addr_1(a.ORDER_NO) || Decode(Nvl(ifsapp.customer_order_api.Get_Cust_Ref(a.ORDER_NO), ''), '', '', '<<' || ifsapp.customer_order_api.Get_Cust_Ref(a.ORDER_NO) || '>>') ADDR1,
-                    Promised_Delivery_Date - Delivery_Leadtime PROM_DATE, 
+                    To_Date(Promised_Delivery_Date - Delivery_Leadtime) PROM_DATE, 
                     To_Char(Promised_Delivery_Date - Delivery_Leadtime, 'IYYYIW') PROM_WEEK, 
                     LOAD_ID,
                     to_date(ifsapp.CUST_ORDER_LOAD_LIST_API.Get_Ship_Date(LOAD_ID)) SHIP_DATE, 
