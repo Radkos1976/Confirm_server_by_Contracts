@@ -463,7 +463,27 @@ namespace Confirm_server_by_Contracts
                     {
                         return res4;
                     }
-                    return this.Sort_ord.CompareTo(other.Sort_ord) * -1;
+                    int srt_odr = this.Sort_ord.CompareTo(other.Sort_ord) * -1;
+                    if (srt_odr != 0) 
+                    {
+                        return srt_odr; 
+                    }
+                    int order = this.Dop.CompareTo(other.Dop);
+                    if (order != 0)
+                    {
+                        return order;
+                    }
+                    int dop_lin = this.Dop_lin.CompareTo(other.Dop_lin);
+                    if (dop_lin != 0)
+                    {
+                        return dop_lin; 
+                    }
+                    int zlc = this.Zlec.CompareTo(other.Zlec);
+                    if (zlc != 0)
+                    {
+                        return zlc;
+                    }                  
+                    return this.Ordid.CompareTo(other.Ordid);
                 }
             }
 
