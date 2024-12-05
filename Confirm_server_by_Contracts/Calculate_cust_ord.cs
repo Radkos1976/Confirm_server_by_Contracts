@@ -496,7 +496,11 @@ namespace Confirm_server_by_Contracts
                     this.Indeks.Equals(other.Indeks) &&
                     this.Umiejsc.Equals(other.Umiejsc) &&
                     this.Data_dost.Equals(other.Data_dost) &&
-                    this.Sort_ord.Equals(other.Sort_ord)
+                    this.Sort_ord.Equals(other.Sort_ord) &&
+                    this.Dop.Equals(other.Dop) &&
+                    this.Dop_lin.Equals(other.Dop_lin) &&
+                    this.Zlec.Equals(other.Zlec) &&
+                    this.Ordid.Equals(other.Ordid)
                     );
             }
         }
