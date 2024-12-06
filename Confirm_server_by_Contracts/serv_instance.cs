@@ -403,14 +403,17 @@ namespace Confirm_server_by_Contracts
                                             indeks,
                                             umiejsc,
                                             max(data_dost) dost,
-                                            max(data_braku) brak
+                                            max(data_braku) brak,
+											 typ_zdarzenia
                                          from public.data 
-                                         where typ_zdarzenia not in ('Brak zamówień zakupu','Dostawa na dzisiejsze ilości','Opóźniona dostawa') 
+                                         where typ_zdarzenia not in ('Brak zamówień zakupu','Opóźniona dostawa') 
                                          and planner_buyer!='LUCPRZ'
-                                        group by indeks, umiejsc
+                                        group by indeks, umiejsc, typ_zdarzenia
                                     )c
                                     on c.indeks=a.part_no and c.umiejsc=a.contract and c.dost=a.work_day
-                                where a.koor!='LUCPRZ' and (round(b.sup::Decimal, 3) != round(a.purch_qty::Decimal, 3) or round(b.dem::Decimal, 3) != round(a.qty_demand::Decimal, 3) or b.chk!=a.chksum) and (a.work_day <= date_fromnow(16) or a.work_day <= date_fromnow(a.expected_leadtime) or a.work_day <= c.dost or a.work_day <= c.brak)
+                                where a.koor!='LUCPRZ' and (round(b.sup::Decimal, 3) != round(a.purch_qty::Decimal, 3) or 
+								((round(b.dem::Decimal, 3) != round(a.qty_demand::Decimal, 3)  or b.chk!=a.chksum) and c.typ_zdarzenia!='Dostawa na dzisiejsze ilości')) and (a.work_day <= date_fromnow(16) or 
+								a.work_day <= date_fromnow(a.expected_leadtime) or a.work_day <= c.dost or a.work_day <= c.brak)
                                 )
                         ) a
                         group by a.part_no, a.contract;",
