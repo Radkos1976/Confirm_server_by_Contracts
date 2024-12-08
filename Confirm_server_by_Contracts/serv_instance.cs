@@ -367,7 +367,7 @@ namespace Confirm_server_by_Contracts
                     // check order_demands for duplicated data amt wrong balances
                     Update_pstgr_from_Ora<Small_upd_demands> upd_dem = new Update_pstgr_from_Ora<Small_upd_demands>("MAIN");
                     List<Small_upd_demands> not_corr_dem = await upd_dem.Get_PSTGR("" +
-                        @"select a.part_no, a.contract, date_shift_days(min(a.min_d),-1,a.contract), date_shift_days(max(a.max_d),1,a.contract) 
+                        @"select a.part_no, a.contract, date_shift_days(min(a.min_d),-1,a.contract) min_d, date_shift_days(max(a.max_d),1,a.contract) max_d
                         from 
                         (
 	                        (select b.part_no,b.contract,b.date_required min_d, b.date_required max_d
