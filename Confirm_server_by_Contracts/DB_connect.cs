@@ -28,8 +28,8 @@ namespace DB_Conect
             Str_oracle_conn = Oracle_conn.Connection_string;
         }
 
-        readonly string Str_oracle_conn;
-        readonly string npC;
+        public readonly string Str_oracle_conn;
+        public readonly string npC;
 
         /// <summary>
         /// Get datasets from ORACLE - use this override when columns in query and in class T is same and create prepared parameters 
@@ -160,6 +160,83 @@ namespace DB_Conect
             }
 
         }
+        public async Task<List<T>> Ora_read_dataset(
+            OracleCommand cust,
+            string Task_name,           
+            CancellationToken cancellationToken)
+        {
+            List<T> Rows = new List<T>();
+            Dictionary<string, int> D_columns = new Dictionary<string, int>();
+            Dictionary<int, string> P_columns = new Dictionary<int, string>();
+            Dictionary<int, Type> P_types = new Dictionary<int, Type>();
+            T Row = new T();
+            IPropertyAccessor[] Accessors = Row.GetType().GetProperties()
+                                        .Select(pi => PropertyInfoHelper.CreateAccessor(pi)).ToArray();           
+            
+            int counter = 0;
+            foreach (var p in Accessors)
+            {
+                P_types.Add(counter, p.PropertyInfo.PropertyType);
+                P_columns.Add(counter, p.PropertyInfo.Name.ToLower());
+                counter++;
+            }
+            bool list_columns = false;
+            try
+            {
+                using (OracleDataReader reader = cust.ExecuteReader())
+                {
+                    reader.FetchSize = cust.RowSize * 200;
+                    while (await reader.ReadAsync(cancellationToken))
+                    {
+                        if (!list_columns)
+                        {
+                            if (D_columns.Count == 0)
+                            {
+                                for (int col = 0; col < reader.FieldCount; col++)
+                                {
+                                    string nam = reader.GetName(col).ToLower();
+                                    D_columns.Add(nam, col);
+                                }
+                            }
+                            list_columns = true;
+                        }
+                        Row = new T();
+                        counter = 0;
+                        foreach (var Accessor in Accessors)
+                        {
+                            string metod = P_columns[counter];
+                            if (D_columns.ContainsKey(metod))
+                            {
+                                int col = D_columns[metod];
+                                object readData = reader.GetValue(D_columns[metod]);
+                                if (readData != System.DBNull.Value)
+                                {
+                                    Type pt = P_types[counter];
+                                    Accessor.SetValue(
+                                        Row,
+                                        Convert.ChangeType(
+                                            readData,
+                                            Nullable.GetUnderlyingType(pt) ?? pt,
+                                            null)
+                                        );
+                                }
+                            }
+                            counter++;
+                        }
+                        Rows.Add(Row);
+                    }
+                }
+                Rows.Sort();
+                return Rows;
+            }
+            catch (Exception e)
+            {
+                Loger.Log("Error on GET_ORA :" + Task_name + e + " => " + e.Message);
+                Steps_executor.Step_error(Task_name);
+                return Rows;
+            }
+        }
+
         /// <summary>
         /// Get datasets from ORACLE - use this override when columns in query and in class T is diferent  
         /// </summary>
@@ -283,8 +360,82 @@ namespace DB_Conect
                 P_types,
                 cancellationToken);
         }
+        public async Task<List<T>> Postgr_read_dataset(
+            NpgsqlCommand cust,
+            string Task_name,
+            CancellationToken cancellationToken)
+        {
+            Dictionary<string, int> D_columns = new Dictionary<string, int>();
+            Dictionary<int, string> P_columns = new Dictionary<int, string>();
+            Dictionary<int, Type> P_types = new Dictionary<int, Type>();
+            bool list_columns = false;
+            T Row = new T();
+            IPropertyAccessor[] Accessors = Row.GetType().GetProperties()
+                                     .Select(pi => PropertyInfoHelper.CreateAccessor(pi)).ToArray();
+            int counter = 0;
+            foreach (var p in Accessors)
+            {
+                P_types.Add(counter, p.PropertyInfo.PropertyType);
+                P_columns.Add(counter, p.PropertyInfo.Name.ToLower());
+                counter++;
+            }
+            List<T> Rows = new List<T>();
+            try
+            {
+                using (NpgsqlDataReader reader = cust.ExecuteReader())
+                {
+                    while (await reader.ReadAsync(cancellationToken))
+                    {
+                        if (!list_columns)
+                        {
+                            if (D_columns.Count == 0)
+                            {
+                                for (int col = 0; col < reader.FieldCount; col++)
+                                {
+                                    D_columns.Add(reader.GetName(col).ToLower(), col);
+                                }
+                            }
+                            list_columns = true;
+                        }
+                        Row = new T();
+                        counter = 0;
+                        foreach (var Accessor in Accessors)
+                        {
+                            string metod = P_columns[counter];
+                            if (D_columns.ContainsKey(metod))
+                            {
+                                int col = D_columns[metod];
+                                object readData = reader.GetValue(D_columns[metod]);
+                                if (readData != System.DBNull.Value)
+                                {
+                                    Type pt = P_types[counter];
+                                    Accessor.SetValue(
+                                        Row,
+                                        Convert.ChangeType(
+                                            readData,
+                                            Nullable.GetUnderlyingType(pt) ?? pt,
+                                            null)
+                                        );
+                                }
+                            }
+                            counter++;
+                        }
+                        Rows.Add(Row);
+                    }
+                }
+                Rows.Sort();
+                return Rows;
+            }
+            catch (Exception e)
+            {
+                Loger.Log(String.Format("Error of modification Table: {0} => {1}", Task_name, e));
+                Steps_executor.Step_error(Task_name);
+                return Rows;
+            }
+        }
+
         /// <summary>
-        /// Get datasets from POSTEGRES - use this override when columns in query and in class T is diferent  
+        /// Get datasets from POSTEGRES - use this override when columns in query and in class T are diferent  
         /// </summary>
         /// <param name="Sql_ora"></param>
         /// <param name="Task_name"></param>
