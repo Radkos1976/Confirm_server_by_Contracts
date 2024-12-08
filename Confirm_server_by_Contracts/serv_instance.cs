@@ -1,6 +1,7 @@
 ﻿using DB_Conect;
 using Npgsql;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -114,6 +115,21 @@ namespace Confirm_server_by_Contracts
                             main_Loop = null;
                         }
                     }
+                },
+                async () =>
+                {
+                    Run_query quer = new Run_query();
+                    await quer.Execute_in_Postgres(new[] {
+                        @"DELETE FROM public.ord_demands
+	                        WHERE id in	(
+                                select a.id from 
+		                            public.ord_demands a,
+		                            (SELECT contract,dop,dop_lin, order_no, line_no, rel_no, part_no 
+                                    FROM 
+	                                public.ord_demands
+	                                   group by contract,dop,dop_lin, order_no, line_no, rel_no, part_no having count(dop)>1) b
+	                            where a.contract=b.contract and a.dop=b.dop and a.dop_lin=b.dop_lin and a.order_no=b.order_no and a.line_no=b.line_no and a.rel_no=b.rel_no and a.part_no=b.part_no)"
+                    }, "Delete duplicated orders", active_token);
                 },
                 () =>
                 {
