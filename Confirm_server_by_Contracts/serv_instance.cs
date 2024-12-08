@@ -367,7 +367,7 @@ namespace Confirm_server_by_Contracts
                     // check order_demands for duplicated data amt wrong balances
                     Update_pstgr_from_Ora<Small_upd_demands> upd_dem = new Update_pstgr_from_Ora<Small_upd_demands>("MAIN");
                     List<Small_upd_demands> not_corr_dem = await upd_dem.Get_PSTGR("" +
-                        @"select a.part_no, a.contract, min(a.min_d), max(a.max_d) 
+                        @"select a.part_no, a.contract, date_shift_days(min(a.min_d),-1,a.contract), date_shift_days(max(a.max_d),1,a.contract) 
                         from 
                         (
 	                        (select b.part_no,b.contract,b.date_required min_d, b.date_required max_d
@@ -378,23 +378,7 @@ namespace Confirm_server_by_Contracts
                                 (select part_no,contract,date_required,dop,dop_lin,int_ord,line_no,rel_no from ord_demands) b 
                             where a.il >1 and (a.dop=b.dop and a.dop_lin=b.dop_lin and a.int_ord=b.int_ord and a.part_no=b.part_no and a.contract=b.contract
                                 and a.line_no=b.line_no and a.rel_no=b.rel_no) 
-                             group by b.part_no,b.contract,b.date_required order by part_no) 
-                            union ALL
-                                (select indeks part_no,umiejsc contract,mn min_d,max(data_dost) max_d
-                                from 
-                                (select c.indeks,c.umiejsc,c.data_dost,c.mag,c.sum_dost-sum(a.qty_supply) supp,c.sum_potrz-sum(a.qty_demand) dmd,min(a.date_required) mn,b.ma 
-                                    from 
-                                        (select * 
-                                            from public.data 
-                                            where typ_zdarzenia not in ('Brak zamówień zakupu','Dostawa na dzisiejsze ilości','Opóźniona dostawa') 
-                                            and planner_buyer!='LUCPRZ')c,
-                                        ord_demands a,
-                                        (select part_no,contract,min(work_day) ma 
-                                            from demands group by part_no, contract) b 
-                                     where c.bilans<0 and b.part_no=c.indeks and a.part_no=c.indeks 
-                                     and (a.date_required<=c.data_dost or a.date_required<=current_date) 
-                                     group by c.indeks, c.umiejsc,c.opis,c.data_dost,c.bilans,c.mag,c.sum_dost,c.sum_potrz,b.ma) a 
-                                where  supp not between -0.001 and 0.001 or dmd not between -0.001 and 0.001 group by indeks,umiejsc,mn,ma)
+                             group by b.part_no,b.contract,b.date_required order by part_no)                             
                             union All
                                 (Select a.part_no, a.contract, a.work_day min_d,a.work_day as max_d 
                                 from
@@ -422,14 +406,14 @@ namespace Confirm_server_by_Contracts
                                             max(data_braku) brak,
 											 typ_zdarzenia
                                          from public.data 
-                                         where typ_zdarzenia not in ('Brak zamówień zakupu','Opóźniona dostawa') 
+                                         where typ_zdarzenia not in ('Brak zamówień zakupu','Opóźniona dostawa', 'Dostawa na dzisiejsze ilości') 
                                          and planner_buyer!='LUCPRZ'
                                         group by indeks, umiejsc, typ_zdarzenia
                                     )c
                                     on c.indeks=a.part_no and c.umiejsc=a.contract and c.dost=a.work_day
                                 where a.koor!='LUCPRZ' and (round(b.sup::Decimal, 3) != round(a.purch_qty::Decimal, 3) or 
-								((round(b.dem::Decimal, 3) != round(a.qty_demand::Decimal, 3)  or b.chk!=a.chksum) and c.typ_zdarzenia!='Dostawa na dzisiejsze ilości')) and (a.work_day <= date_fromnow(16) or 
-								a.work_day <= date_fromnow(a.expected_leadtime) or a.work_day <= c.dost or a.work_day <= c.brak)
+								round(b.dem::Decimal, 3) != round(a.qty_demand::Decimal, 3)  or b.chk!=a.chksum) and (a.work_day <= date_fromnow(16) or 
+								a.work_day <= c.brak)
                                 )
                         ) a
                         group by a.part_no, a.contract;",
