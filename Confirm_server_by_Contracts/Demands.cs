@@ -446,7 +446,7 @@ namespace Confirm_server_by_Contracts
                     a.PART_CODE,
                     To_Date(a.DATE_REQUIRED) DATE_REQUIRED,
                     a.ORD_STATE,
-                    a.ORD_DATE,
+                    To_Date(a.ORD_DATE) ORD_DATE,
                     a.PROD_QTY,
                     a.QTY_SUPPLY,
                     a.QTY_DEMAND,
