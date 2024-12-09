@@ -670,7 +670,7 @@ namespace Confirm_server_by_Contracts
                         FROM 
                             ifsapp.material_requis_line_demand_oe a, 
                             ifsapp.material_requis_line b 
-                        WHERE b.OBJID = a.ROW_ID and part_no = :part_no AND CONTRACT = :contract AND To_Date(DATE_REQUIRED) between :date_from and :date_end  
+                        WHERE b.OBJID = a.ROW_ID and a.part_no = :part_no AND a.CONTRACT = :contract AND To_Date(a.DATE_REQUIRED) between :date_from and :date_end  
                         UNION ALL  
                         SELECT 
                             0 DOP,
