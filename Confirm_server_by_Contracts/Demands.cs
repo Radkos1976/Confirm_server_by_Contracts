@@ -261,8 +261,7 @@ namespace Confirm_server_by_Contracts
         public async Task<int> Update_from_executor(string Task_name, CancellationToken cancellationToken)
         {
             int result = 0;
-            Steps_executor.Register_step(Task_name);
-            Count_oracle_conn.Wait_for_Oracle(cancellationToken);
+            Steps_executor.Register_step(Task_name);           
             using (OracleConnection conO = new OracleConnection(Str_oracle_conn))
             {
                 await conO.OpenAsync(cancellationToken);
@@ -291,6 +290,7 @@ namespace Confirm_server_by_Contracts
 
                             while (Dataset_executor.Count() > 0 && !cancellationToken.IsCancellationRequested)
                             {
+                                Count_oracle_conn.Wait_for_Oracle(cancellationToken);
                                 try
                                 {
 
@@ -324,12 +324,12 @@ namespace Confirm_server_by_Contracts
                                 {
                                     Loger.Log(string.Format("Err => {0}", ex.Message));
                                 }
+                                Count_oracle_conn.Oracle_conn_ended();
                             }
                         }
                     }
                 }
-            }
-            Count_oracle_conn.Oracle_conn_ended();
+            }            
             Steps_executor.End_step(Task_name);
             return result;
         }
@@ -340,8 +340,7 @@ namespace Confirm_server_by_Contracts
             CancellationToken cancellationToken)
         {
             int result = 0;
-            Steps_executor.Register_step(Task_name);
-            Count_oracle_conn.Wait_for_Oracle(cancellationToken);
+            Steps_executor.Register_step(Task_name);            
             using (OracleConnection conO = new OracleConnection(Str_oracle_conn))
             {
                 await conO.OpenAsync(cancellationToken);
@@ -361,7 +360,6 @@ namespace Confirm_server_by_Contracts
                         await conp.OpenAsync(cancellationToken);
                         using (NpgsqlCommand cu = new NpgsqlCommand(postgres_get_orders, conp))
                         {
-
                             cu.Parameters.Add("part_no", NpgsqlTypes.NpgsqlDbType.Varchar);
                             cu.Parameters.Add("contract", NpgsqlTypes.NpgsqlDbType.Varchar);
                             cu.Parameters.Add("date_from", NpgsqlTypes.NpgsqlDbType.Date);
@@ -370,6 +368,7 @@ namespace Confirm_server_by_Contracts
 
                             foreach (Small_upd_demands item in dataset)
                             {
+                                Count_oracle_conn.Wait_for_Oracle(cancellationToken);
                                 try
                                 {
                                     if (cancellationToken.IsCancellationRequested) { break; }
@@ -399,12 +398,12 @@ namespace Confirm_server_by_Contracts
                                 {
                                     Loger.Log(string.Format("Err => {0}", ex.Message));
                                 }
+                                Count_oracle_conn.Oracle_conn_ended();
                             }
                         }
                     }
                 }
-            }
-            Count_oracle_conn.Oracle_conn_ended();
+            }            
             Steps_executor.End_step(Task_name);
             return result;
         }
