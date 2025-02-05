@@ -572,7 +572,7 @@ namespace Confirm_server_by_Contracts
                                                     conf_mail_null
                                                     where date_add is null) a,
                                                     kontakty b 
-                                                where a.country=ANY(string_to_array(b.country_coor::text, ','::text)) 
+                                                where a.country=ANY(string_to_array(b.country_coor::text, ','::text)) or 'support'=ANY(string_to_array(b.country_coor::text, ','::text))
                                                 group by b.mail", conA))
                                             {
                                                 using (NpgsqlDataReader po = cmd.ExecuteReader())
@@ -612,7 +612,7 @@ namespace Confirm_server_by_Contracts
                                                         from 
                                                         (select * from conf_mail_null where date_add is null) a,
                                                         kontakty b 
-                                                        where a.country=ANY(string_to_array(b.country_coor::text, ','::text)) and b.mail=@mail ", conA))
+                                                        where (a.country=ANY(string_to_array(b.country_coor::text, ','::text)) or 'support'=ANY(string_to_array(b.country_coor::text, ','::text))) and b.mail=@mail ", conA))
                                                     {
                                                         cmd.Parameters.Add("mail", NpgsqlTypes.NpgsqlDbType.Varchar);
 
